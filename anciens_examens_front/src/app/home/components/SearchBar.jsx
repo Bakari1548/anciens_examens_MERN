@@ -10,25 +10,31 @@ export default function SearchBar() {
     // const [matiereSelected, setMatiereSelected] = useState("");
 
     const { searchQuery, setSearchQuery, filters, setFilters } = useExamContext();
+
+    const handleResetFilters = () => {
+        setFiliereSelected("");
+        setSemestreSelected("");
+        // setMatiereSelected("");
+    };
     
     return (
         <div className="flex flex-col gap-5 sm:px-10 px-4 w-full my-10">
             <div className="relative flex md:w-2/3 w-full sm:mx-auto ">
                 <input
                     type="text"
-                    // value={searchQuery}
-                    // onChange={(e) => setSearchQuery(e.target.value)}
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder='🔎 Rechercher un examen par son titre'
                     className="w-full shadow-sm bg-white px-4 py-3 pr-12 border rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500"
                 />
-                {/* {searchQuery !=="" &&
+                {searchQuery !=="" &&
                 <button
                     onClick={() => setSearchQuery("")}
                     className="absolute cursor-pointer right-2 top-1/2 -translate-y-1/2 bg-gray-500 text-gray-900 px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-gray-600 active:scale-95 transition"
                 >
                     Reinitialiser
                 </button>
-                } */}
+                }
             </div>
             <div className="grid md:grid-cols-4 sm:grid-cols-2 grid-cols-1 px-4 py-2.5 bg-white justify-center gap-5 shadow-sm rounded-md w-full items-center">
                 <select 
@@ -69,7 +75,7 @@ export default function SearchBar() {
                     ))}
                 </select>
                 <button
-                    // onClick={handleResetFilters}
+                    onClick={handleResetFilters}
                     className="cursor-pointer h-fit bg-gray-500 text-white font-semibold px-4 py-2 rounded-md text-center gap-2 hover:bg-gray-600 active:scale-95 transition"
                 >
                     Reinitialiser

@@ -1,0 +1,20 @@
+
+
+export default function ResetPasswordComplete () {
+    return (
+        <div class="flex flex-col h-screen justify-center items-center py-20 gap-3 px-10">
+            <div class="flex flex-col gap-6 items-center md:w-[700px]">
+                <h1 class="text-5xl font-semibold text-gray-700">
+                    Mot de passe changé !!!
+                </h1>
+                <p class="text-center font-medium text-gray-600">
+                    Votre mot de passe a été changé. Vous pouvez maintenant vous connecter.
+                </p>
+                <a 
+                    class="bg-gray-600 font-semibold text-white mx-auto py-3 px-8 rounded-lg shadow hover:bg-gray-700 active:bg-gray-700 transition-all duration-300 ease-in-out"
+                    href="/connexion"
+                >Se connecter</a>
+            </div>
+        </div>
+    )
+}

@@ -17,28 +17,28 @@ export default function HeroSection() {
             <h2 className="absolute top-68 left-[30%] font-bold text-2xl text-gray-500/70 -rotate-80">LPC</h2>
             <img
                 src={sheet6}
-                className="absolute top-16 left-[65%] rotate-20 w-12 h-12 opacity-40"
+                className="absolute top-16 left-[65%] rotate-20 w-14 h-14 opacity-40"
             />
             <img 
                 src={sheet4}
-                className="absolute top-44 left-[30%] -rotate-25 w-12 h-12 opacity-30"
+                className="absolute top-44 left-[30%] -rotate-25 w-14 h-14 opacity-30"
             />
             <img 
                 src={sheet3}
-                className="absolute top-60 left-[85%] rotate-35 w-12 h-12 opacity-40"
+                className="absolute top-60 left-[85%] rotate-35 w-14 h-14 opacity-40"
             />
         </div>
         <div className="flex flex-col items-center gap-8 md:px-0 sm:px-14 px-4 sm:pt-0 pt-20">
-            <h1 className="text-4xl text-gray-800 font-medium text-center">
+            <h1 className="text-5xl text-gray-800 font-medium text-center">
                 Bienvenue dans
                 <span className="bg-linear-to-r from-violet-500 via-green-400 to-blue-600 bg-clip-text font-semibold text-transparent"> anciens examens</span>
             </h1>
             <p className="text-gray-800 font-medium text-center text-lg">Une plateforme qui collecte les anciens examens de l'UIDT pour vous aider à mieux reviser.</p>
             <div className="flex flex-col min-[520px]:flex-row gap-4 justify-center items-center">
-                <a href="#" className="bg-gray-500 text-white py-3 px-4 rounded-lg shadow hover:bg-gray-700 active:scale-95 transition-all duration-300 ease-in-out">
+                <a href="#" className="font-medium bg-gray-500 text-white py-3 px-4 rounded-lg shadow hover:bg-gray-700 active:scale-95 transition-all duration-300 ease-in-out">
                     Consulter les Examens
                 </a>
-                <a href="#" className="border border-gray-700 text-gray-800 py-3 px-4 rounded-lg shadow hover:bg-gray-300/80 hover:shadow active:scale-95 transition-all duration-300 ease-in-out">
+                <a href="/partager-examen" className="font-medium border border-gray-700 text-gray-800 py-3 px-4 rounded-lg shadow hover:bg-gray-300/80 hover:shadow active:scale-95 transition-all duration-300 ease-in-out">
                     Partager un examen
                 </a>
             </div>
@@ -51,15 +51,15 @@ export default function HeroSection() {
             <h2 className="absolute top-68 right-[40%] font-bold text-2xl text-gray-500/70 rotate-40">MIO</h2>
             <img 
                 src={sheet1}
-                className="absolute top-16 right-[65%] rotate-20 w-12 h-12 opacity-40"
+                className="absolute top-16 right-[65%] rotate-20 w-14 h-14 opacity-40"
             />
             <img 
                 src={sheet2}
-                className="absolute top-52 right-[35%] -rotate-35 w-12 h-12 opacity-30"
+                className="absolute top-52 right-[35%] -rotate-35 w-14 h-14 opacity-30"
             />
             <img 
                 src={sheet5}
-                className="absolute top-60 right-[85%] rotate-35 w-12 h-12 opacity-40"
+                className="absolute top-60 right-[85%] rotate-35 w-14 h-14 opacity-40"
             />
         </div>
     </div>

@@ -60,7 +60,7 @@ export default function Footer() {
             &copy; 2026 Anciens Examens - Université Iba Der Thiam de Thiès. Tous droits réservés.
           </p>
         </div>
-      </div>?
+      </div>
     </footer>
   );
 }

@@ -24,15 +24,15 @@ export default function CardExam({ exam }) {
                 </div>
                 <div className="flex min-[550px]:flex-row flex-col gap-6 w-full">
                     <a 
-                        href={`examen/${exam.id}`}
-                        className="bg-blue-400/40 flex justify-center gap-2 text-black   items-center p-2 min-[550px]:w-1/2 font-semibold rounded-lg shadow active:scale-95 hover:bg-blue-400 active:bg-blue-400 transition-all duration-200 ease-in-out"
+                        href={`examen/${exam.slug}`}
+                        className="bg-blue-400/40 flex justify-center gap-2 text-black items-center p-2 min-[550px]:w-1/2 font-semibold rounded-lg shadow active:scale-95 hover:bg-blue-400 active:bg-blue-400 transition-all duration-200 ease-in-out"
                     >
                         <span>Lire</span>
                         <Eye size={18} />
                     </a>
                     <a
                         download
-                        href={exam.file.url} 
+                        href={exam.filePath} 
                         className="bg-transparent flex justify-center items-center gap-2 border border-gray-300 text-black   p-2 min-[550px]:w-1/2 text-center font-semibold rounded-lg shadow active:scale-95 hover:bg-gray-100 active:bg-gray-200 transition-all duration-200 ease-in-out"
                     >
                         <span>Télécharger</span>

@@ -1,14 +1,34 @@
+import { useState, useEffect } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { mockExams } from "../services/mockDatas";
-import CardExam from "./CardExam";
-import { useExamContext } from "../context/ExamContext";
+import { getAllExams } from "../../exam/services/exam.api";
+import CardExam from "../../exam/components/CardExam";
+import { useExamContext } from "../../exam/context/ExamContext";
+import { toast } from "sonner";
 
 
 export default function Exams() {
-
+    const [exams, setExams] = useState([]);
+    const [loading, setLoading] = useState(true);
     const { searchQuery, filters } = useExamContext();
 
-    const filteredExams = mockExams.filter((exam) => {
+    useEffect(() => {
+        const fetchExams = async () => {
+            try {
+                setLoading(true);
+                const response = await getAllExams();
+                setExams(response.exams || []);
+            } catch (error) {
+                console.error('Erreur lors de la récupération des examens:', error);
+                toast.error('Erreur lors du chargement des examens');
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchExams();
+    }, []);
+
+    const filteredExams = exams.filter((exam) => {
         const matchesSearchQuery = exam.title.toLowerCase().includes(searchQuery.toLowerCase());
         const matchesFiliere = filters.filiere === "" || exam.filiere === filters.filiere;
         const matchesSemestre = filters.semestre === "" || exam.semestre === filters.semestre;
@@ -17,17 +37,31 @@ export default function Exams() {
         return matchesSearchQuery && matchesFiliere && matchesSemestre && matchesMatiere;
     });
 
+    if (loading) {
+        return (
+            <div className="p-4 sm:px-12 px-6 flex flex-col gap-3">
+                <div className="text-center py-12">
+                    <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-gray-700"></div>
+                    <p className="mt-4 text-gray-600">Chargement des examens...</p>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="p-4 sm:px-12 px-6 flex flex-col gap-3">
-            <h4 className="text-lg font-medium text-gray-700">Total produits {mockExams.length}</h4>
-            {/* <p className="text-center text-xl font-medium text-gray-600">
-                Désolé, nous n'avons que des examens de 2010 jusqu'à aujourd'hui
-            </p> */}
-            <div className="grid lg:grid-cols-2 grid-cols-1 sm:gap-4 gap-8">
-                {filteredExams.map((exam) => (
-                    <CardExam key={exam.id} exam={exam} />
-                ))}
-            </div>
+            <h4 className="text-lg font-medium text-gray-700">Total examens {exams.length}</h4>
+            {filteredExams.length === 0 ? (
+                <div className="text-center py-12">
+                    <p className="text-gray-600">Aucun examen trouvé pour vos critères de recherche.</p>
+                </div>
+            ) : (
+                <div className="grid lg:grid-cols-2 grid-cols-1 sm:gap-4 gap-8">
+                    {filteredExams.map((exam) => (
+                        <CardExam key={exam._id} exam={exam} />
+                    ))}
+                </div>
+            )}
             <div className="flex sm:justify-end justify-center items-center gap-3 sm:px-10 py-6">
                 <button className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300">
                     <ChevronLeft size={20} />

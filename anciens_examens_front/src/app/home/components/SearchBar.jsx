@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { mockFilieres } from "../services/mockDatas";
-import { useExamContext } from "../context/ExamContext";
+import { useExamContext } from "../../exam/context/ExamContext";
 
 
 export default function SearchBar() {
@@ -30,13 +30,13 @@ export default function SearchBar() {
                 {searchQuery !=="" &&
                 <button
                     onClick={() => setSearchQuery("")}
-                    className="absolute cursor-pointer right-2 top-1/2 -translate-y-1/2 bg-gray-500 text-gray-900 px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-gray-600 active:scale-95 transition"
+                    className="absolute cursor-pointer right-2 top-1/2 -translate-y-1/2 font-medium bg-gray-500 text-white py-2 px-4 rounded-lg shadow hover:bg-gray-700 active:scale-95 transition-all duration-300 ease-in-out"
                 >
                     Reinitialiser
                 </button>
                 }
             </div>
-            <div className="grid md:grid-cols-4 sm:grid-cols-2 grid-cols-1 px-4 py-2.5 bg-white justify-center gap-5 shadow-sm rounded-md w-full items-center">
+            <div className="grid md:grid-cols-4 sm:grid-cols-2 grid-cols-1 px-4 py-2.5 bg-white justify-center gap-4 shadow-sm rounded-md w-full items-center">
                 <select 
                     className="bg-gray-100/70 border active:outline-gray-500 focus:outline-gray-500 rounded-md py-2 px-4"
                     name="filiere" 

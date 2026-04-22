@@ -1,6 +1,8 @@
 import { useState } from 'react';
-import { Link } from 'react-router';
+import { Link, useNavigate } from 'react-router';
+import { toast } from 'sonner';
 import signupImage from '@/assets/student3.webp';
+import { register } from '../services/auth.api';
 
 export default function Register() {
   const [formData, setFormData] = useState({
@@ -11,6 +13,8 @@ export default function Register() {
     password: '',
     confirmPassword: ''
   });
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
   const handleChange = (e) => {
     setFormData({
@@ -19,15 +23,43 @@ export default function Register() {
     });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Vérifier que les mots de passe correspondent
-    if (formData.password !== formData.confirmPassword) {
-      alert('Les mots de passe ne correspondent pas');
+    
+    // Validation des champs
+    if (!formData.firstName || !formData.lastName || !formData.email || !formData.password) {
+      toast.error('Veuillez remplir tous les champs obligatoires');
       return;
     }
-    // Logique d'inscription à implémenter
-    console.log('Inscription:', formData);
+    
+    // Vérifier que les mots de passe correspondent
+    if (formData.password !== formData.confirmPassword) {
+      toast.error('Les mots de passe ne correspondent pas');
+      return;
+    }
+    
+    if (formData.password.length < 6) {
+      toast.error('Le mot de passe doit contenir au moins 6 caractères');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const response = await register(formData.firstName, formData.lastName, formData.email, formData.password);
+      
+      toast.success('Inscription réussie ! Vous pouvez maintenant vous connecter.');
+      
+      // Rediriger vers la page de connexion après 2 secondes
+      setTimeout(() => {
+        navigate('/connexion');
+      }, 2000);
+      
+    } catch (error) {
+      const errorMessage = error.response?.data?.message || 'Erreur lors de l\'inscription';
+      toast.error(errorMessage);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -133,9 +165,10 @@ export default function Register() {
 
               <button
                 type="submit"
-                className="w-full bg-gray-700 text-white py-3 rounded-lg hover:bg-gray-800 transition-colors font-semibold"
+                disabled={loading}
+                className="w-full bg-gray-700 text-white py-3 rounded-lg hover:bg-gray-800 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                S'inscrire
+                {loading ? 'Inscription en cours...' : 'S\'inscrire'}
               </button>
 
               <p className="text-center">

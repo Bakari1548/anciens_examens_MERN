@@ -39,9 +39,8 @@ const getExamBySlug = async (req, res) => {
 
 const postExam = async (req, res) => {
     try {
-        const { title, ufr, filiere, matiere, year, author } = req.body;
-        // console.log(req.user);
-        author = req.user;
+        const { title, ufr, filiere, matiere, year } = req.body;
+        const author = req.user._id;
         
         if (!title || !ufr || !filiere || !matiere || !year || !author) {
             return res.status(400).json({
@@ -49,8 +48,17 @@ const postExam = async (req, res) => {
             });
         }
 
+        // Générer le slug à partir du titre
+        const slug = title
+            .toLowerCase()
+            .replace(/[^a-z0-9\s-]/g, '')
+            .replace(/\s+/g, '-')
+            .replace(/-+/g, '-')
+            .trim();
+
         const exam = await Exam.create({
             title,
+            slug,
             ufr,
             filiere,
             matiere,
@@ -72,15 +80,15 @@ const postExam = async (req, res) => {
 
 const updateExam = async (req, res) => {
     try {
-        const exam = await Exam.findById(req.params.id);
+        const exam = await Exam.findOne({ slug: req.params.slug });
         
         if(!exam) {
             return res.status(404).json({
                 message: 'Examen non trouvé'
             });
-        }
+        };
         
-        const updatedExam = await Exam.findByIdAndUpdate(req.params.id, req.body, {
+        const updatedExam = await Exam.findByIdAndUpdate(exam._id, req.body, {
             new: true,
             runValidators: true
         });
@@ -99,12 +107,13 @@ const updateExam = async (req, res) => {
 
 const deleteExam = async (req, res) => {
     try {
-        const exam = await Exam.findByIdAndDelete(req.params.id);
+        const exam = await Exam.findOne({ slug: req.params.slug });
         if (!exam) {
             return res.status(404).json({
                 message: 'Examen non trouvé'
             });
-        }
+        };
+        await Exam.findByIdAndDelete(exam._id);
         res.status(200).json({
             message: 'Examen supprimé avec succès'
         });

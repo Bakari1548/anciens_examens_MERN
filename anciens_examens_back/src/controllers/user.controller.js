@@ -50,7 +50,6 @@ const register = async (req, res) => {
                 message: "Incription reussie !",
                 token: generateToken(user._id),
                 user: {
-                    _id: user._id,
                     firstName: user.firstName,
                     lastName: user.lastName,
                     email: user.email,
@@ -107,7 +106,6 @@ const login = async (req, res) => {
            message: "Utilisateur connectee avec succès !",
             token: token,
             user: {
-                _id: user._id,
                 firstName: user.firstName,
                 lastName: user.lastName,
                 email: user.email,

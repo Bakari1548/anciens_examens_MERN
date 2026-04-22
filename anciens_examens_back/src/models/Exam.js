@@ -13,6 +13,7 @@ const examSchema = new mongoose.Schema({
         type: String,
         required: [true, 'le slug est requis'],
         trim: true,
+        unique: [true, 'le slug doit être unique'],
         minlength: [3, 'le slug doit avoir au moins 3 characters long']
     },
     ufr: {
@@ -50,7 +51,7 @@ const examSchema = new mongoose.Schema({
     },
     filePath: {
         type: String,
-        required: [true, 'le chemin du fichier est requis']
+        required: true
     },
     createdAt: {
         type: Date,
@@ -72,13 +73,19 @@ const examSchema = new mongoose.Schema({
     }
 });
 
-examSchema.pre('save', function(next) {
+examSchema.pre('save', function() {
     this.updatedAt = Date.now();
 });
 
-examSchema.pre('save', function(next) {
-    this.slug = this.title.toLowerCase().replace(/[^a-z0-9]/g, '-');
-    next();
+examSchema.pre('save', function() {
+    if (this.title && !this.slug) {
+        this.slug = this.title
+            .toLowerCase()
+            .replace(/[^a-z0-9\s-]/g, '') // Supprime les caractères spéciaux
+            .replace(/\s+/g, '-') // Remplace les espaces par des tirets
+            .replace(/-+/g, '-') // Supprime les tirets multiples
+            .trim(); // Supprime les espaces en début/fin
+    }
 });
 
 // Méthode pour ajouter un commentaire

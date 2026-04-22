@@ -1,15 +1,44 @@
 import { useState } from 'react';
-import { Link } from 'react-router';
+import { Link, useNavigate } from 'react-router';
+import { toast } from 'sonner';
 import loginImage from '@/assets/students.webp';
+import { login } from '../services/auth.api';
 
 export default function Login() {
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Logique de connexion à implémenter
-    console.log('Connexion:', { username, password });
+    
+    if (!email || !password) {
+      toast.error('Veuillez remplir tous les champs');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const response = await login(email, password);
+      
+      // Stocker les infos utilisateur
+      const { tokenStorage } = await import('@/utils/tokenStorage');
+      tokenStorage.setUser(response.user);
+      
+      toast.success('Connexion réussie !');
+      
+      // Rediriger vers la page d'accueil après 2 secondes
+      setTimeout(() => {
+        navigate('/');
+      }, 2000);
+      
+    } catch (error) {
+      const errorMessage = error.response?.data?.message || 'Erreur de connexion';
+      toast.error(errorMessage);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -22,14 +51,14 @@ export default function Login() {
             
             <form onSubmit={handleSubmit} className="space-y-6">
               <div>
-                <label htmlFor="username" className="block text-md font-medium mb-2">
-                  Nom d'utilisateur :
+                <label htmlFor="email" className="block text-md font-medium mb-2">
+                  Adresse email :
                 </label>
                 <input
-                  type="text"
-                  id="username"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
+                  type="email"
+                  id="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent"
                   required
                 />
@@ -57,9 +86,10 @@ export default function Login() {
 
               <button
                 type="submit"
-                className="w-full bg-gray-700 text-white py-3 rounded-lg hover:bg-gray-800 transition-colors font-semibold"
+                disabled={loading}
+                className="w-full bg-gray-700 text-white py-3 rounded-lg hover:bg-gray-800 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Se connecter
+                {loading ? 'Connexion en cours...' : 'Se connecter'}
               </button>
 
               <p className="text-center text-base">

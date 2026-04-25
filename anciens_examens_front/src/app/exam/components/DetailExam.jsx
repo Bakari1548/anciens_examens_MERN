@@ -1,5 +1,5 @@
 import { useParams, useNavigate, Link } from 'react-router';
-import { ArrowLeft, Download, FileText, Calendar, User, Heart, MessageSquare, Send } from 'lucide-react';
+import { ArrowLeft, Download, FileText, Calendar, User, Heart, MessageSquare, Send, ThumbsUp } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { getExamBySlug } from '../services/exam.api';
 import { toast } from 'sonner';
@@ -100,7 +100,7 @@ export default function ExamDetail() {
         {/* En-tête avec bouton retour */}
         <div className="mb-6">
           <button
-            onClick={() => navigate(-1)}
+            onClick={() => navigate('/examens')}
             className="flex items-center gap-2 text-gray-600 hover:text-blue-600 transition-colors"
           >
             <ArrowLeft size={20} />
@@ -170,17 +170,17 @@ export default function ExamDetail() {
           {/* Colonne de droite - Visualiseur de document */}
           <div className="lg:col-span-2">
             <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-              <h2 className="mb-4">Aperçu du document</h2>
+              {/* <h2 className="mb-4">Aperçu du document</h2> */}
               <div className="border border-gray-300 rounded-lg overflow-hidden bg-gray-100">
-                {exam.fileType === 'pdf' ? (
+                {exam.mimeType === 'application/pdf' ? (
                   <iframe
-                    src={exam.fileUrl}
+                    src={exam.filePath}
                     className="w-full h-[800px]"
                     title={exam.title}
                   />
                 ) : (
                   <img
-                    src={exam.fileUrl}
+                    src={exam.filePath}
                     alt={exam.title}
                     className="w-full h-auto"
                   />
@@ -194,9 +194,9 @@ export default function ExamDetail() {
               <div className="border-b pb-4 mb-6">
                 <button
                   onClick={handleLike}
-                  className="flex items-center gap-2 text-red-500 hover:text-red-600 transition-colors"
+                  className="flex items-center gap-2 text-blue-500 hover:text-blue-600 transition-colors"
                 >
-                  <Heart size={24} fill={isLiked ? 'currentColor' : 'none'} strokeWidth={2} />
+                  <ThumbsUp size={24} fill={isLiked ? 'currentColor' : 'none'} strokeWidth={2} />
                   <span className="text-lg font-medium text-gray-700">{likesCount} likes</span>
                 </button>
               </div>

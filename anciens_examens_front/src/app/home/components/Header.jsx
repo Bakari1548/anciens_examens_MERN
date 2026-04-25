@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import logoUIDT from '@/assets/logo_uidt.jpeg';
+import logoAnciensExamens from '@/assets/logo_anciens_examens.png';
 import { FileText, LogIn, User, UserPlus, LogOut } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { tokenStorage } from '@/utils/tokenStorage';
@@ -13,12 +13,24 @@ export default function Header() {
   useEffect(() => {
     const userData = tokenStorage.getUser();
     setUser(userData);
+
+    // Écouter l'événement personnalisé de connexion/déconnexion
+    const handleUserChange = () => {
+      const updatedUser = tokenStorage.getUser();
+      setUser(updatedUser);
+    };
+
+    window.addEventListener('user-auth-change', handleUserChange);
+
+    return () => {
+      window.removeEventListener('user-auth-change', handleUserChange);
+    };
   }, []);
 
   const getUserInitials = (user) => {
     if (!user) return '';
-    const firstName = user.firstName || '';
-    const lastName = user.lastName || '';
+    const firstName = typeof user.firstName === 'string' ? user.firstName : '';
+    const lastName = typeof user.lastName === 'string' ? user.lastName : '';
     return (firstName.charAt(0) + lastName.charAt(0)).toUpperCase();
   };
 
@@ -35,16 +47,27 @@ export default function Header() {
   };
 
   return (
-    <header className='w-full px-8 flex items-center justify-between py-4 bg-white shadow'>
-        <a href="/" className='active:scale-90 duration-200'>
-            <img
-                src={logoUIDT}
-                className='h-14'
-                alt="UIDT Logo"
-            />
-        </a>
-        <a href="/" className='text-3xl font-bold text-gray-800 hover:text-gray-600 active:scale-95 duration-200'>Anciens Examens</a>
-        {/* Avatar utilisateur */}
+    <header className='sticky top-0 z-30 w-full px-8 flex items-center justify-between py-2 bg-white shadow'>
+        {/* Partie gauche - Logo */}
+        <div className='flex items-center gap-4'>
+            <a href="/" className='active:scale-90 duration-200'>
+                <img
+                    src={logoAnciensExamens}
+                    className='h-14 w-14'
+                    alt="UIDT Logo"
+                />
+            </a>
+            {/* <a href="/" className='text-xl font-bold text-gray-800 hover:text-gray-600 active:scale-95 duration-200'>Anciens Examens</a> */}
+        </div>
+
+        {/* Partie centre - Navigation */}
+        <nav className='hidden text-lg md:flex items-center gap-8'>
+            <button onClick={() => onNavigate('/')} className='text-gray-700 hover:text-blue-600 font-medium transition-colors'>Accueil</button>
+            <button onClick={() => onNavigate('/examens')} className='text-gray-700 hover:text-blue-600 font-medium transition-colors'>Examens</button>
+            <button onClick={() => onNavigate('/regles')} className='text-gray-700 hover:text-blue-600 font-medium transition-colors'>Règles</button>
+        </nav>
+
+        {/* Partie droite - Icône utilisateur */}
         <div className="flex items-center">
           <div className="relative">
             <button
@@ -68,9 +91,9 @@ export default function Header() {
                     <div className="px-4 py-3 border-b border-gray-500">
                       <p className="flex items-center text-lg font-medium text-gray-900">
                         <User size={20} className="inline mr-2" />
-                        {user.firstName} {user.lastName}
+                        {user?.firstName || ''} {user?.lastName || ''}
                       </p>
-                      <p className="text-xs text-gray-500">{user.email}</p>
+                      <p className="text-xs text-gray-500">{user.email || ''}</p>
                     </div>
                     <button
                       onClick={() => onNavigate('/profil')}
@@ -85,13 +108,6 @@ export default function Header() {
                     >
                       <FileText size={18} className="text-violet-600" />
                       <span>Partager un examen</span>
-                    </button>
-                    <button
-                      onClick={() => onNavigate('/regles')}
-                      className="w-full text-left px-4 py-3 hover:bg-gray-100 transition-colors flex items-center gap-3 border-t border-gray-100"
-                    >
-                      <FileText size={18} className="text-gray-600" />
-                      <span>Règles à respecter</span>
                     </button>
                     <button
                       onClick={handleLogout}
@@ -117,13 +133,6 @@ export default function Header() {
                       <LogIn size={18} className="text-emerald-600" />
                       <span>Se connecter</span>
                     </button>
-                    <button
-                      onClick={() => onNavigate('/regles')}
-                      className="w-full text-left px-4 py-3 hover:bg-gray-100 transition-colors flex items-center gap-3 border-t border-gray-100"
-                    >
-                      <FileText size={18} className="text-gray-600" />
-                      <span>Règles à respecter</span>
-                    </button>
                   </>
                 )}
               </div>
@@ -138,7 +147,6 @@ export default function Header() {
             )}
           </div>
         </div>
-      {/* </div> */}
     </header>
   );
 }

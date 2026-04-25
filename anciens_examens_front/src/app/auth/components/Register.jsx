@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { toast } from 'sonner';
+import { Eye, EyeOff } from 'lucide-react';
 import signupImage from '@/assets/student3.webp';
 import { register } from '../services/auth.api';
 
@@ -8,11 +9,14 @@ export default function Register() {
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
-    username: '',
     email: '',
     password: '',
-    confirmPassword: ''
+    confirmPassword: '',
+    ufr: '',
+    filiere: ''
   });
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
@@ -45,14 +49,14 @@ export default function Register() {
 
     try {
       setLoading(true);
-      const response = await register(formData.firstName, formData.lastName, formData.email, formData.password);
+      const response = await register(formData.firstName, formData.lastName, formData.email, formData.password, formData.ufr, formData.filiere);
       
       toast.success('Inscription réussie ! Vous pouvez maintenant vous connecter.');
       
       // Rediriger vers la page de connexion après 2 secondes
       setTimeout(() => {
         navigate('/connexion');
-      }, 2000);
+      }, 500);
       
     } catch (error) {
       const errorMessage = error.response?.data?.message || 'Erreur lors de l\'inscription';
@@ -104,21 +108,6 @@ export default function Register() {
               </div>
 
               <div>
-                <label htmlFor="username" className="block text-md font-medium text-gray-800 mb-2">
-                  Nom d'utilisateur :
-                </label>
-                <input
-                  type="text"
-                  id="username"
-                  name="username"
-                  value={formData.username}
-                  onChange={handleChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent"
-                  required
-                />
-              </div>
-
-              <div>
                 <label htmlFor="email" className="block text-md font-medium text-gray-800 mb-2">
                   Email universitaire :
                 </label>
@@ -134,33 +123,90 @@ export default function Register() {
               </div>
 
               <div>
+                <label htmlFor="ufr" className="block text-md font-medium text-gray-800 mb-2">
+                  UFR :
+                </label>
+                <select
+                  id="ufr"
+                  name="ufr"
+                  value={formData.ufr}
+                  onChange={handleChange}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent"
+                >
+                  <option value="">Sélectionnez votre UFR</option>
+                  <option value="UFR Sciences et Technologies">UFR Sciences et Technologies</option>
+                  <option value="UFR Sciences Économiques et de Gestion">UFR Sciences Économiques et de Gestion</option>
+                  <option value="UFR Lettres, Arts et Communication">UFR Lettres, Arts et Communication</option>
+                  <option value="UFR Sciences Juridiques et Politiques">UFR Sciences Juridiques et Politiques</option>
+                </select>
+              </div>
+
+              <div>
+                <label htmlFor="filiere" className="block text-md font-medium text-gray-800 mb-2">
+                  Filière :
+                </label>
+                <select
+                  id="filiere"
+                  name="filiere"
+                  value={formData.filiere}
+                  onChange={handleChange}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent"
+                >
+                  <option value="">Sélectionnez votre filière</option>
+                  <option value="L1">Licence 1</option>
+                  <option value="L2">Licence 2</option>
+                  <option value="L3">Licence 3</option>
+                  <option value="M1">Master 1</option>
+                  <option value="M2">Master 2</option>
+                </select>
+              </div>
+
+              <div>
                 <label htmlFor="password" className="block text-md font-medium text-gray-800 mb-2">
                   Mot de passe :
                 </label>
-                <input
-                  type="password"
-                  id="password"
-                  name="password"
-                  value={formData.password}
-                  onChange={handleChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent"
-                  required
-                />
+                <div className="relative">
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    id="password"
+                    name="password"
+                    value={formData.password}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent pr-12"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                  >
+                    {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                  </button>
+                </div>
               </div>
 
               <div>
                 <label htmlFor="confirmPassword" className="block text-md font-medium text-gray-800 mb-2">
                   Confirmer mot de passe :
                 </label>
-                <input
-                  type="password"
-                  id="confirmPassword"
-                  name="confirmPassword"
-                  value={formData.confirmPassword}
-                  onChange={handleChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent"
-                  required
-                />
+                <div className="relative">
+                  <input
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    id="confirmPassword"
+                    name="confirmPassword"
+                    value={formData.confirmPassword}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent pr-12"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                  >
+                    {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                  </button>
+                </div>
               </div>
 
               <button

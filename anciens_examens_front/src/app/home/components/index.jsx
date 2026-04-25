@@ -1,6 +1,5 @@
 import Exams from "./Exams";
 import HeroSection from "./HeroSection";
-import SearchBar from "./SearchBar";
 import { ExamProvider } from "../../exam/context/ExamContext";
 import CTASection from "./CTASection";
 import StatsSection from "./StatsSection";
@@ -13,13 +12,12 @@ export default function Home() {
     <ExamProvider>
       <div className="w-full">
           <HeroSection />
-          <SearchBar />
           <StatsSection />
           <Exams />
           <TestimonialsSection />
+          <CTASection />
           <FAQSection />
           <NewsletterSection />
-          <CTASection />
       </div>
     </ExamProvider>
   )

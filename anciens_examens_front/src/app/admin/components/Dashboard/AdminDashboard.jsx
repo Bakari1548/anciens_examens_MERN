@@ -14,10 +14,12 @@ import {
   ArrowDown,
   Shield
 } from 'lucide-react';
-import { useAdminStats } from '../../hooks/useAdmin';
+import { useAdminStats } from '../../hooks/useAdmin.stats';
 import { useAdmin } from '../../context/AdminContext';
+import { useTheme } from '../../context/ThemeContext';
 
 export default function AdminDashboard() {
+  const { isDark } = useTheme();
   const { stats, fetchStats, userGrowthRate, examApprovalRate, loading } = useAdminStats();
   const { fetchUsers, fetchExams, fetchReports } = useAdmin();
   const [recentActivity, setRecentActivity] = useState([]);
@@ -25,9 +27,9 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     fetchStats();
-    fetchUsers({ limit: 5 });
-    fetchExams({ limit: 5 });
-    fetchReports();
+    fetchUsers({ page: 1, limit: 5 });
+    fetchExams({ page: 1, limit: 5 });
+    fetchReports({ page: 1, limit: 5 });
     
     // Simuler les données d'activité récente
     setRecentActivity([
@@ -126,8 +128,8 @@ export default function AdminDashboard() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-        <p className="text-gray-600 mt-1">Vue d'ensemble de la plateforme</p>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Dashboard</h1>
+        <p className="text-gray-600 dark:text-gray-400 mt-1">Vue d'ensemble de la plateforme</p>
       </div>
 
       {/* Statistiques principales */}
@@ -135,21 +137,21 @@ export default function AdminDashboard() {
         {statCards.map((stat, index) => {
           const Icon = stat.icon;
           return (
-            <div key={index} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <div key={index} className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
               <div className="flex items-center justify-between mb-4">
                 <div className={`w-12 h-12 rounded-lg bg-gradient-to-r ${stat.color} flex items-center justify-center`}>
                   <Icon className="text-white" size={24} />
                 </div>
                 <div className={`flex items-center gap-1 text-sm font-medium ${
-                  stat.changeType === 'increase' ? 'text-green-600' : 'text-red-600'
+                  stat.changeType === 'increase' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
                 }`}>
                   {stat.changeType === 'increase' ? <ArrowUp size={16} /> : <ArrowDown size={16} />}
                   {stat.change}
                 </div>
               </div>
               <div>
-                <h3 className="text-2xl font-bold text-gray-900">{stat.value.toLocaleString()}</h3>
-                <p className="text-gray-600 text-sm">{stat.title}</p>
+                <h3 className="text-2xl font-bold text-gray-900 dark:text-white">{stat.value.toLocaleString()}</h3>
+                <p className="text-gray-600 dark:text-gray-400 text-sm">{stat.title}</p>
               </div>
             </div>
           );
@@ -160,8 +162,8 @@ export default function AdminDashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Actions rapides */}
         <div className="lg:col-span-2">
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Actions rapides</h2>
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Actions rapides</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {quickActions.map((action, index) => {
                 const Icon = action.icon;
@@ -169,14 +171,14 @@ export default function AdminDashboard() {
                   <a
                     key={index}
                     href={action.link}
-                    className="flex items-center gap-4 p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                    className="flex items-center gap-4 p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                   >
                     <div className={`w-10 h-10 rounded-lg ${action.color} flex items-center justify-center`}>
                       <Icon className="text-white" size={20} />
                     </div>
                     <div>
-                      <h3 className="font-medium text-gray-900">{action.title}</h3>
-                      <p className="text-sm text-gray-600">{action.description}</p>
+                      <h3 className="font-medium text-gray-900 dark:text-white">{action.title}</h3>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">{action.description}</p>
                     </div>
                   </a>
                 );
@@ -186,8 +188,8 @@ export default function AdminDashboard() {
         </div>
 
         {/* Activité récente */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Activité récente</h2>
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Activité récente</h2>
           <div className="space-y-3">
             {recentActivity.map((activity) => {
               const Icon = activity.icon;
@@ -197,8 +199,8 @@ export default function AdminDashboard() {
                     <Icon className={activity.color} size={16} />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm text-gray-900">{activity.action}</p>
-                    <p className="text-xs text-gray-500">{activity.user} - {activity.time}</p>
+                    <p className="text-sm text-gray-900 dark:text-white">{activity.action}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">{activity.user} - {activity.time}</p>
                   </div>
                 </div>
               );
@@ -208,21 +210,21 @@ export default function AdminDashboard() {
       </div>
 
       {/* Graphique d'activité */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-lg font-semibold text-gray-900">Activité cette semaine</h2>
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Activité cette semaine</h2>
           <div className="flex items-center gap-4 text-sm">
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-              <span className="text-gray-600">Utilisateurs</span>
+              <span className="text-gray-600 dark:text-gray-400">Utilisateurs</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-              <span className="text-gray-600">Examens</span>
+              <span className="text-gray-600 dark:text-gray-400">Examens</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
-              <span className="text-gray-600">Téléchargements</span>
+              <span className="text-gray-600 dark:text-gray-400">Téléchargements</span>
             </div>
           </div>
         </div>
@@ -245,7 +247,7 @@ export default function AdminDashboard() {
                   style={{ height: `${(data.downloads / 450) * 100}px` }}
                 ></div>
               </div>
-              <span className="text-xs text-gray-600">{data.day}</span>
+              <span className="text-xs text-gray-600 dark:text-gray-400">{data.day}</span>
             </div>
           ))}
         </div>
@@ -253,44 +255,44 @@ export default function AdminDashboard() {
 
       {/* Statistiques additionnelles */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Taux de croissance</h3>
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Taux de croissance</h3>
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-gray-600">Utilisateurs actifs</span>
-              <span className="font-medium text-green-600">{userGrowthRate}%</span>
+              <span className="text-gray-600 dark:text-gray-400">Utilisateurs actifs</span>
+              <span className="font-medium text-green-600 dark:text-green-400">{userGrowthRate}%</span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-gray-600">Examens approuvés</span>
-              <span className="font-medium text-green-600">{examApprovalRate}%</span>
+              <span className="text-gray-600 dark:text-gray-400">Examens approuvés</span>
+              <span className="font-medium text-green-600 dark:text-green-400">{examApprovalRate}%</span>
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Performance système</h3>
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Performance système</h3>
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-gray-600">Temps de réponse</span>
-              <span className="font-medium text-green-600">245ms</span>
+              <span className="text-gray-600 dark:text-gray-400">Temps de réponse</span>
+              <span className="font-medium text-green-600 dark:text-green-400">245ms</span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-gray-600">Uptime</span>
-              <span className="font-medium text-green-600">99.9%</span>
+              <span className="text-gray-600 dark:text-gray-400">Uptime</span>
+              <span className="font-medium text-green-600 dark:text-green-400">99.9%</span>
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Stockage</h3>
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Stockage</h3>
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-gray-600">Espace utilisé</span>
-              <span className="font-medium text-orange-600">2.4GB</span>
+              <span className="text-gray-600 dark:text-gray-400">Espace utilisé</span>
+              <span className="font-medium text-orange-600 dark:text-orange-400">2.4GB</span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-gray-600">Total disponible</span>
-              <span className="font-medium text-gray-600">10GB</span>
+              <span className="text-gray-600 dark:text-gray-400">Total disponible</span>
+              <span className="font-medium text-gray-600 dark:text-gray-400">10GB</span>
             </div>
           </div>
         </div>

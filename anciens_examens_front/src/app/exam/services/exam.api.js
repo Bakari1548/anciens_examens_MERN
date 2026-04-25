@@ -1,9 +1,31 @@
 import api from '@/api/api';
 
-// Récupérer tous les examens
-export const getAllExams = async () => {
+// Récupérer tous les examens avec filtres et pagination
+export const getAllExams = async (params = {}) => {
     try {
-        const response = await api.get('/exams');
+        const queryParams = new URLSearchParams();
+        
+        // Ajouter les paramètres de pagination
+        if (params.page) queryParams.append('page', params.page);
+        if (params.limit) queryParams.append('limit', params.limit);
+        
+        // Ajouter les paramètres de tri
+        if (params.sortBy) queryParams.append('sortBy', params.sortBy);
+        if (params.sortOrder) queryParams.append('sortOrder', params.sortOrder);
+        
+        // Ajouter les filtres
+        if (params.filiere) queryParams.append('filiere', params.filiere);
+        if (params.ufr) queryParams.append('ufr', params.ufr);
+        if (params.matiere) queryParams.append('matiere', params.matiere);
+        if (params.year) queryParams.append('year', params.year);
+        
+        // Ajouter la recherche
+        if (params.search) queryParams.append('search', params.search);
+        
+        const queryString = queryParams.toString();
+        const url = queryString ? `/exams?${queryString}` : '/exams';
+        
+        const response = await api.get(url);
         return response.data;
     } catch (error) {
         throw error;

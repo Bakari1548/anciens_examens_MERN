@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { tokenStorage } from '@/utils/tokenStorage';
-import { adminApi } from '@/app/admin/services/admin.api';
+import { authApi } from '@/app/admin/services/auth.api';
 
 export default function AdminProtectedRoute({ children }) {
   const [user, setUser] = useState(null);
@@ -24,7 +24,7 @@ export default function AdminProtectedRoute({ children }) {
         setUser(userData);
         
         // Vérifier si l'utilisateur a les droits admin
-        const response = await adminApi.checkAdminStatus();
+        const response = await authApi.checkAdminStatus();
         console.log(response);
         
         

@@ -26,7 +26,7 @@ const examSchema = new mongoose.Schema({
         type: String,
         required: [true, 'la filiere est requise'],
         trim: true,
-        minlength: [3, 'la filiere doit avoir au moins 3 characters long']
+        minlength: [2, 'la filiere doit avoir au moins 2 characters long']
     },
     matiere: {
         type: String,
@@ -34,24 +34,61 @@ const examSchema = new mongoose.Schema({
         trim: true,
         minlength: [3, 'la matiere doit avoir au moins 3 characters long']
     },
+    description : {
+        type: String,
+        nullable: true
+    },
     year: {
         type: Number,
-        required: [true, 'l\'année est requise'],
+        nullable: true,
         validate: {
             validator: function(v) {
+                if (v === null || v === undefined) return true;
                 return v.toString().length === 4;
             },
             message: 'l\'année doit avoir 4 chiffres'
         }
     },
+    status: {
+        type: String,
+        enum: ['pending', 'approved', 'rejected'],
+        default: 'pending'
+    },
     author: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',
-        required: true
+        _id: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'User',
+            required: true
+        },
+        firstName: {
+            type: String,
+            required: true
+        },
+        lastName: {
+            type: String,
+            required: true
+        }
     },
     filePath: {
         type: String,
         required: true
+    },
+    originalName: {
+        type: String,
+        required: true
+    },
+    fileSize: {
+        type: Number,
+        required: true
+    },
+    mimeType: {
+        type: String,
+        required: true,
+        enum: ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png', 'image/gif']
+    },
+    cloudinaryPublicId: {
+        type: String,
+        required: false
     },
     createdAt: {
         type: Date,

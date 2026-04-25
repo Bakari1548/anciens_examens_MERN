@@ -4,8 +4,13 @@ import sheet3 from '@/assets/sheet3.png';
 import sheet4 from '@/assets/sheet4.png';
 import sheet5 from '@/assets/sheet5.png';
 import sheet6 from '@/assets/sheet6.png';
+import { useNavigate } from 'react-router-dom';
 
 export default function HeroSection() {
+
+    const navigate = useNavigate();
+
+
   return (
     <div className="flex flex-row bg-radial-[at_50%_50%] from-gray-50 via-gray-400/50 to-gray-100 to-90% w-full py-14 pb-48 justify-center items-center mx-auto p-4 md:px-4 px-6">
         {/* <p className="text-xl font-normal text-center my-6">Vous êtes connecté en tant que <span className="font-semibold">{{ user|get_first_letter_user }}</span></p> {% endcomment %} */}
@@ -35,12 +40,12 @@ export default function HeroSection() {
             </h1>
             <p className="text-gray-800 font-medium text-center text-lg">Une plateforme qui collecte les anciens examens de l'UIDT pour vous aider à mieux reviser.</p>
             <div className="flex flex-col min-[520px]:flex-row gap-4 justify-center items-center">
-                <a href="#" className="font-medium bg-gray-500 text-white py-3 px-4 rounded-lg shadow hover:bg-gray-700 active:scale-95 transition-all duration-300 ease-in-out">
+                <button onClick={() => navigate('/examens')} className="font-medium bg-gray-500 text-white py-3 px-4 rounded-lg shadow hover:bg-gray-700 active:scale-95 transition-all duration-300 ease-in-out">
                     Consulter les Examens
-                </a>
-                <a href="/partager-examen" className="font-medium border border-gray-700 text-gray-800 py-3 px-4 rounded-lg shadow hover:bg-gray-300/80 hover:shadow active:scale-95 transition-all duration-300 ease-in-out">
+                </button>
+                <button onClick={() => navigate('/partager-examen')} className="font-medium border border-gray-700 text-gray-800 py-3 px-4 rounded-lg shadow hover:bg-gray-300/80 hover:shadow active:scale-95 transition-all duration-300 ease-in-out">
                     Partager un examen
-                </a>
+                </button>
             </div>
         </div>
         <div className="relative md:block hidden h-60 w-1/4 ">

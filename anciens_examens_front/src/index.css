@@ -11,7 +11,25 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Configuration du thème sombre */
+.dark {
+  color-scheme: dark;
+}
 
 body {
   margin: 0;
 }
+
+/* Assurer que le thème s'applique correctement */
+html.dark {
+  color-scheme: dark;
+}
+
+/* Configuration Tailwind pour le mode sombre */
+@layer base {
+  html {
+    font-family: system-ui, sans-serif;
+  }
+}
+
+/* Supprimer les styles personnalisés qui peuvent entrer en conflit avec Tailwind */

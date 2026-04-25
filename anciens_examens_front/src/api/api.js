@@ -6,9 +6,7 @@ const url = import.meta.env.VITE_API_URL;
 const api = axios.create({
   baseURL: url,
   timeout: 10000,
-  headers: {
-    'Content-Type': 'application/json',
-  }
+  // Pas de Content-Type par défaut pour permettre multipart/form-data
 });
 
 
@@ -32,6 +30,13 @@ api.interceptors.response.use(
     if (error?.response?.status === 401) {
       // Si Token expiré ou invalide déconnecte l'utilisateur
       tokenStorage.clear();
+      // window.location.href = '/connexion';
+    } else if (error?.response?.status === 403) {
+      // Si compte désactivé ou banni, rediriger vers la page de demande
+      const message = error?.response?.data?.message;
+      if (message && (message.includes('désactivé') || message.includes('banni'))) {
+        window.location.href = '/demande';
+      }
     }
     return Promise.reject(error);
   }

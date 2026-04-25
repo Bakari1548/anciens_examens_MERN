@@ -37,6 +37,16 @@ const userSchema = new mongoose.Schema({
     type: Date,
     default: null
   },
+  ufr: {
+    type: String,
+    trim: true,
+    minlength: [3, 'l\'ufr doit avoir au moins 3 characters long']
+  },
+  filiere: {
+    type: String,
+    trim: true,
+    minlength: [2, 'la filiere doit avoir au moins 2 characters long']
+  },
   exams: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Exam',
@@ -46,6 +56,39 @@ const userSchema = new mongoose.Schema({
     type: String,
     enum: ['user', 'admin'],
     default: 'user'
+  },
+  status: {
+    type: String,
+    enum: ['active', 'inactive', 'banned'],
+    default: 'active'
+  },
+  appeal: {
+    message: {
+      type: String,
+      default: null
+    },
+    status: {
+      type: String,
+      enum: ['pending', 'approved', 'rejected'],
+      default: null
+    },
+    submittedAt: {
+      type: Date,
+      default: null
+    },
+    reviewedAt: {
+      type: Date,
+      default: null
+    },
+    reviewedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null
+    },
+    reviewMessage: {
+      type: String,
+      default: null
+    }
   },
   createdAt: {
     type: Date,

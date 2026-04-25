@@ -124,7 +124,7 @@ export default function NewsletterSection() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="Entrez votre adresse email"
-                className="w-full px-6 py-4 rounded-full text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-4 focus:ring-white/30"
+                className="w-full px-6 py-4 rounded-full border border-gray-300 text-gray-100 placeholder-gray-300 focus:outline-none focus:ring-4 focus:ring-white/30"
                 required
               />
             </div>

@@ -1,12 +1,14 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { toast } from 'sonner';
+import { Eye, EyeOff } from 'lucide-react';
 import loginImage from '@/assets/students.webp';
 import { login } from '../services/auth.api';
 
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
@@ -28,10 +30,14 @@ export default function Login() {
       
       toast.success('Connexion réussie !');
       
-      // Rediriger vers la page d'accueil après 2 secondes
+      // Rediriger vers le dashboard admin si l'utilisateur est admin, sinon vers l'accueil
       setTimeout(() => {
-        navigate('/');
-      }, 2000);
+        if (response.user.role === 'admin') {
+          navigate('/admin/dashboard');
+        } else {
+          navigate('/');
+        }
+      }, 500);
       
     } catch (error) {
       const errorMessage = error.response?.data?.message || 'Erreur de connexion';
@@ -68,14 +74,23 @@ export default function Login() {
                 <label htmlFor="password" className="block text-md font-medium mb-2">
                   Mot de passe :
                 </label>
-                <input
-                  type="password"
-                  id="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent"
-                  required
-                />
+                <div className="relative">
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    id="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent pr-12"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                  >
+                    {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                  </button>
+                </div>
               </div>
 
               <div className="flex justify-start">

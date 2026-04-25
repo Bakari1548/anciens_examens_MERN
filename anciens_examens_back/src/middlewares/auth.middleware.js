@@ -24,6 +24,15 @@ const authMiddleware = async (req, res, next) => {
         }
         // console.log("Users : ", user[0]);
         
+        // Vérifier le statut de l'utilisateur
+        if (user[0].status !== 'active') {
+            if (user[0].status === 'banned') {
+                return res.status(403).json({ message: 'Votre compte a été banni' });
+            } else if (user[0].status === 'inactive') {
+                return res.status(403).json({ message: 'Votre compte a été désactivé' });
+            }
+        }
+        
         req.user = user[0];
         next();
     } catch (err) {

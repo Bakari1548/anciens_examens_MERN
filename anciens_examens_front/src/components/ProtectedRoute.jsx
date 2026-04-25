@@ -17,6 +17,11 @@ export default function ProtectedRoute({ children }) {
         return;
       }
       
+      if (userData.status === 'inactive' || userData.status === 'banned') {
+        navigate('/demande');
+        return;
+      }
+      
       setUser(userData);
       setLoading(false);
     };

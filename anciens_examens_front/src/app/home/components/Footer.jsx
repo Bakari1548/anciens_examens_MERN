@@ -1,4 +1,10 @@
+import { useNavigate } from 'react-router-dom';
+
 export default function Footer() {
+
+  const navigate = useNavigate();
+
+
   return (
     <footer className="bg-gray-900 text-white py-8 px-6">
       <div className="max-w-7xl mx-auto">
@@ -17,24 +23,24 @@ export default function Footer() {
             <h3 className="mb-3 text-lg font-medium">Liens rapides</h3>
             <ul className="space-y-2   text-gray-400">
               <li>
-                <a href="#" className="hover:text-white transition-colors">
+                <button onClick={() => navigate('/examens')} className="hover:text-white transition-colors">
                   Consulter les examens
-                </a>
+                </button>
               </li>
               <li>
-                <a href="#" className="hover:text-white transition-colors">
+                <button onClick={() => navigate('/partager-examen')} className="hover:text-white transition-colors">
                   Partager un examen
-                </a>
+                </button>
               </li>
               <li>
-                <a href="#" className="hover:text-white transition-colors">
+                <button onClick={() => navigate('/regles')} className="hover:text-white transition-colors">
                   Conditions d'utilisation
-                </a>
+                </button>
               </li>
               <li>
-                <a href="#" className="hover:text-white transition-colors">
+                <button onClick={() => navigate('#')} className="hover:text-white transition-colors">
                   Contact
-                </a>
+                </button>
               </li>
             </ul>
           </div>
@@ -46,9 +52,9 @@ export default function Footer() {
               <li>Université Iba Der Thiam</li>
               <li>Thiès, Sénégal</li>
               <li>
-                <a href="mailto:contact@anciensexamens.sn" className="hover:text-white transition-colors">
+                <button onClick={() => navigate('mailto:contact@anciensexamens.sn')} className="hover:text-white transition-colors">
                   contact@anciensexamens.sn
-                </a>
+                </button>
               </li>
             </ul>
           </div>

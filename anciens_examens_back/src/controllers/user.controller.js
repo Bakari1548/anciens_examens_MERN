@@ -18,7 +18,7 @@ const generateToken = (userId) => {
 // @access  Public
 const register = async (req, res) => {
     try {
-        const { firstName, lastName, email, password } = req.body;
+        const { firstName, lastName, email, password, ufr, filiere } = req.body;
 
         // Validation
         if (!firstName || !lastName || !email || !password) {
@@ -42,7 +42,9 @@ const register = async (req, res) => {
             firstName,
             lastName,
             email,
-            password
+            password,
+            ufr,
+            filiere
         });
 
         if (user) {
@@ -53,7 +55,8 @@ const register = async (req, res) => {
                     firstName: user.firstName,
                     lastName: user.lastName,
                     email: user.email,
-                    password: user.password
+                    ufr: user.ufr,
+                    filiere: user.filiere
                 }
             });
         } else {
@@ -99,6 +102,19 @@ const login = async (req, res) => {
             });
         }
 
+        // Vérifier le statut de l'utilisateur
+        if (user.status !== 'active') {
+            if (user.status === 'banned') {
+                return res.status(403).json({
+                    message: 'Vous avez été banni'
+                });
+            } else if (user.status === 'inactive') {
+                return res.status(403).json({
+                    message: 'Votre compte a été désactivé par un admin'
+                });
+            }
+        }
+
         // Generer le token
         const token = generateToken(user._id);
 
@@ -109,6 +125,9 @@ const login = async (req, res) => {
                 firstName: user.firstName,
                 lastName: user.lastName,
                 email: user.email,
+                ufr: user.ufr,
+                filiere: user.filiere,
+                role: user.role
             }
         });
     } catch (error) {
@@ -137,6 +156,9 @@ const getProfile = async (req, res) => {
     }
 };
 
+// @desc    Changer le mot de passe
+// @route   POST /api/users/change-password
+// @access  Private
 const changePassword = async (req, res) => {
     try {
         const { oldPassword, newPassword } = req.body;
@@ -171,6 +193,9 @@ const changePassword = async (req, res) => {
     }
 };
 
+// @desc    Demander un mot de passe oublié
+// @route   POST /api/users/forgot-password
+// @access  Public
 const forgotPassword = async (req, res) => {
     try {
         const { email } = req.body;
@@ -208,6 +233,9 @@ const forgotPassword = async (req, res) => {
     }
 };
 
+// @desc    Réinitialiser le mot de passe
+// @route   POST /api/users/reset-password/:token
+// @access  Public
 const resetPassword = async (req, res) => {
     try {
         const { token } = req.params;
@@ -234,11 +262,351 @@ const resetPassword = async (req, res) => {
     }
 };
 
+// @desc    Recuperer tous les utilisateurs par l'admin en serie de données
+// @route   GET /api/users/all/:page/:limit
+// @access  Private
+const getAllUsers = async (req, res) => {
+    try {
+        const { page, limit } = req.params;
+        const { search, role, status } = req.query;
+        
+        // Construire le filtre
+        let filter = {};
+        if (role) filter.role = role;
+        if (status) filter.status = status;
+        if (search) {
+            filter.$or = [
+                { firstName: { $regex: search, $options: 'i' } },
+                { lastName: { $regex: search, $options: 'i' } },
+                { email: { $regex: search, $options: 'i' } }
+            ];
+        }
+        
+        const users = await User.find(filter)
+            .limit(limit * 1)
+            .skip((page - 1) * limit)
+            .sort({ createdAt: -1 });
+            
+        const total = await User.countDocuments(filter);
+        res.json({
+            users,
+            total: total,
+            totalPages: Math.ceil(total / limit),
+            currentPage: parseInt(page),
+            limit: parseInt(limit)
+        });
+    } catch (error) {
+        res.status(500).json({
+            message: 'Erreur serveur',
+            error: error.message
+        });
+    }
+};
+
+// @desc    Mettre a jour un utilisateur
+// @route   PUT /api/users/:id
+// @access  Private
+const updateUser = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { firstName, lastName, email, role, status } = req.body;
+        const user = await User.findByIdAndUpdate(id, { firstName, lastName, email, role, status }, { new: true });
+        res.status(200).json({
+            message: 'Utilisateur mis à jour',
+            user
+        });
+    } catch (error) {
+        res.status(500).json({
+            message: 'Erreur serveur',
+            error: error.message
+        });
+    }
+};
+
+
+// @desc    Supprimer un utilisateur par l'admin
+// @route   DELETE /api/users/delete/:id
+// @access  Private
+const deleteUser = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const user = await User.findByIdAndDelete(id);
+        res.status(200).json({
+            message: 'Utilisateur supprimé'
+        });
+    } catch (error) {
+        res.status(500).json({
+            message: 'Erreur serveur',
+            error: error.message
+        });
+    }
+};
+
+// @desc    Récupérer un utilisateur par ID
+// @route   GET /api/users/:id
+// @access  Private
+const getUserById = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const user = await User.findById(id);
+        res.status(200).json({
+            message: 'Utilisateur recuperé',
+            user
+        });
+    } catch (error) {
+        res.status(500).json({
+            message: 'Erreur serveur',
+            error: error.message
+        });
+    }
+};
+
+// @desc    Activer un utilisateur par l'admin
+// @route   PUT /api/users/activate/:id
+// @access  Private
+const activateUser = async (req, res) => {
+    try {
+        const { id } = req.params;
+        await User.findByIdAndUpdate(id, { status: 'active' });
+        res.status(200).json({
+            message: 'Utilisateur activé'
+        });
+    } catch (error) {
+        res.status(500).json({
+            message: 'Erreur serveur',
+            error: error.message
+        });
+    }
+};
+
+// @desc    Désactiver un utilisateur par l'admin
+// @route   PUT /api/users/desactivate/:id
+// @access  Private
+const desactivateUser = async (req, res) => {
+    try {
+        const { id } = req.params;
+        await User.findByIdAndUpdate(id, { status: 'inactive' });
+        res.status(200).json({
+            message: 'Utilisateur désactivé'
+        });
+    } catch (error) {
+        res.status(500).json({
+            message: 'Erreur serveur',
+            error: error.message
+        });
+    }
+};
+
+// @desc Bannir un utilisateur pour une durée déterminée
+// @route   PUT /api/users/ban/:id
+// @access  Private
+const banUser = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { duration, reason } = req.body;
+        await User.findByIdAndUpdate(id, { status: 'banned', banUntil: new Date(Date.now() + duration * 24 * 60 * 60 * 1000), banReason: reason });
+        res.status(200).json({
+            message: 'Utilisateur banni'
+        });
+    } catch (error) {
+        res.status(500).json({
+            message: 'Erreur serveur',
+            error: error.message
+        });
+    }
+};
+
+// @desc Débannir un utilisateur
+// @route   PUT /api/users/unban/:id
+// @access  Private
+const unbanUser = async (req, res) => {
+    try {
+        const { id } = req.params;
+        await User.findByIdAndUpdate(id, { status: 'active', banUntil: null, banReason: null });
+        res.status(200).json({
+            message: 'Utilisateur débanni'
+        });
+    } catch (error) {
+        res.status(500).json({
+            message: 'Erreur serveur',
+            error: error.message
+        });
+    }
+};
+
+// @desc    Soumettre une demande
+// @route   POST /api/users/appeal
+// @access  Private
+const submitAppeal = async (req, res) => {
+    try {
+        const { message } = req.body;
+        
+        if (!message) {
+            return res.status(400).json({
+                message: 'Le message de la demande est requis'
+            });
+        }
+
+        const user = await User.findById(req.user._id);
+        
+        if (!user) {
+            return res.status(404).json({
+                message: 'Utilisateur non trouvé'
+            });
+        }
+
+        if (user.status === 'active') {
+            return res.status(400).json({
+                message: 'Votre compte est actif, vous ne pouvez pas soumettre de demande'
+            });
+        }
+
+        if (user.appeal && user.appeal.status === 'pending') {
+            return res.status(400).json({
+                message: 'Vous avez déjà une demande en cours de traitement'
+            });
+        }
+
+        user.appeal = {
+            message,
+            status: 'pending',
+            submittedAt: new Date()
+        };
+
+        await user.save();
+
+        res.status(200).json({
+            message: 'Demande soumise avec succès',
+            appeal: user.appeal
+        });
+    } catch (error) {
+        res.status(500).json({
+            message: 'Erreur serveur',
+            error: error.message
+        });
+    }
+};
+
+// @desc    Récupérer toutes les demandes (admin)
+// @route   GET /api/users/appeals
+// @access  Private (Admin)
+const getAllAppeals = async (req, res) => {
+    try {
+        const appeals = await User.find({
+            'appeal.status': { $exists: true, $ne: null }
+        }).select('firstName lastName email status appeal createdAt');
+
+        res.status(200).json({
+            message: 'Demandes récupérées avec succès',
+            appeals
+        });
+    } catch (error) {
+        res.status(500).json({
+            message: 'Erreur serveur',
+            error: error.message
+        });
+    }
+};
+
+// @desc    Approuver une demande
+// @route   PUT /api/users/appeals/:id/approve
+// @access  Private (Admin)
+const approveAppeal = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { reviewMessage } = req.body;
+
+        const user = await User.findById(id);
+        
+        if (!user) {
+            return res.status(404).json({
+                message: 'Utilisateur non trouvé'
+            });
+        }
+
+        if (!user.appeal || user.appeal.status !== 'pending') {
+            return res.status(400).json({
+                message: 'Aucune demande en attente pour cet utilisateur'
+            });
+        }
+
+        user.appeal.status = 'approved';
+        user.appeal.reviewedAt = new Date();
+        user.appeal.reviewedBy = req.user?._id || null;
+        user.appeal.reviewMessage = reviewMessage || '';
+        user.status = 'active';
+
+        await user.save();
+
+        res.status(200).json({
+            message: 'Demande approuvée et compte réactivé'
+        });
+    } catch (error) {
+        res.status(500).json({
+            message: 'Erreur serveur',
+            error: error.message
+        });
+    }
+};
+
+// @desc    Rejeter une demande
+// @route   PUT /api/users/appeals/:id/reject
+// @access  Private (Admin)
+const rejectAppeal = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { reviewMessage } = req.body;
+
+        const user = await User.findById(id);
+        
+        if (!user) {
+            return res.status(404).json({
+                message: 'Utilisateur non trouvé'
+            });
+        }
+
+        if (!user.appeal || user.appeal.status !== 'pending') {
+            return res.status(400).json({
+                message: 'Aucune demande en attente pour cet utilisateur'
+            });
+        }
+
+        user.appeal.status = 'rejected';
+        user.appeal.reviewedAt = new Date();
+        user.appeal.reviewedBy = req.user?._id || null;
+        user.appeal.reviewMessage = reviewMessage || '';
+
+        await user.save();
+
+        res.status(200).json({
+            message: 'Demande rejetée'
+        });
+    } catch (error) {
+        res.status(500).json({
+            message: 'Erreur serveur',
+            error: error.message
+        });
+    }
+};
+
+
 module.exports = { 
     register, 
     login, 
     getProfile, 
     changePassword,
     forgotPassword, 
-    resetPassword 
+    resetPassword,
+    getAllUsers,
+    updateUser,
+    deleteUser,
+    getUserById,
+    activateUser,
+    desactivateUser,
+    banUser,
+    unbanUser,
+    submitAppeal,
+    getAllAppeals,
+    approveAppeal,
+    rejectAppeal
 };

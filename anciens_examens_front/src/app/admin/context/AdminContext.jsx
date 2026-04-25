@@ -1,5 +1,10 @@
 import { createContext, useContext, useReducer, useEffect } from 'react';
-import { adminApi } from '../services/admin.api';
+import { dashboardApi } from '../services/dashboard.api';
+import { usersApi } from '../services/users.api';
+import { examsApi } from '../services/exams.api';
+import { reportsApi } from '../services/reports.api';
+import { settingsApi } from '../services/settings.api';
+import { authApi } from '../services/auth.api';
 
 // État initial
 const initialState = {
@@ -33,9 +38,14 @@ const ADMIN_ACTIONS = {
   REMOVE_NOTIFICATION: 'REMOVE_NOTIFICATION',
   UPDATE_USER: 'UPDATE_USER',
   DELETE_USER: 'DELETE_USER',
+  ACTIVATE_USER: 'ACTIVATE_USER',
+  DESACTIVATE_USER: 'DESACTIVATE_USER',
+  BAN_USER: 'BAN_USER',
+  UNBAN_USER: 'UNBAN_USER',
   APPROVE_EXAM: 'APPROVE_EXAM',
   REJECT_EXAM: 'REJECT_EXAM',
   DELETE_EXAM: 'DELETE_EXAM',
+  ADD_EXAM: 'ADD_EXAM',
   RESOLVE_REPORT: 'RESOLVE_REPORT'
 };
 
@@ -89,6 +99,38 @@ const adminReducer = (state, action) => {
         users: state.users.filter(user => user._id !== action.payload)
       };
     
+    case ADMIN_ACTIONS.ACTIVATE_USER:
+      return {
+        ...state,
+        users: state.users.map(user =>
+          user._id === action.payload ? { ...user, status: 'active' } : user
+        )
+      };
+    
+    case ADMIN_ACTIONS.DESACTIVATE_USER:
+      return {
+        ...state,
+        users: state.users.map(user =>
+          user._id === action.payload ? { ...user, status: 'inactive' } : user
+        )
+      };
+    
+    case ADMIN_ACTIONS.BAN_USER:
+      return {
+        ...state,
+        users: state.users.map(user =>
+          user._id === action.payload ? { ...user, status: 'banned' } : user
+        )
+      };
+    
+    case ADMIN_ACTIONS.UNBAN_USER:
+      return {
+        ...state,
+        users: state.users.map(user =>
+          user._id === action.payload ? { ...user, status: 'active' } : user
+        )
+      };
+    
     case ADMIN_ACTIONS.APPROVE_EXAM:
       return {
         ...state,
@@ -110,7 +152,13 @@ const adminReducer = (state, action) => {
         ...state,
         exams: state.exams.filter(exam => exam._id !== action.payload)
       };
-    
+
+    case ADMIN_ACTIONS.ADD_EXAM:
+      return {
+        ...state,
+        exams: [action.payload, ...state.exams]
+      };
+
     case ADMIN_ACTIONS.RESOLVE_REPORT:
       return {
         ...state,
@@ -159,8 +207,8 @@ export function AdminProvider({ children }) {
     fetchStats: async () => {
       try {
         actions.setLoading(true);
-        const response = await adminApi.getStats();
-        actions.setStats(response.data);
+        const response = await dashboardApi.getStats();
+        actions.setStats(response);
       } catch (error) {
         actions.setError(error.message);
       } finally {
@@ -171,8 +219,8 @@ export function AdminProvider({ children }) {
     fetchUsers: async (params = {}) => {
       try {
         actions.setLoading(true);
-        const response = await adminApi.getUsers(params);
-        actions.setUsers(response.data.users);
+        const response = await usersApi.getUsers(params);
+        actions.setUsers(response.users);
       } catch (error) {
         actions.setError(error.message);
       } finally {
@@ -183,8 +231,9 @@ export function AdminProvider({ children }) {
     fetchExams: async (params = {}) => {
       try {
         actions.setLoading(true);
-        const response = await adminApi.getExams(params);
-        actions.setExams(response.data.exams);
+        const response = await examsApi.getExams(params);
+        console.log(response);
+        actions.setExams(response.exams);
       } catch (error) {
         actions.setError(error.message);
       } finally {
@@ -195,7 +244,7 @@ export function AdminProvider({ children }) {
     fetchReports: async () => {
       try {
         actions.setLoading(true);
-        const response = await adminApi.getReports();
+        const response = await reportsApi.getReports();
         actions.setReports(response.data.reports);
       } catch (error) {
         actions.setError(error.message);
@@ -206,7 +255,7 @@ export function AdminProvider({ children }) {
     
     updateUser: async (userId, userData) => {
       try {
-        await adminApi.updateUser(userId, userData);
+        await usersApi.updateUser(userId, userData);
         dispatch({ type: ADMIN_ACTIONS.UPDATE_USER, payload: { id: userId, data: userData } });
         actions.addNotification({
           type: 'success',
@@ -219,7 +268,7 @@ export function AdminProvider({ children }) {
     
     deleteUser: async (userId) => {
       try {
-        await adminApi.deleteUser(userId);
+        await usersApi.deleteUser(userId);
         dispatch({ type: ADMIN_ACTIONS.DELETE_USER, payload: userId });
         actions.addNotification({
           type: 'success',
@@ -229,10 +278,62 @@ export function AdminProvider({ children }) {
         actions.setError(error.message);
       }
     },
+
+    activateUser: async (userId) => {
+      try {
+        await usersApi.activateUser(userId);
+        dispatch({ type: ADMIN_ACTIONS.ACTIVATE_USER, payload: userId });
+        actions.addNotification({
+          type: 'success',
+          message: 'Utilisateur activé avec succès'
+        });
+      } catch (error) {
+        actions.setError(error.message);
+      }
+    },
+    
+    desactivateUser: async (userId) => {
+      try {
+        await usersApi.desactivateUser(userId);
+        dispatch({ type: ADMIN_ACTIONS.DESACTIVATE_USER, payload: userId });
+        actions.addNotification({
+          type: 'success',
+          message: 'Utilisateur désactivé avec succès'
+        });
+      } catch (error) {
+        actions.setError(error.message);
+      }
+    },
+    
+    banUser: async (userId, duration, reason) => {
+      try {
+        await usersApi.banUser(userId, duration, reason);
+        dispatch({ type: ADMIN_ACTIONS.BAN_USER, payload: { id: userId, duration, reason } });
+        actions.addNotification({
+          type: 'success',
+          message: 'Utilisateur banni avec succès'
+        });
+      } catch (error) {
+        actions.setError(error.message);
+      }
+    },
+    
+    unbanUser: async (userId) => {
+      try {
+        await usersApi.unbanUser(userId);
+        dispatch({ type: ADMIN_ACTIONS.UNBAN_USER, payload: userId });
+        actions.addNotification({
+          type: 'success',
+          message: 'Utilisateur débanni avec succès'
+        });
+      } catch (error) {
+        actions.setError(error.message);
+      }
+    },
     
     approveExam: async (examId) => {
       try {
-        await adminApi.approveExam(examId);
+        await examsApi.approveExam(examId);
         dispatch({ type: ADMIN_ACTIONS.APPROVE_EXAM, payload: examId });
         actions.addNotification({
           type: 'success',
@@ -245,7 +346,7 @@ export function AdminProvider({ children }) {
     
     rejectExam: async (examId) => {
       try {
-        await adminApi.rejectExam(examId);
+        await examsApi.rejectExam(examId);
         dispatch({ type: ADMIN_ACTIONS.REJECT_EXAM, payload: examId });
         actions.addNotification({
           type: 'success',
@@ -258,7 +359,7 @@ export function AdminProvider({ children }) {
     
     deleteExam: async (examId) => {
       try {
-        await adminApi.deleteExam(examId);
+        await examsApi.deleteExam(examId);
         dispatch({ type: ADMIN_ACTIONS.DELETE_EXAM, payload: examId });
         actions.addNotification({
           type: 'success',
@@ -268,14 +369,56 @@ export function AdminProvider({ children }) {
         actions.setError(error.message);
       }
     },
-    
+
+    addExam: async (formData) => {
+      try {
+        actions.setLoading(true);
+        const response = await examsApi.createExam(formData);
+        dispatch({ type: ADMIN_ACTIONS.ADD_EXAM, payload: response.exam });
+        actions.addNotification({
+          type: 'success',
+          message: 'Examen créé avec succès'
+        });
+        return response.exam;
+      } catch (error) {
+        actions.setError(error.message);
+        throw error;
+      } finally {
+        actions.setLoading(false);
+      }
+    },
+
     resolveReport: async (reportId) => {
       try {
-        await adminApi.resolveReport(reportId);
+        await reportsApi.resolveReport(reportId);
         dispatch({ type: ADMIN_ACTIONS.RESOLVE_REPORT, payload: reportId });
         actions.addNotification({
           type: 'success',
           message: 'Signalement résolu avec succès'
+        });
+      } catch (error) {
+        actions.setError(error.message);
+      }
+    },
+
+    sendGlobalNotification: async (notification) => {
+      try {
+        await settingsApi.sendGlobalNotification(notification);
+        actions.addNotification({
+          type: 'success',
+          message: 'Notification globale envoyée avec succès'
+        });
+      } catch (error) {
+        actions.setError(error.message);
+      }
+    },
+
+    sendNotificationToUsers: async (userIds, notification) => {
+      try {
+        await settingsApi.sendNotificationToUsers(userIds, notification);
+        actions.addNotification({
+          type: 'success',
+          message: `Notification envoyée à ${userIds.length} utilisateurs`
         });
       } catch (error) {
         actions.setError(error.message);
@@ -287,7 +430,7 @@ export function AdminProvider({ children }) {
   useEffect(() => {
     const checkAdminStatus = async () => {
       try {
-        const response = await adminApi.checkAdminStatus();
+        const response = await authApi.checkAdminStatus();
         actions.setUser(response.data.user);
       } catch (error) {
         console.error('Non autorisé ou erreur admin:', error);

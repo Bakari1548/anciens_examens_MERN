@@ -62,6 +62,8 @@ export const tokenStorage = {
 export const logout = () => {
   tokenStorage.clear();
   if (typeof window !== 'undefined') {
+    // Émettre l'événement pour mettre à jour le Header
+    window.dispatchEvent(new Event('user-auth-change'));
     window.location.href = '/connexion';
   }
 };

@@ -1,0 +1,106 @@
+version: '3.8'
+
+services:
+  # ====================== MONGODB ======================
+  mongodb:
+    image: mongo:6.0
+    container_name: anciens_examens_mongodb
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME:-admin}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:-password123}
+      MONGO_INITDB_DATABASE: ${MONGO_DATABASE:-anciens_examens}
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+      - ./scripts/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+    networks:
+      - anciens_examens_network
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+    # ==================== BACKEND Node JS ====================
+  backend:
+    build:
+      context: ./anciens_examens_back
+      dockerfile: Dockerfile
+    container_name: anciens_examens_backend
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 5000
+      MONGODB_URI: mongodb://${MONGO_ROOT_USERNAME:-admin}:${MONGO_ROOT_PASSWORD:-password123}@mongodb:27017/${MONGO_DATABASE:-anciens_examens}?authSource=admin
+      JWT_SECRET: ${JWT_SECRET:-votre-super-secret-jet-ici}
+      CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME}
+      CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY}
+      CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET}
+      EMAIL_HOST: ${EMAIL_HOST}
+      EMAIL_PORT: ${EMAIL_PORT}
+      EMAIL_USER: ${EMAIL_USER}
+      EMAIL_PASS: ${EMAIL_PASS}
+    ports:
+      - "5000:5000"
+    env_file:
+      - ./anciens_examens_back/.env
+    depends_on:
+      - mongodb
+    networks:
+      - anciens_examens_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/api/users/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    volumes:
+      - ./anciens_examens_back/uploads:/app/uploads
+      - ./anciens_examens_back:/app
+      - /app/node_modules
+
+    # ==================== FRONTEND React avec Nginx ====================
+  frontend:
+    build:
+      context: ./anciens_examens_front
+      dockerfile: Dockerfile
+    container_name: anciens_examens_frontend
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - anciens_examens_network
+
+    # ==================== Redis pour le cache (optionnel) ====================
+  redis:
+    image: redis:7-alpine
+    container_name: anciens_examens_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - anciens_examens_network
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+    # ==================== Volumes ====================
+volumes:
+  mongodb_data:
+    driver: local
+  redis_data:
+    driver: local
+
+    # ==================== Réseaux ====================
+networks:
+  anciens_examens_network:
+    driver: bridge

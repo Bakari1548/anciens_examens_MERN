@@ -1,52 +1,23 @@
-import axios from 'axios';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
-
-const getToken = () => localStorage.getItem('token');
+import api from '@/api/api';
 
 export const appealApi = {
   submitAppeal: async (message) => {
-    const response = await axios.post(`${API_URL}/users/appeal`, 
-      { message },
-      {
-        headers: {
-          Authorization: `Bearer ${getToken()}`
-        }
-      }
-    );
+    const response = await api.post('/users/appeal', { message });
     return response.data;
   },
 
   getAllAppeals: async () => {
-    const response = await axios.get(`${API_URL}/users/appeals`, {
-      headers: {
-        Authorization: `Bearer ${getToken()}`
-      }
-    });
+    const response = await api.get('/users/appeals');
     return response.data;
   },
 
   approveAppeal: async (userId, reviewMessage) => {
-    const response = await axios.put(`${API_URL}/users/appeals/${userId}/approve`,
-      { reviewMessage },
-      {
-        headers: {
-          Authorization: `Bearer ${getToken()}`
-        }
-      }
-    );
+    const response = await api.put(`/users/appeals/${userId}/approve`, { reviewMessage });
     return response.data;
   },
 
   rejectAppeal: async (userId, reviewMessage) => {
-    const response = await axios.put(`${API_URL}/users/appeals/${userId}/reject`,
-      { reviewMessage },
-      {
-        headers: {
-          Authorization: `Bearer ${getToken()}`
-        }
-      }
-    );
+    const response = await api.put(`/users/appeals/${userId}/reject`, { reviewMessage });
     return response.data;
   }
 };

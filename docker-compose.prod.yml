@@ -1,18 +1,19 @@
 version: '3.8'
 
 services:
-  # Base de données MongoDB
-  mongodb:
-    image: mongo:6.0
-    container_name: anciens_examens_mongodb_prod
+  # ========== REVERSE PROXY NGINX ==========
+  nginx:
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
+    container_name: anciens_examens_nginx
     restart: always
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME}
-      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD}
-      MONGO_INITDB_DATABASE: ${MONGO_DATABASE}
-    volumes:
-      - mongodb_data:/data/db
-      - ./scripts/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+    ports:
+      - "80:80"
+      - "443:443"  # Pour HTTPS futur
+    depends_on:
+      - backend
+      - frontend
     networks:
       - anciens_examens_network
     logging:
@@ -21,17 +22,21 @@ services:
         max-size: "10m"
         max-file: "3"
 
-  # Backend Node.js
+  # ========== BACKEND NODE.JS ==========
   backend:
     build:
       context: ./anciens_examens_back
       dockerfile: Dockerfile
     container_name: anciens_examens_backend_prod
     restart: always
+    expose:
+      - "5000"  # Pas de ports publiés, uniquement accessible via le réseau Docker
+    env_file:
+      - .env
     environment:
       NODE_ENV: production
       PORT: 5000
-      MONGODB_URI: mongodb://${MONGO_ROOT_USERNAME}:${MONGO_ROOT_PASSWORD}@mongodb:27017/${MONGO_DATABASE}?authSource=admin
+      MONGODB_URI: ${MONGODB_URI}
       JWT_SECRET: ${JWT_SECRET}
       CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME}
       CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY}
@@ -40,25 +45,26 @@ services:
       EMAIL_PORT: ${EMAIL_PORT}
       EMAIL_USER: ${EMAIL_USER}
       EMAIL_PASS: ${EMAIL_PASS}
-    depends_on:
-      - mongodb
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
     networks:
       - anciens_examens_network
-    volumes:
-      - ./anciens_examens_back/uploads:/app/uploads
     logging:
       driver: "json-file"
       options:
         max-size: "10m"
         max-file: "3"
 
-  # Frontend React avec Nginx
+  # ========== FRONTEND REACT (NGINX) ==========
   frontend:
     build:
       context: ./anciens_examens_front
       dockerfile: Dockerfile
     container_name: anciens_examens_frontend_prod
     restart: always
+    expose:
+      - "80"  # Pas de ports publiés, uniquement via le réseau Docker
+    env_file:
+      - .env
     depends_on:
       - backend
     networks:
@@ -69,11 +75,13 @@ services:
         max-size: "10m"
         max-file: "3"
 
-  # Redis pour le cache
+  # ========== REDIS ==========
   redis:
     image: redis:7-alpine
     container_name: anciens_examens_redis_prod
     restart: always
+    expose:
+      - "6379"
     volumes:
       - redis_data:/data
     networks:
@@ -86,8 +94,6 @@ services:
         max-file: "3"
 
 volumes:
-  mongodb_data:
-    driver: local
   redis_data:
     driver: local
 

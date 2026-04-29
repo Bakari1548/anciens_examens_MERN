@@ -1,35 +1,24 @@
-# Étape 1: Build stage
-FROM node:22-alpine AS builder
+# Étape 1 : Build
+FROM node:20-alpine AS builder
 
-# Définir le répertoire de travail
 WORKDIR /app
-
-# Copier les fichiers de dépendances
 COPY package*.json ./
+RUN npm ci --only=production
 
-# Installer les dépendances
-RUN npm ci
-
-# Copier le code source
 COPY . .
-
-# Définir la variable d'environnement pour l'API
-ENV VITE_API_URL=/api
-
-# Construire l'application
 RUN npm run build
 
-# Étape 2: Production stage avec Nginx
-FROM docker.io/nginx:alpine AS production
+# Étape 2 : Serveur Nginx
+FROM nginx:1.27-alpine
 
-# Copier les fichiers de build depuis le builder
+# Copier le build React
 COPY --from=builder /app/dist /usr/share/nginx/html
+# OU si vous utilisez Create React App :
+# COPY --from=builder /app/build /usr/share/nginx/html
 
-# Copier la configuration nginx
+# Copier la config Nginx
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-# Exposer le port
 EXPOSE 80
 
-# Commande de démarrage
 CMD ["nginx", "-g", "daemon off;"]

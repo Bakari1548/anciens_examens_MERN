@@ -86,19 +86,12 @@ const login = async (req, res) => {
             });
         }
 
-        // Verifier si l'utilisateur existe
+        // Verifier si l'utilisateur existe et si le mot de passe est correct
         const user = await User.findOne({ email });
-        if (!user) {
-            return res.status(401).json({
-                message: 'Email incorrect'
-            });
-        }
-
-        // Verifier le mot de passe
         const isPasswordValid = await user.comparePassword(password);
-        if (!isPasswordValid) {
+        if (!user || !isPasswordValid) {
             return res.status(401).json({
-                message: 'mot de passe incorrect'
+                message: 'Email ou mot de passe incorrect'
             });
         }
 
@@ -436,18 +429,18 @@ const unbanUser = async (req, res) => {
 
 // @desc    Soumettre une demande
 // @route   POST /api/users/appeal
-// @access  Private
+// @access  Public
 const submitAppeal = async (req, res) => {
     try {
-        const { message } = req.body;
+        const { message, email } = req.body;
         
-        if (!message) {
+        if (!message || !email) {
             return res.status(400).json({
-                message: 'Le message de la demande est requis'
+                message: 'Le message et l\'email de la demande sont requis'
             });
         }
 
-        const user = await User.findById(req.user._id);
+        const user = await User.findOne({ email });
         
         if (!user) {
             return res.status(404).json({

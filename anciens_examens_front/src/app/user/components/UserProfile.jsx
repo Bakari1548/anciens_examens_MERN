@@ -137,7 +137,11 @@ export default function UserProfile() {
                 </div>
                 <div className="bg-purple-50 rounded-xl p-3 text-center">
                   <p className="text-2xl font-bold text-purple-600">
-                    {new Date(user?.createdAt).toLocaleDateString('fr-FR', { month: 'short' })}
+                    {user ? 
+                      new Date(user?.createdAt).toLocaleDateString('fr-FR', { month: 'short' }) 
+                      : 
+                      '--'
+                    }
                   </p>
                   <p className="text-xs text-purple-600">Depuis</p>
                 </div>

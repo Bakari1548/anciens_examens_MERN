@@ -28,11 +28,11 @@ router.post('/register', register);
 router.post('/login', login);
 router.post('/forgot-password', forgotPassword);
 router.post('/reset-password/:token', resetPassword);
+router.post('/appeal', submitAppeal);
 
 // Routes protégées par le middleware auth
 router.get('/profile', authMiddleware, getProfile);
 router.put('/change-password', authMiddleware, changePassword);
-router.post('/appeal', authMiddleware, submitAppeal);
 
 // Routes protégées par le middleware admin
 router.get('/all/:page/:limit', adminMiddleware, getAllUsers);

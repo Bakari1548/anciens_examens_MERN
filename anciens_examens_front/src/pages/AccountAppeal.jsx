@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 
 export default function AccountAppeal() {
   const [message, setMessage] = useState('');
+  const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
@@ -16,9 +17,14 @@ export default function AccountAppeal() {
       return;
     }
 
+    if (!email.trim()) {
+      toast.error('Veuillez entrer votre email');
+      return;
+    }
+
     try {
       setLoading(true);
-      await appealApi.submitAppeal(message);
+      await appealApi.submitAppeal(message, email);
       toast.success('Demande soumis avec succès');
       setSubmitted(true);
     } catch (error) {
@@ -57,6 +63,24 @@ export default function AccountAppeal() {
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-6">
+            <div>
+              <label htmlFor="email" className="block text-md font-medium text-gray-800 mb-2">
+                Votre adresse email :
+              </label>
+              <input
+                type="email"
+                id="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                placeholder="votre.email@example.com"
+                required
+              />
+              <p className="text-sm text-gray-500 mt-2">
+                L'email associé à votre compte désactivé.
+              </p>
+            </div>
+
             <div>
               <label htmlFor="message" className="block text-md font-medium text-gray-800 mb-2">
                 Votre message de demande d'activation :

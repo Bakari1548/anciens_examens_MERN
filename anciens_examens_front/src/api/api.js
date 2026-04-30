@@ -1,7 +1,7 @@
 import axios from "axios";
 import { tokenStorage } from "../utils/tokenStorage";
 
-const url = import.meta.env.VITE_API_URL;
+const url = import.meta.env.VITE_API_URL || '/api';
 
 const api = axios.create({
   baseURL: url,

@@ -1,10 +1,10 @@
 FROM nginx:1.27-alpine
 
+# Supprimer la config par défaut du système
+RUN rm -f /etc/nginx/conf.d/default.conf
+
 # Copier la configuration
 COPY nginx.conf /etc/nginx/conf.d/default.conf
-
-# Supprimer la config par défaut pour éviter les conflits
-RUN rm /etc/nginx/conf.d/default.conf 2>/dev/null || true
 
 EXPOSE 80
 

@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const cookieParser = require('cookie-parser');
 const path = require('path');
 const connectDB = require('./src/config/db');
 const userRoutes = require('./src/routes/user.route');
@@ -11,7 +12,16 @@ require('dotenv').config();
 const app = express();
 const port = process.env.PORT || 8000;
 
-app.use(cors());
+// CORS configuration pour permettre les cookies
+const corsOptions = {
+  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+};
+
+app.use(cors(corsOptions));
+app.use(cookieParser());
 app.use(express.json());
 
 app.get('/', (req, res) => {

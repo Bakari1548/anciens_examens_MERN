@@ -6,8 +6,16 @@ require('dotenv').config();
 const JWT_SECRET = process.env.JWT_SECRET;
 
 const authMiddleware = async (req, res, next) => {
+    // Essayer d'abord le token depuis l'en-tête Authorization
     const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1]; // Format: "Bearer TOKEN"
+    const tokenFromHeader = authHeader && authHeader.split(' ')[1]; // Format: "Bearer TOKEN"
+    
+    // Essayer ensuite le token depuis les cookies
+    const tokenFromCookie = req.cookies?.auth_token;
+    
+    // Priorité au token de l'en-tête, sinon utiliser le cookie
+    const token = tokenFromHeader || tokenFromCookie;
+    
     try {
         if (!token) {
             // console.log("Token requis : ", req.user);

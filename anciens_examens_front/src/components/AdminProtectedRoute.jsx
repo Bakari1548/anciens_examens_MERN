@@ -14,9 +14,9 @@ export default function AdminProtectedRoute({ children }) {
       try {
         // Vérifier si l'utilisateur est connecté
         const userData = tokenStorage.getUser();
-        const token = tokenStorage.getToken();
         
-        if (!userData || !token) {
+        // Le token est maintenant géré par HTTP-only cookie côté backend
+        if (!userData) {
           navigate('/connexion');
           return;
         }

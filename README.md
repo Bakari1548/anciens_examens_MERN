@@ -167,7 +167,7 @@ Le serveur démarre sur `http://localhost:8000`
 cd anciens_examens_front
 npm run dev
 ```
-L'application démarre sur `http://localhost:5173`
+L'application démarre sur `http://localhost:3000`
 
 ## 📝 Scripts Disponibles
 

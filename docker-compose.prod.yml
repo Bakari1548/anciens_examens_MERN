@@ -59,6 +59,8 @@ services:
     build:
       context: ./anciens_examens_front
       dockerfile: Dockerfile
+      args:
+        VITE_API_URL: ${VITE_API_URL}
     container_name: anciens_examens_frontend_prod
     restart: always
     expose:

@@ -29,7 +29,7 @@ export default function UserProfile() {
 
   useEffect(() => {
     fetchUserExams();
-  }, [fetchUserExams]);
+  }, []);
 
   const handleEditSubmit = async (e) => {
     e.preventDefault();

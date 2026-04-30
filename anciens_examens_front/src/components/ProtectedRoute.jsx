@@ -10,9 +10,10 @@ export default function ProtectedRoute({ children }) {
   useEffect(() => {
     const checkAuth = () => {
       const userData = tokenStorage.getUser();
-      const token = tokenStorage.getToken();
       
-      if (!userData || !token) {
+      // Le token est maintenant géré par HTTP-only cookie côté backend
+      // On vérifie uniquement les données utilisateur
+      if (!userData) {
         navigate('/connexion');
         return;
       }

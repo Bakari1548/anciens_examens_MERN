@@ -3,7 +3,7 @@ import logoAnciensExamens from '@/assets/logo_anciens_examens.png';
 import { FileText, LogIn, User, UserPlus, LogOut } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { tokenStorage } from '@/utils/tokenStorage';
-import { logout } from '@/utils/tokenStorage';
+import { logout as authLogout } from '@/app/auth/services/auth.api';
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -34,11 +34,20 @@ export default function Header() {
     return (firstName.charAt(0) + lastName.charAt(0)).toUpperCase();
   };
 
-  const handleLogout = () => {
-    logout();
-    setUser(null);
-    setIsMenuOpen(false);
-    navigate('/');
+  const handleLogout = async () => {
+    try {
+      await authLogout();
+      setUser(null);
+      setIsMenuOpen(false);
+      navigate('/');
+    } catch (error) {
+      console.error('Erreur lors de la déconnexion:', error);
+      // Même en cas d'erreur, nettoyer et rediriger
+      tokenStorage.clear();
+      setUser(null);
+      setIsMenuOpen(false);
+      navigate('/');
+    }
   };
 
   const onNavigate = (path) => {

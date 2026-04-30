@@ -102,7 +102,8 @@ const getUserExams = async (req, res) => {
         // console.log('nombre d\'examens:', exams.length);
         if (!exams || exams.length === 0) { 
             return res.status(404).json({
-                message: 'Aucun examen trouvé'
+                message: 'Aucun examen trouvé',
+                exams: []
             });
         }
         // Pagination 

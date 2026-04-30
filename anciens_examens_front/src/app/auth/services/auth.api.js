@@ -5,9 +5,9 @@ import { tokenStorage } from "@/utils/tokenStorage";
 export const login = async (email, password) => {
     try {
         const response = await api.post('/users/login', { email, password });
-        tokenStorage.setToken(response.data.token);
         
-        // Stocker les infos utilisateur
+        // Le token est maintenant géré par le backend via HTTP-only cookie
+        // Stocker uniquement les infos utilisateur
         if (response.data.user) {
             console.log('Login response user data:', response.data.user);
             tokenStorage.setUser(response.data.user);
@@ -26,10 +26,10 @@ export const register = async (firstName, lastName, email, password, ufr, filier
     try {
         const response = await api.post('/users/register', { firstName, lastName, email, password, ufr, filiere });
         
-        // Stocker les infos utilisateur si token fourni
-        if (response.data.token && response.data.user) {
+        // Le token est maintenant géré par le backend via HTTP-only cookie
+        // Stocker uniquement les infos utilisateur
+        if (response.data.user) {
             console.log('Register response user data:', response.data.user);
-            tokenStorage.setToken(response.data.token);
             tokenStorage.setUser(response.data.user);
             // Émettre l'événement pour mettre à jour le Header
             window.dispatchEvent(new Event('user-auth-change'));
@@ -37,6 +37,25 @@ export const register = async (firstName, lastName, email, password, ufr, filier
         
         return response.data;
     } catch (error) {
+        throw error;
+    }
+}
+
+// Déconnexion
+export const logout = async () => {
+    try {
+        const response = await api.post('/users/logout');
+        
+        // Nettoyer les données utilisateur côté client
+        tokenStorage.clear();
+        // Émettre l'événement pour mettre à jour le Header
+        window.dispatchEvent(new Event('user-auth-change'));
+        
+        return response.data;
+    } catch (error) {
+        // Même en cas d'erreur, nettoyer les données locales
+        tokenStorage.clear();
+        window.dispatchEvent(new Event('user-auth-change'));
         throw error;
     }
 }

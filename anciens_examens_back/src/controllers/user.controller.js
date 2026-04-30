@@ -48,9 +48,20 @@ const register = async (req, res) => {
         });
 
         if (user) {
+            const token = generateToken(user._id);
+            
+            // Définir le cookie HTTP-only
+            const isProduction = process.env.NODE_ENV === 'production';
+            res.cookie('auth_token', token, {
+                httpOnly: true,
+                secure: isProduction,
+                sameSite: 'strict',
+                maxAge: 7 * 24 * 60 * 60 * 1000, // 7 jours
+                path: '/'
+            });
+            
             res.status(201).json({
                 message: "Incription reussie !",
-                token: generateToken(user._id),
                 user: {
                     firstName: user.firstName,
                     lastName: user.lastName,
@@ -110,17 +121,25 @@ const login = async (req, res) => {
 
         // Generer le token
         const token = generateToken(user._id);
+        
+        // Définir le cookie HTTP-only
+        const isProduction = process.env.NODE_ENV === 'production';
+        res.cookie('auth_token', token, {
+            httpOnly: true,
+            secure: isProduction,
+            sameSite: 'strict',
+            maxAge: 7 * 24 * 60 * 60 * 1000, // 7 jours
+            path: '/'
+        });
 
         res.json({
            message: "Utilisateur connectee avec succès !",
-            token: token,
             user: {
                 firstName: user.firstName,
                 lastName: user.lastName,
                 email: user.email,
                 ufr: user.ufr,
                 filiere: user.filiere,
-                role: user.role
             }
         });
     } catch (error) {
@@ -140,6 +159,31 @@ const getProfile = async (req, res) => {
         res.json({
             message: 'Profil de l\'utilisateur',
             user: req.user
+        });
+    } catch (error) {
+        res.status(500).json({
+            message: 'Erreur serveur',
+            error: error.message
+        });
+    }
+};
+
+// @desc    Déconnexion
+// @route   POST /api/users/logout
+// @access  Private
+const logout = async (req, res) => {
+    try {
+        // Effacer le cookie
+        const isProduction = process.env.NODE_ENV === 'production';
+        res.clearCookie('auth_token', {
+            httpOnly: true,
+            secure: isProduction,
+            sameSite: 'strict',
+            path: '/'
+        });
+        
+        res.json({
+            message: 'Déconnexion réussie'
         });
     } catch (error) {
         res.status(500).json({
@@ -586,6 +630,7 @@ const rejectAppeal = async (req, res) => {
 module.exports = { 
     register, 
     login, 
+    logout,
     getProfile, 
     changePassword,
     forgotPassword, 

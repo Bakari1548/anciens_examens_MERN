@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import { userApi } from '../services/user.api';
+import { tokenStorage } from '@/utils/tokenStorage';
 import { toast } from 'sonner';
 
 const UserContext = createContext();
@@ -16,7 +17,14 @@ export function UserProvider({ children }) {
       setError(null);
       const response = await userApi.getProfile();
       setUser(response.user);
+      console.log(response.user);
     } catch (error) {
+      // Si erreur 401 mais qu'on a déjà des données locales, ne pas afficher d'erreur
+      // L'utilisateur est connecté via cookie mais l'API a échoué
+      if (error.response?.status === 401 && user) {
+        console.log('Session expirée, utilisation des données locales');
+        return;
+      }
       setError(error.message);
       toast.error('Erreur lors du chargement du profil');
     } finally {
@@ -61,17 +69,30 @@ export function UserProvider({ children }) {
       setLoading(true);
       setError(null);
       const response = await userApi.getUserExams(params);
-      setUserExams(response.exams || []);
+      if (response.exams.length === 0) {
+        setUserExams([]);
+      } else {
+        setUserExams(response.exams || []);
+      }
     } catch (error) {
       setError(error.message);
-      toast.error('Erreur lors du chargement des examens');
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchProfile();
+    // D'abord, essayer de récupérer les données utilisateur depuis le stockage local
+    const localUser = tokenStorage.getUser();
+    if (localUser) {
+      setUser(localUser);
+    }
+    
+    // Ensuite, faire un appel API pour rafraîchir les données si nécessaire
+    // mais seulement si l'utilisateur est connecté
+    if (localUser) {
+      fetchProfile();
+    }
   }, []);
 
   return (

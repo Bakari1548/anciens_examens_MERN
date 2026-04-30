@@ -3,3 +3,18 @@ node_modules
 .DS_Store
 *.log
 logs
+
+# Swap files
+*.swp
+*.swo
+*.sw?
+*.swn
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+*.suo
+*.ntvs*
+*.njsproj
+*.sln

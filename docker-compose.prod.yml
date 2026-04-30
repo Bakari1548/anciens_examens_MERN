@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # ========== REVERSE PROXY NGINX ==========
   nginx:
@@ -10,12 +8,15 @@ services:
     restart: always
     ports:
       - "80:80"
-      - "443:443"  # Pour HTTPS futur
+      - "443:443"
     depends_on:
       - backend
       - frontend
     networks:
       - anciens_examens_network
+    volumes:
+      - ./certbot/conf:/etc/letsencrypt:ro    # Certificats en lecture seule
+      - ./certbot/www:/var/www/certbot          # Challenge HTTP
     logging:
       driver: "json-file"
       options:
@@ -30,7 +31,7 @@ services:
     container_name: anciens_examens_backend_prod
     restart: always
     expose:
-      - "5000"  # Pas de ports publiés, uniquement accessible via le réseau Docker
+      - "5000"
     env_file:
       - .env
     environment:
@@ -54,7 +55,7 @@ services:
         max-size: "10m"
         max-file: "3"
 
-  # ========== FRONTEND REACT (NGINX) ==========
+  # ========== FRONTEND REACT + NGINX ==========
   frontend:
     build:
       context: ./anciens_examens_front
@@ -64,11 +65,7 @@ services:
     container_name: anciens_examens_frontend_prod
     restart: always
     expose:
-      - "80"  # Pas de ports publiés, uniquement via le réseau Docker
-    env_file:
-      - .env
-    depends_on:
-      - backend
+      - "80"
     networks:
       - anciens_examens_network
     logging:
@@ -94,6 +91,17 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
+
+  # ========== CERTBOT (Let's Encrypt) ==========
+  certbot:
+    image: certbot/certbot
+    container_name: anciens_examens_certbot
+    volumes:
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
+    networks:
+      - anciens_examens_network
 
 volumes:
   redis_data:

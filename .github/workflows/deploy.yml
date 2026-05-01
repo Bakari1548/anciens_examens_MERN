@@ -36,6 +36,9 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
+          cache-dependency-path: |
+            anciens_examens_back/package-lock.json
+            anciens_examens_front/package-lock.json
 
       # Étape 3 : Installer les dépendances backend
       - name: Install backend dependencies

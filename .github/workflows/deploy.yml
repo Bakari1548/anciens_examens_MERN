@@ -1,0 +1,112 @@
+# ==========================================
+# NOM DU WORKFLOW
+# ==========================================
+name: Deploy to Production
+
+# ==========================================
+# QUAND LE WORKFLOW SE DÉCLENCHE
+# ==========================================
+on:
+  push:
+    branches:
+      - main  # Se déclenche quand on push sur la branche main
+  pull_request:
+    branches:
+      - main  # Se déclenche aussi sur les PR vers main
+
+# ==========================================
+# JOBS (TÂCHES)
+# ==========================================
+jobs:
+  # ----------------------------------------
+  # JOB 1 : TESTS ET BUILD
+  # ----------------------------------------
+  test-and-build:
+    name: Test and Build
+    runs-on: ubuntu-latest  # Runner GitHub gratuit
+
+    steps:
+      # Étape 1 : Récupérer le code
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Étape 2 : Setup Node.js
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      # Étape 3 : Installer les dépendances backend
+      - name: Install backend dependencies
+        working-directory: ./anciens_examens_back
+        run: npm ci
+
+      # Étape 4 : Installer les dépendances frontend
+      - name: Install frontend dependencies
+        working-directory: ./anciens_examens_front
+        run: npm ci
+
+      # Étape 5 : Build du frontend
+      - name: Build frontend
+        working-directory: ./anciens_examens_front
+        run: npm run build
+
+      # Étape 6 : Tests backend (si vous en avez)
+      - name: Run backend tests
+        working-directory: ./anciens_examens_back
+        run: npm test --if-present
+
+  # ----------------------------------------
+  # JOB 2 : DÉPLOIEMENT
+  # ----------------------------------------
+  deploy:
+    name: Deploy to VPS
+    needs: test-and-build  # Attend que le job 1 réussisse
+    runs-on: self-hosted   # Utilise VOTRE VPS comme runner
+
+    steps:
+      # Étape 1 : Récupérer le code sur le VPS
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Étape 2 : Créer le fichier .env sur le VPS
+      - name: Create .env file
+        run: |
+          cat > .env << EOF
+          MONGODB_URI=${{ secrets.MONGODB_URI }}
+          JWT_SECRET=${{ secrets.JWT_SECRET }}
+          CLOUDINARY_CLOUD_NAME=${{ secrets.CLOUDINARY_CLOUD_NAME }}
+          CLOUDINARY_API_KEY=${{ secrets.CLOUDINARY_API_KEY }}
+          CLOUDINARY_API_SECRET=${{ secrets.CLOUDINARY_API_SECRET }}
+          EMAIL_HOST=${{ secrets.EMAIL_HOST }}
+          EMAIL_PORT=${{ secrets.EMAIL_PORT }}
+          EMAIL_USER=${{ secrets.EMAIL_USER }}
+          EMAIL_PASS=${{ secrets.EMAIL_PASS }}
+          REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}
+          VITE_API_URL=${{ secrets.VITE_API_URL }}
+          EOF
+
+      # Étape 3 : Arrêter les conteneurs existants
+      - name: Stop existing containers
+        run: docker compose -f docker-compose.prod.yml down
+
+      # Étape 4 : Nettoyer les anciennes images
+      - name: Clean old images
+        run: docker system prune -af --volumes
+
+      # Étape 5 : Build et démarrer les nouveaux conteneurs
+      - name: Build and start containers
+        run: docker compose -f docker-compose.prod.yml up --build -d
+
+      # Étape 6 : Vérifier que tout est démarré
+      - name: Verify deployment
+        run: |
+          sleep 10
+          docker compose -f docker-compose.prod.yml ps
+          curl -f http://localhost || exit 1
+
+      # Étape 7 : Notification de succès (optionnel)
+      - name: Deployment success
+        if: success()
+        run: echo "✅ Déploiement réussi sur https://anciensexamensuidt.app"

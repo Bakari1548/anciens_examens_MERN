@@ -18,3 +18,22 @@ logs
 *.ntvs*
 *.njsproj
 *.sln
+
+# Variables d'environnement
+.env
+.env.local
+.env.production
+
+# Node modules
+node_modules/
+
+# Builds
+dist/
+build/
+
+# Certificats SSL (NE JAMAIS COMMITTER)
+cloudflare-certs/
+certbot/
+*.pem
+*.key
+

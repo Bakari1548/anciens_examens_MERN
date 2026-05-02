@@ -70,7 +70,7 @@ jobs:
           cat > .env << EOF
           PORT=8000
           MONGODB_URI=mongodb://localhost:27017/test
-          JWT_SECRET=${{ secrets.JWT_SECRET }}
+          JWT_SECRET="${{ secrets.JWT_SECRET }}"
           JWT_EXPIRE=7d
           CLOUDINARY_CLOUD_NAME=${{ secrets.CLOUDINARY_CLOUD_NAME }}
           CLOUDINARY_API_KEY=${{ secrets.CLOUDINARY_API_KEY }}
@@ -107,7 +107,7 @@ jobs:
         run: |
           cat > .env << EOF
           MONGODB_URI=${{ secrets.MONGODB_URI }}
-          JWT_SECRET=${{ secrets.JWT_SECRET }}
+          JWT_SECRET="${{ secrets.JWT_SECRET }}"
           CLOUDINARY_CLOUD_NAME=${{ secrets.CLOUDINARY_CLOUD_NAME }}
           CLOUDINARY_API_KEY=${{ secrets.CLOUDINARY_API_KEY }}
           CLOUDINARY_API_SECRET=${{ secrets.CLOUDINARY_API_SECRET }}

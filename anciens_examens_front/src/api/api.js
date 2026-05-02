@@ -24,7 +24,11 @@ api.interceptors.request.use(
 
 
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    // Vérifier si l'utilisateur est admin et rediriger si nécessaire
+    tokenStorage.getUser();
+    return response;
+  },
   (error) => {
     if (error?.response?.status === 401) {
       // Vérifier si l'utilisateur a des données locales avant de déconnecter
@@ -32,7 +36,7 @@ api.interceptors.response.use(
       if (!localUser) {
         // Si pas de données locales, déconnecter et rediriger
         tokenStorage.clear();
-        window.location.href = '/connexion';
+        // window.location.href = '/connexion';
       }
       // Si on a des données locales, laisser le composant gérer l'erreur
     } else if (error?.response?.status === 403) {

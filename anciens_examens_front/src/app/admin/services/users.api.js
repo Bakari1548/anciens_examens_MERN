@@ -1,18 +1,20 @@
 import api from '@/api/api';
+import { ENDPOINTS } from '../../../api/endpoints';
 
 export const usersApi = {
   // Gestion des utilisateurs
   getUsers: async (params = {}) => {
-    const { page = 1, limit = 20, search, role, status } = params;
-    const queryParams = new URLSearchParams({
-      ...(search && { search }),
-      ...(role && { role }),
-      ...(status && { status })
-    });
-    const response = await api.get(`/users/all/${page}/${limit}`);
-    console.log(response.data);
-    
-    return response.data;
+    try {
+
+      const { page = 1, limit = 20, search, role, status } = params;
+      const response = await api.get(ENDPOINTS.USERS.GET_ALL(page, limit, search, role, status));
+      // console.log(response.data);
+      
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      throw error;
+    }
   },
 
   getUserById: async (userId) => {

@@ -26,6 +26,7 @@ import AdminSettingsPage from './pages/AdminSettings'
 import AdminLogsPage from './pages/AdminLogs'
 import AdminAppealsPage from './pages/AdminAppeals'
 import { ThemeProvider } from './app/admin/context/ThemeContext'
+import ResetPasswordWithTokenPage from './pages/ResetPasswordWithToken'
 
 function AppContent() {
   const location = useLocation();
@@ -41,6 +42,7 @@ function AppContent() {
         <Route path="/mot-de-passe-oublie" element={<ResetPasswordPage />} />
         <Route path="/email-envoye" element={<ResetPasswordDonePage />} />
         <Route path="/mot-de-passe-modifie" element={<ResetPasswordCompletePage />} />
+        <Route path="/mot-de-passe-modifie/:token" element={<ResetPasswordWithTokenPage />} />
         <Route path="/partager-examen" element={<PostExamPage />} />
         <Route path="/examen/:slug" element={<DetailExamPage />} />
         <Route path="/examens" element={<ExamsPage />} />

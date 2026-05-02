@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 
 
 export default function ResetPasswordComplete () {
@@ -10,10 +11,12 @@ export default function ResetPasswordComplete () {
                 <p class="text-center font-medium text-gray-600">
                     Votre mot de passe a été changé. Vous pouvez maintenant vous connecter.
                 </p>
-                <a 
-                    class="bg-gray-600 font-semibold text-white mx-auto py-3 px-8 rounded-lg shadow hover:bg-gray-700 active:bg-gray-700 transition-all duration-300 ease-in-out"
-                    href="/connexion"
-                >Se connecter</a>
+                <Link
+                  to="/connexion"
+                  className="block w-fit px-6 text-center bg-gray-700 text-white py-2.5 rounded-lg hover:bg-gray-800 transition-colors font-semibold"
+                >
+                  Retour à la connexion
+                </Link>
             </div>
         </div>
     )

@@ -1,8 +1,10 @@
 import { useParams, useNavigate, Link } from 'react-router';
-import { ArrowLeft, Download, FileText, Calendar, User, Heart, MessageSquare, Send, ThumbsUp } from 'lucide-react';
+import { ArrowLeft, FileText, Calendar, User, Heart, MessageSquare, Send, ThumbsUp, Download } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { getExamBySlug } from '../services/exam.api';
 import { toast } from 'sonner';
+import ExamViewer from './ExamViewer';
+import { tokenStorage } from '../../../utils/tokenStorage';
 
 export default function ExamDetail() {
   const { slug } = useParams();
@@ -15,6 +17,9 @@ export default function ExamDetail() {
   const [likesCount, setLikesCount] = useState(0);
   const [newComment, setNewComment] = useState('');
   const [comments, setComments] = useState([]);
+
+  // Vérifier si l'utilisateur est connecté
+  const isUserLoggedIn = !!tokenStorage.getUser();
 
   // Récupérer les détails de l'examen
   useEffect(() => {
@@ -158,8 +163,18 @@ export default function ExamDetail() {
               </div>
 
               <button
-                onClick={handleDownload}
-                className="bg-blue-500 flex justify-center gap-2 text-white items-center p-2 w-full font-semibold rounded-lg shadow active:scale-95 hover:bg-blue-600 active:bg-blue-600 transition-all duration-200 ease-in-out"
+                onClick={() => {
+                  if (!isUserLoggedIn) {
+                    toast.error('Vous devez être connecté pour télécharger cet examen');
+                    return;
+                  }
+                  handleDownload();
+                }}
+                className={`flex justify-center gap-2 text-white items-center p-2 w-full font-semibold rounded-lg shadow active:scale-95 transition-all duration-200 ease-in-out ${
+                  isUserLoggedIn 
+                    ? 'bg-blue-500 hover:bg-blue-600 active:bg-blue-600' 
+                    : 'bg-gray-400 cursor-not-allowed'
+                }`}
               >
                 <Download size={20} />
                 <span>Télécharger l'examen</span>
@@ -170,22 +185,11 @@ export default function ExamDetail() {
           {/* Colonne de droite - Visualiseur de document */}
           <div className="lg:col-span-2">
             <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-              {/* <h2 className="mb-4">Aperçu du document</h2> */}
-              <div className="border border-gray-300 rounded-lg overflow-hidden bg-gray-100">
-                {exam.mimeType === 'application/pdf' ? (
-                  <iframe
-                    src={exam.filePath}
-                    className="w-full h-[800px]"
-                    title={exam.title}
-                  />
-                ) : (
-                  <img
-                    src={exam.filePath}
-                    alt={exam.title}
-                    className="w-full h-auto"
-                  />
-                )}
-              </div>
+              <ExamViewer 
+                exam={exam} 
+                isUserLoggedIn={isUserLoggedIn}
+                onDownload={handleDownload}
+              />
             </div>
 
             {/* Section Likes et Commentaires */}

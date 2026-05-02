@@ -10,7 +10,6 @@ export default function TestimonialsSection() {
       id: 1,
       name: "Aminata Diallo",
       role: "Étudiante en L2 Informatique",
-      university: "Université Cheikh Anta Diop",
       avatar: "AD",
       rating: 5,
       content: "Cette plateforme a transformé ma façon de réviser. J'ai trouvé des examens des années précédentes qui m'ont permis de comprendre les attentes des professeurs. Mes notes ont considérablement amélioré !",
@@ -19,8 +18,7 @@ export default function TestimonialsSection() {
     {
       id: 2,
       name: "Ibrahima Ba",
-      role: "Étudiant en M1 Sciences Économiques",
-      university: "Université Gaston Berger",
+      role: "Étudiant en M1 Mathématiques",
       avatar: "IB",
       rating: 5,
       content: "Je recommande vivement ce site à tous mes camarades. Les examens sont bien organisés par matière et année. Le téléchargement est rapide et les documents sont de bonne qualité.",
@@ -29,8 +27,7 @@ export default function TestimonialsSection() {
     {
       id: 3,
       name: "Fatoumata Camara",
-      role: "Étudiante en L3 Droit",
-      university: "Université Assane Seck",
+      role: "Étudiante en L3 SEG",
       avatar: "FC",
       rating: 5,
       content: "Grâce aux examens que j'ai trouvés ici, j'ai pu me préparer efficacement pour mes partiels. La variété des matières disponibles est impressionnante. Vraiment utile !",
@@ -39,20 +36,18 @@ export default function TestimonialsSection() {
     {
       id: 4,
       name: "Moussa Ndiaye",
-      role: "Étudiant en L1 Sciences",
-      university: "Université Alioune Diop",
+      role: "Étudiant en L1 Mathématiques",
       avatar: "MN",
-      rating: 5,
+      rating: 4,
       content: "La communauté est très active et les examens partagés sont pertinents. J'ai pu accéder à des documents que je ne trouvais nulle part ailleurs. Merci pour cette ressource précieuse !",
       highlight: "Documents exclusifs"
     },
     {
       id: 5,
       name: "Mariama Sow",
-      role: "Étudiante en M2 Communication",
-      university: "Université Virtuelle du Sénégal",
+      role: "Étudiante en L2 Informatique",
       avatar: "MS",
-      rating: 5,
+      rating: 4,
       content: "Interface intuitive, recherche facile et téléchargement rapide. Ce site facilite vraiment la préparation aux examens. Je le consulte régulièrement avant chaque évaluation.",
       highlight: "Utilisation quotidienne"
     }
@@ -130,9 +125,6 @@ export default function TestimonialsSection() {
                   <p className="text-gray-600">
                     {testimonials[currentTestimonial].role}
                   </p>
-                  <p className="text-sm text-gray-500">
-                    {testimonials[currentTestimonial].university}
-                  </p>
                 </div>
               </div>
 
@@ -190,7 +182,7 @@ export default function TestimonialsSection() {
         {/* Statistiques des témoignages */}
         <div className="mt-16 grid md:grid-cols-3 gap-8">
           <div className="text-center">
-            <div className="text-3xl font-bold text-blue-600 mb-2">4.9/5</div>
+            <div className="text-3xl font-bold text-blue-600 mb-2">4.4/5</div>
             <div className="flex items-center justify-center gap-1 mb-2">
               {renderStars(5)}
             </div>

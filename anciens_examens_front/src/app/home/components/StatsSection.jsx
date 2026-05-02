@@ -8,7 +8,7 @@ export default function StatsSection() {
     downloadsCount: 0,
     averageRating: 0,
     satisfactionRate: 0,
-    universitiesCount: 0
+    ufrCount: 0
   });
 
   const [animatedStats, setAnimatedStats] = useState({
@@ -17,31 +17,31 @@ export default function StatsSection() {
     downloadsCount: 0,
     averageRating: 0,
     satisfactionRate: 0,
-    universitiesCount: 0
+    ufrCount: 0
   });
 
   useEffect(() => {
     // Données de démonstration (en production, viendraient d'une API)
     setStats({
-      examsCount: 15420,
-      usersCount: 8750,
-      downloadsCount: 45680,
+      examsCount: 520,
+      usersCount: 1500,
+      downloadsCount: 1080,
       averageRating: 4.8,
       satisfactionRate: 96,
-      universitiesCount: 25
+      ufrCount: 5
     });
   }, []);
 
   useEffect(() => {
     const duration = 2000; // 2 secondes d'animation
-    const steps = 60;
+    const steps = 20;
     const increment = {
       examsCount: stats.examsCount / steps,
       usersCount: stats.usersCount / steps,
       downloadsCount: stats.downloadsCount / steps,
       averageRating: stats.averageRating / steps,
       satisfactionRate: stats.satisfactionRate / steps,
-      universitiesCount: stats.universitiesCount / steps
+      ufrCount: stats.ufrCount / 1
     };
 
     let currentStep = 0;
@@ -54,7 +54,7 @@ export default function StatsSection() {
           downloadsCount: Math.floor(increment.downloadsCount * currentStep),
           averageRating: (increment.averageRating * currentStep).toFixed(1),
           satisfactionRate: Math.floor(increment.satisfactionRate * currentStep),
-          universitiesCount: Math.floor(increment.universitiesCount * currentStep)
+          ufrCount: Math.floor(increment.ufrCount * 1)
         });
       } else {
         clearInterval(timer);
@@ -102,8 +102,8 @@ export default function StatsSection() {
     },
     {
       icon: Award,
-      value: animatedStats.universitiesCount,
-      label: "Universités partenaires",
+      value: animatedStats.ufrCount,
+      label: "UFR couvertes",
       color: "from-red-500 to-red-600",
       bgColor: "bg-red-50"
     }
@@ -114,7 +114,7 @@ export default function StatsSection() {
       <div className="max-w-7xl mx-auto px-6">
         <div className="text-center mb-12">
           <h2 className="text-4xl font-bold text-gray-900 mb-4">
-            Des chiffres qui parlent d'eux-mêmes
+            Des chiffres que nous voulons atteindre
           </h2>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
             Rejoignez une communauté de milliers d'étudiants qui utilisent notre plateforme
@@ -158,7 +158,7 @@ export default function StatsSection() {
               ))}
             </div>
             <p className="text-gray-700 font-medium">
-              <span className="font-bold text-blue-600">+500</span> nouveaux étudiants cette semaine
+              <span className="font-bold text-blue-600">+200</span> nouveaux étudiants cette semaine
             </p>
           </div>
         </div>

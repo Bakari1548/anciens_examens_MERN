@@ -1,31 +1,55 @@
 import { useState } from 'react';
 import { Link } from 'react-router';
 import resetImage from '@/assets/student5.webp';
+import { forgotPassword } from '../services/resetPassword.api';
+import { toast } from 'sonner';
+import ResetPasswordDone from './ResetPasswordDone';
 
 export default function ResetPassword() {
   const [email, setEmail] = useState('');
   const [sent, setSent] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Logique d'envoi de l'email de réinitialisation
-    console.log('Réinitialisation pour:', email);
-    setSent(true);
+    
+    if (!email) {
+      toast.error('Veuillez entrer votre adresse email');
+      return;
+    }
+
+    // Validation de l'email universitaire
+    if (!email.endsWith('@univ-thies.sn')) {
+      toast.error('Veuillez utiliser une adresse email universitaire (@univ-thies.sn)');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      await forgotPassword(email);
+      setSent(true);
+      toast.success('Un email de réinitialisation a été envoyé');
+
+    } catch (error) {
+      toast.error(error.message || 'Erreur lors de l\'envoi de l\'email');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center px-6 py-12">
-      <div className="max-w-6xl w-full bg-white rounded-2xl shadow-lg overflow-hidden">
-        <div className="grid md:grid-cols-2 gap-8 items-center">
-          {/* Formulaire */}
-          <div className="p-8 md:p-12">
-            <h2 className="text-2xl font-bold pb-6 pt-2 text-gray-800">Réinitialiser votre mot de passe</h2>
-            
-            {!sent ? (
+    <>
+      {!sent ? (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center px-6 py-12">
+        <div className="max-w-6xl w-full bg-white rounded-2xl shadow-lg overflow-hidden">
+          <div className="grid md:grid-cols-2 gap-8 items-center">
+            {/* Formulaire */}
+            <div className="p-8 md:p-12">
+              <h2 className="text-2xl font-bold pb-6 pt-2 text-gray-800">Réinitialiser votre mot de passe</h2>
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div>
                   <label htmlFor="email" className="block mb-2">
-                    Courriel :
+                    Email universitaire :
                   </label>
                   <input
                     type="email"
@@ -36,22 +60,20 @@ export default function ResetPassword() {
                     required
                   />
                 </div>
-
                 <button
                   type="submit"
-                  className="w-full bg-gray-700 text-white py-3 rounded-lg hover:bg-gray-800 transition-colors font-semibold"
+                  disabled={loading}
+                  className="w-full bg-gray-700 text-white py-3 rounded-lg hover:bg-gray-800 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Envoyer
+                  {loading ? 'Envoi en cours...' : 'Envoyer'}
                 </button>
-
                 <p className="text-center">
                   <Link to="/connexion" className="text-blue-600 hover:underline">
                     Retour à la connexion
                   </Link>
                 </p>
               </form>
-            ) : (
-              <div className="space-y-6">
+              {/* <div className="space-y-6">
                 <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 px-4 py-3 rounded-lg">
                   Un email de réinitialisation a été envoyé à votre adresse.
                 </div>
@@ -61,20 +83,22 @@ export default function ResetPassword() {
                 >
                   Retour à la connexion
                 </Link>
-              </div>
-            )}
-          </div>
-
-          {/* Image illustration */}
-          <div className="hidden md:block bg-gradient-to-br from-violet-50 to-emerald-50 p-8">
-            <img
-              src={resetImage}
-              alt="Étudiant préoccupé"
-              className="w-full h-full object-contain"
-            />
+              </div> */}
+            </div>
+            {/* Image illustration */}
+            <div className="hidden md:block bg-gradient-to-br from-violet-50 to-emerald-50 p-8">
+              <img
+                src={resetImage}
+                alt="Étudiant préoccupé"
+                className="w-full h-full object-contain"
+              />
+            </div>
           </div>
         </div>
       </div>
-    </div>
+      ) : (
+        <ResetPasswordDone />
+      )}
+    </>
   );
 }

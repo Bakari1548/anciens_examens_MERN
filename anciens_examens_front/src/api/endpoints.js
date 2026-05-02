@@ -12,7 +12,7 @@ export const ENDPOINTS = {
         CHANGE_PASSWORD: '/users/change-password',
         
         // Routes administratives
-        GET_ALL: '/users/all',
+        GET_ALL: (page, limit, search, role, status) => `/users/all/${page}/${limit}${search ? `?search=${search}` : ''}${role ? `&role=${role}` : ''}${status ? `&status=${status}` : ''}`,
         GET_BY_ID: '/users/get/:id',
         DELETE: '/users/delete/:id'
     },

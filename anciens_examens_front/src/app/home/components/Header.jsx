@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import logoAnciensExamens from '@/assets/logo_anciens_examens.png';
-import { FileText, LogIn, User, UserPlus, LogOut } from 'lucide-react';
+import { FileText, LogIn, User, UserPlus, LogOut, Menu, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { tokenStorage } from '@/utils/tokenStorage';
 import { logout as authLogout } from '@/app/auth/services/auth.api';
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [user, setUser] = useState(null);
   const navigate = useNavigate();
 
@@ -52,6 +53,7 @@ export default function Header() {
 
   const onNavigate = (path) => {
     setIsMenuOpen(false);
+    setIsMobileMenuOpen(false);
     navigate(path);
   };
 
@@ -76,9 +78,18 @@ export default function Header() {
             <button onClick={() => onNavigate('/regles')} className='text-gray-700 hover:text-blue-600 font-medium transition-colors'>Règles</button>
         </nav>
 
-        {/* Partie droite - Icône utilisateur */}
-        <div className="flex items-center">
-          <div className="relative">
+        {/* Partie droite - Menu mobile et utilisateur */}
+        <div className="flex items-center gap-2">
+          {/* Menu hamburger mobile */}
+          <button
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="md:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors"
+          >
+              {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+          </button>
+
+          {/* Icône utilisateur */}
+          <div className="relative hidden md:block">
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
               className="w-10 h-10 rounded-full bg-gradient-to-r from-violet-600 to-emerald-500 flex items-center justify-center hover:opacity-90 transition-opacity"
@@ -156,6 +167,71 @@ export default function Header() {
             )}
           </div>
         </div>
+
+        {/* Menu mobile */}
+        {isMobileMenuOpen && (
+          <div className="fixed inset-0 top-16 z-20 bg-white md:hidden">
+            <div className="flex flex-col p-4 space-y-4">
+              <button
+                onClick={() => onNavigate('/')}
+                className="text-lg text-gray-700 hover:text-blue-600 font-medium transition-colors text-left py-2 border-b border-gray-200"
+              >
+                Accueil
+              </button>
+              <button
+                onClick={() => onNavigate('/examens')}
+                className="text-lg text-gray-700 hover:text-blue-600 font-medium transition-colors text-left py-2 border-b border-gray-200"
+              >
+                Examens
+              </button>
+              <button
+                onClick={() => onNavigate('/regles')}
+                className="text-lg text-gray-700 hover:text-blue-600 font-medium transition-colors text-left py-2 border-b border-gray-200"
+              >
+                Règles
+              </button>
+              
+              {/* Actions utilisateur en mobile */}
+              {user ? (
+                <>
+                  <button
+                    onClick={() => onNavigate('/profil')}
+                    className="text-lg text-gray-700 hover:text-blue-600 font-medium transition-colors text-left py-2 border-b border-gray-200"
+                  >
+                    Profil
+                  </button>
+                  <button
+                    onClick={() => onNavigate('/partager-examen')}
+                    className="text-lg text-gray-700 hover:text-blue-600 font-medium transition-colors text-left py-2 border-b border-gray-200"
+                  >
+                    Partager un examen
+                  </button>
+                  <button
+                    onClick={handleLogout}
+                    className="text-lg text-red-600 hover:text-red-700 font-medium transition-colors text-left py-2"
+                  >
+                    Se déconnecter
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button
+                    onClick={() => onNavigate('/inscription')}
+                    className="text-lg text-gray-700 hover:text-blue-600 font-medium transition-colors text-left py-2 border-b border-gray-200"
+                  >
+                    Créer un compte
+                  </button>
+                  <button
+                    onClick={() => onNavigate('/connexion')}
+                    className="text-lg text-gray-700 hover:text-blue-600 font-medium transition-colors text-left py-2"
+                  >
+                    Se connecter
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+        )}
     </header>
   );
 }

@@ -22,6 +22,8 @@ import { useAdmin } from '../../context/AdminContext';
 import { useAdminNotifications } from '../../hooks/useAdmin.notifications';
 import { useTheme } from '../../context/ThemeContext';
 import logoAnciensExamens from '../../../../assets/logo_anciens_examens.png';
+import { tokenStorage } from '../../../../utils/tokenStorage';
+import { logout as authLogout } from '@/app/auth/services/auth.api';
 
 
 
@@ -31,16 +33,20 @@ export default function AdminLayout({ children }) {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, addNotification } = useAdmin();
+
   const { notifications, unreadCount, clearAllNotifications } = useAdminNotifications();
 
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    navigate('/connexion');
-    addNotification({
-      type: 'info',
-      message: 'Déconnexion réussie'
-    });
+ const handleLogout = async () => {
+    try {
+      await authLogout();
+      tokenStorage.clear();
+      navigate('/connexion');
+    } catch (error) {
+      console.error('Erreur lors de la déconnexion:', error);
+      // Même en cas d'erreur, nettoyer et rediriger
+      tokenStorage.clear();
+      navigate('/connexion');
+    }
   };
 
   const menuItems = [

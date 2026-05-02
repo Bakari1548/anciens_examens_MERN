@@ -25,7 +25,7 @@ export default function AdminProtectedRoute({ children }) {
         
         // Vérifier si l'utilisateur a les droits admin
         const response = await authApi.checkAdminStatus();
-        console.log(response);
+        // console.log(response);
         
         
         if (response.data.user.role === 'admin' || response.data.user.role === 'moderator') {

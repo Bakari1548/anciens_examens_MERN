@@ -232,7 +232,7 @@ export function AdminProvider({ children }) {
       try {
         actions.setLoading(true);
         const response = await examsApi.getExams(params);
-        console.log(response);
+        // console.log(response);
         actions.setExams(response.exams);
       } catch (error) {
         actions.setError(error.message);

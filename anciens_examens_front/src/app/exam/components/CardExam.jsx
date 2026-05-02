@@ -1,12 +1,19 @@
 import logoFile from '@/assets/file_exam.png';
 import { Download, Eye } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { tokenStorage } from '../../../utils/tokenStorage';
+import { toast } from 'sonner';
 
 export default function CardExam({ exam }) {
 
     const navigate = useNavigate();
+    const isUserLoggedIn = !!tokenStorage.getUser();
 
     const handleDownload = () => {
+        if (!isUserLoggedIn) {
+            toast.error('Vous devez être connecté pour télécharger cet examen');
+            return;
+        }
         if (exam.filePath) {
             window.open(exam.filePath, '_blank');
         }
@@ -41,7 +48,11 @@ export default function CardExam({ exam }) {
                     </button>
                     <button
                         onClick={handleDownload}
-                        className="bg-transparent flex justify-center items-center gap-2 border border-gray-300 text-black p-2 min-[550px]:w-1/2 text-center font-semibold rounded-lg shadow active:scale-95 hover:bg-gray-100 active:bg-gray-200 transition-all duration-200 ease-in-out"
+                        className={`flex justify-center items-center gap-2 border p-2 min-[550px]:w-1/2 text-center font-semibold rounded-lg shadow active:scale-95 transition-all duration-200 ease-in-out ${
+                            isUserLoggedIn 
+                                ? 'bg-transparent text-black border-gray-300 hover:bg-gray-100 active:bg-gray-200'
+                                : 'bg-gray-200 text-gray-500 border-gray-300 cursor-not-allowed'
+                        }`}
                     >
                         <span>Télécharger</span>
                         <Download size={20} />

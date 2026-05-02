@@ -13,10 +13,10 @@ export default function Home() {
       <div className="w-full">
           <HeroSection />
           <StatsSection />
+          <CTASection />
           <Exams />
           <TestimonialsSection />
-          <CTASection />
-          <FAQSection />
+          {/* <FAQSection /> */}
           <NewsletterSection />
       </div>
     </ExamProvider>

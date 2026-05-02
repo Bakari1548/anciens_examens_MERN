@@ -32,7 +32,7 @@ export const userApi = {
     try {
       const { page = 1, limit = 10 } = params;
       const response = await api.get(`/exams/user?page=${page}&limit=${limit}`);
-      console.log(response);
+      // console.log(response);
       return response.data;
     } catch (error) {
       throw error;

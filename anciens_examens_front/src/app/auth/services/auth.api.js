@@ -9,7 +9,7 @@ export const login = async (email, password) => {
         // Le token est maintenant géré par le backend via HTTP-only cookie
         // Stocker uniquement les infos utilisateur
         if (response.data.user) {
-            console.log('Login response user data:', response.data.user);
+            // console.log('Login response user data:', response.data.user);
             tokenStorage.setUser(response.data.user);
             // Émettre l'événement pour mettre à jour le Header
             window.dispatchEvent(new Event('user-auth-change'));
@@ -29,7 +29,7 @@ export const register = async (firstName, lastName, email, password, ufr, filier
         // Le token est maintenant géré par le backend via HTTP-only cookie
         // Stocker uniquement les infos utilisateur
         if (response.data.user) {
-            console.log('Register response user data:', response.data.user);
+            // console.log('Register response user data:', response.data.user);
             tokenStorage.setUser(response.data.user);
             // Émettre l'événement pour mettre à jour le Header
             window.dispatchEvent(new Event('user-auth-change'));

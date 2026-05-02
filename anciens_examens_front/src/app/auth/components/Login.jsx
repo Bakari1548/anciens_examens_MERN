@@ -20,14 +20,21 @@ export default function Login() {
       return;
     }
 
+    // Validation de l'email universitaire
+    if (!email.endsWith('@univ-thies.sn')) {
+      toast.error('Veuillez utiliser une adresse email universitaire (@univ-thies.sn)');
+      return;
+    }
+
     try {
       setLoading(true);
       const response = await login(email, password);
       
       // Stocker les infos utilisateur
       const { tokenStorage } = await import('@/utils/tokenStorage');
+
       tokenStorage.setUser(response.user);
-      
+      // console.log('Login response user data:', response.user);
       toast.success('Connexion réussie !');
       
       // Rediriger vers le dashboard admin si l'utilisateur est admin, sinon vers l'accueil

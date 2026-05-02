@@ -17,7 +17,7 @@ export function UserProvider({ children }) {
       setError(null);
       const response = await userApi.getProfile();
       setUser(response.user);
-      console.log(response.user);
+      // console.log(response.user);
     } catch (error) {
       // Si erreur 401 mais qu'on a déjà des données locales, ne pas afficher d'erreur
       // L'utilisateur est connecté via cookie mais l'API a échoué

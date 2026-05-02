@@ -50,12 +50,41 @@ jobs:
         working-directory: ./anciens_examens_front
         run: npm ci
 
-      # Étape 5 : Build du frontend
+      # Étape 5 : Créer le fichier .env pour le build frontend
+      - name: Create frontend environment file
+        working-directory: ./anciens_examens_front
+        run: |
+          cat > .env << EOF
+          VITE_API_URL=${{ secrets.VITE_API_URL }}
+          EOF
+
+      # Étape 6 : Build du frontend
       - name: Build frontend
         working-directory: ./anciens_examens_front
         run: npm run build
 
-      # Étape 6 : Tests backend (si vous en avez)
+      # Étape 7 : Créer le fichier .env pour les tests avec les secrets GitHub
+      - name: Create test environment file
+        working-directory: ./anciens_examens_back
+        run: |
+          cat > .env << EOF
+          PORT=8000
+          MONGODB_URI=mongodb://localhost:27017/test
+          JWT_SECRET=${{ secrets.JWT_SECRET }}
+          JWT_EXPIRE=7d
+          CLOUDINARY_CLOUD_NAME=${{ secrets.CLOUDINARY_CLOUD_NAME }}
+          CLOUDINARY_API_KEY=${{ secrets.CLOUDINARY_API_KEY }}
+          CLOUDINARY_API_SECRET=${{ secrets.CLOUDINARY_API_SECRET }}
+          EMAIL_HOST=${{ secrets.EMAIL_HOST }}
+          EMAIL_PORT=${{ secrets.EMAIL_PORT }}
+          EMAIL_USER=${{ secrets.EMAIL_USER }}
+          EMAIL_PASS=${{ secrets.EMAIL_PASS }}
+          EMAIL_FROM=${{ secrets.EMAIL_USER }}
+          FRONTEND_URL=http://localhost:3000
+          NODE_ENV=test
+          EOF
+
+      # Étape 8 : Tests backend (si vous en avez)
       - name: Run backend tests
         working-directory: ./anciens_examens_back
         run: npm test --if-present

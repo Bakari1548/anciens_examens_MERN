@@ -115,7 +115,7 @@ jobs:
           EMAIL_PORT=${{ secrets.EMAIL_PORT }}
           EMAIL_USER=${{ secrets.EMAIL_USER }}
           EMAIL_PASS=${{ secrets.EMAIL_PASS }}
-          REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}
+          # REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}  # Désactivé temporairement
           VITE_API_URL=${{ secrets.VITE_API_URL }}
           EOF
 
@@ -134,9 +134,33 @@ jobs:
       # Étape 6 : Vérifier que tout est démarré
       - name: Verify deployment
         run: |
-          sleep 10
+          echo "⏳ Attente du démarrage des services..."
+          sleep 30
+          
+          echo "📊 État des conteneurs :"
           docker compose -f docker-compose.prod.yml ps
-          curl -f http://localhost || exit 1
+          
+          echo "🔍 Vérification des logs si des conteneurs ne sont pas up :"
+          docker compose -f docker-compose.prod.yml logs --tail=20 nginx || true
+          # docker compose -f docker-compose.prod.yml logs --tail=20 redis || true  # Redis désactivé
+          
+          echo "🌐 Test de connexion à nginx :"
+          for i in {1..10}; do
+            if curl -f http://localhost >/dev/null 2>&1; then
+              echo "✅ Nginx est accessible !"
+              break
+            else
+              echo "⏳ Tentative $i/10 - Nginx pas encore prêt..."
+              sleep 5
+            fi
+          done
+          
+          # Vérification finale
+          if ! curl -f http://localhost >/dev/null 2>&1; then
+            echo "❌ Nginx n'est toujours pas accessible après 50 secondes"
+            docker compose -f docker-compose.prod.yml logs --tail=50
+            exit 1
+          fi
 
       # Étape 7 : Notification de succès (optionnel)
       - name: Deployment success

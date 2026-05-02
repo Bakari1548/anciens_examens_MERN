@@ -102,6 +102,34 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # ==========================================
+      # ÉTAPE CRUCIALE : COPIER LES CERTIFICATS SSL
+      # ==========================================
+      # Les certificats Cloudflare Origin sont stockés sur le VPS
+      # dans /root/anciens_examens_MERN/cloudflare-certs/
+      # Le runner GitHub clone le code dans un dossier temporaire
+      # donc les certificats ne sont pas automatiquement présents.
+      # On les copie dans le workspace du runner avant le build Docker.
+      # ==========================================
+      - name: Copy SSL certificates from VPS
+        run: |
+          echo "📁 Création du dossier cloudflare-certs..."
+          mkdir -p cloudflare-certs
+
+          echo "📋 Liste des certificats disponibles sur le VPS :"
+          ls -la /home/bkr/anciens_examens_MERN/cloudflare-certs/ || echo "⚠️ Dossier source non trouvé"
+
+          echo "📥 Copie des certificats..."
+          cp /home/bkr/anciens_examens_MERN/cloudflare-certs/cert.pem cloudflare-certs/ || echo "❌ cert.pem non trouvé"
+          cp /home/bkr/anciens_examens_MERN/cloudflare-certs/key.pem cloudflare-certs/ || echo "❌ key.pem non trouvé"
+
+          echo "✅ Certificats copiés. Vérification :"
+          ls -la cloudflare-certs/
+
+          echo "🔒 Vérification du contenu :"
+          head -n 1 cloudflare-certs/cert.pem || echo "cert.pem vide"
+          head -n 1 cloudflare-certs/key.pem || echo "key.pem vide"
+
       # Étape 2 : Créer le fichier .env sur le VPS
       - name: Create .env file
         run: |
@@ -136,14 +164,14 @@ jobs:
         run: |
           echo "⏳ Attente du démarrage des services..."
           sleep 30
-          
+
           echo "📊 État des conteneurs :"
           docker compose -f docker-compose.prod.yml ps
-          
+
           echo "🔍 Vérification des logs si des conteneurs ne sont pas up :"
           docker compose -f docker-compose.prod.yml logs --tail=20 nginx || true
           # docker compose -f docker-compose.prod.yml logs --tail=20 redis || true  # Redis désactivé
-          
+
           echo "🌐 Test de connexion à nginx :"
           for i in {1..10}; do
             if curl -f http://localhost >/dev/null 2>&1; then
@@ -154,11 +182,15 @@ jobs:
               sleep 5
             fi
           done
-          
+
           # Vérification finale
           if ! curl -f http://localhost >/dev/null 2>&1; then
             echo "❌ Nginx n'est toujours pas accessible après 50 secondes"
-            docker compose -f docker-compose.prod.yml logs --tail=50
+            echo "📋 Logs complets de nginx :"
+            docker compose -f docker-compose.prod.yml logs --tail=50 nginx || true
+            echo ""
+            echo "📋 Logs complets de tous les services :"
+            docker compose -f docker-compose.prod.yml logs --tail=50 || true
             exit 1
           fi
 

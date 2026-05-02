@@ -277,7 +277,7 @@ describe('Exam Controller Tests', () => {
 
     it('devrait récupérer les examens de l\'utilisateur connecté', async () => {
       const response = await request(app)
-        .get('/api/exams/user/1/10')
+        .get('/api/exams/user')
         .set('Authorization', `Bearer ${userToken}`)
         .expect(200);
 
@@ -288,7 +288,7 @@ describe('Exam Controller Tests', () => {
 
     it('devrait retourner 401 sans token', async () => {
       const response = await request(app)
-        .get('/api/exams/user/1/10')
+        .get('/api/exams/user')
         .expect(401);
     });
   });

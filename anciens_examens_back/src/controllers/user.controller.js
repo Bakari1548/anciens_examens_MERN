@@ -12,6 +12,12 @@ const generateToken = (userId) => {
     });
 };
 
+const generateResetToken = () => {
+    return jwt.sign({ type: 'reset' }, process.env.JWT_SECRET, {
+        expiresIn: '1h',
+    });
+};
+
 
 // @desc    Inscription d'un nouveau utilisateur
 // @route   POST /api/users/register
@@ -99,8 +105,16 @@ const login = async (req, res) => {
 
         // Verifier si l'utilisateur existe et si le mot de passe est correct
         const user = await User.findOne({ email });
+        
+        if (!user) {
+            return res.status(401).json({
+                message: 'Email incorrect'
+            });
+        }
+
         const isPasswordValid = await user.comparePassword(password);
-        if (!user || !isPasswordValid) {
+        
+        if (!isPasswordValid) {
             return res.status(401).json({
                 message: 'Email ou mot de passe incorrect'
             });
@@ -140,6 +154,7 @@ const login = async (req, res) => {
                 email: user.email,
                 ufr: user.ufr,
                 filiere: user.filiere,
+                role: user.role,
             }
         });
     } catch (error) {
@@ -167,6 +182,7 @@ const getProfile = async (req, res) => {
         });
     }
 };
+
 
 // @desc    Déconnexion
 // @route   POST /api/users/logout
@@ -252,17 +268,24 @@ const forgotPassword = async (req, res) => {
         user.passwordResetExpires = Date.now() + 3600000; // 1 heure
         await user.save();
         
-        // Envoyer l'email avec le token
+        // Importer le template d'email
+        const resetPasswordTemplate = require('../templates/resetPasswordEmail');
+        const resetLink = `${process.env.FRONTEND_URL}/mot-de-passe-modifie/${token}`;
+        const userName = `${user.firstName} ${user.lastName}`;
+        
+        // Envoyer l'email avec le template HTML
         await sendEmail({
             email: user.email,
-            subject: 'Réinitialisation de mot de passe',
-            message: `Vous avez demandé à réinitialiser votre mot de passe. Cliquez sur le lien suivant pour réinitialiser votre mot de passe: ${process.env.FRONTEND_URL}/reset-password/${token}`
+            subject: 'Réinitialisation de mot de passe - Anciens Examens',
+            message: `Vous avez demandé à réinitialiser votre mot de passe. Cliquez sur le lien suivant pour réinitialiser votre mot de passe: ${resetLink}`,
+            html: resetPasswordTemplate(resetLink, userName)
         });
         
         res.json({
             message: 'Un email avec un lien de réinitialisation de mot de passe a été envoyé à votre adresse email'
         });
     } catch (error) {
+        console.error('Erreur forgotPassword:', error);
         res.status(500).json({
             message: 'Erreur serveur',
             error: error.message

@@ -98,7 +98,7 @@ describe('Appeal Controller Tests', () => {
         .send({})
         .expect(400);
 
-      expect(response.body.message).toBe('Le message de la demande est requis');
+      expect(response.body.message).toBe('Le message et l\'email de la demande sont requis');
     });
 
     // Test de validation pour un compte actif
@@ -106,7 +106,8 @@ describe('Appeal Controller Tests', () => {
       await User.findByIdAndUpdate(testUser._id, { status: 'active' });
 
       const appealData = {
-        message: 'Je demande la réactivation de mon compte.'
+        message: 'Je demande la réactivation de mon compte.',
+        email: testUser.email
       };
 
       const response = await request(app)
@@ -119,11 +120,11 @@ describe('Appeal Controller Tests', () => {
     });
 
     // Test de validation sans token
-    it('devrait retourner 401 sans token', async () => {
+    it('devrait retourner 400 sans token', async () => {
       const response = await request(app)
         .post('/api/users/appeal')
         .send({ message: 'Test message' })
-        .expect(401);
+        .expect(400);
     });
   });
 

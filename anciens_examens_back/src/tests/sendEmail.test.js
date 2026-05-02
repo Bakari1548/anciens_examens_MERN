@@ -44,7 +44,8 @@ describe('sendEmail Utility Tests', () => {
       from: `Support <${process.env.EMAIL_FROM}>`,
       to: emailOptions.email,
       subject: emailOptions.subject,
-      text: emailOptions.message
+      text: emailOptions.message,
+      html: null
     });
 
     // Vérifier le résultat

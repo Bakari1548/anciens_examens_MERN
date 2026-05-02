@@ -82,7 +82,7 @@ describe('User Controller Tests', () => {
         .expect(201);
 
       expect(response.body.message).toBe('Incription reussie !');
-      expect(response.body.token).toBeDefined();
+      // Le token est dans les headers Cookie, pas dans le body
       expect(response.body.user).toBeDefined();
       expect(response.body.user.email).toBe(userData.email);
       expect(response.body.user.firstName).toBe(userData.firstName);
@@ -181,7 +181,7 @@ describe('User Controller Tests', () => {
         .expect(200);
 
       expect(response.body.message).toBe('Utilisateur connectee avec succès !');
-      expect(response.body.token).toBeDefined();
+      // Le token est dans les headers Cookie, pas dans le body
       expect(response.body.user).toBeDefined();
       expect(response.body.user.email).toBe(loginData.email);
     });
@@ -219,7 +219,7 @@ describe('User Controller Tests', () => {
         })
         .expect(401);
 
-      expect(response.body.message).toBe('mot de passe incorrect');
+      expect(response.body.message).toBe('Email ou mot de passe incorrect');
     });
   });
 

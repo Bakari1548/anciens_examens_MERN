@@ -13,6 +13,9 @@ export default function UserProfile() {
   const [isEditing, setIsEditing] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [activeTab, setActiveTab] = useState('profile');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
   
   const [editForm, setEditForm] = useState({
     firstName: user?.firstName || '',
@@ -67,8 +70,19 @@ export default function UserProfile() {
   };
 
   const handleLogout = () => {
+    setShowLogoutModal(true);
+  };
+
+  const confirmLogout = () => {
     tokenStorage.clear();
+    setShowLogoutModal(false);
+    // Émettre un événement personnalisé pour notifier la déconnexion
+    window.dispatchEvent(new Event('user-auth-change'));
     navigate('/connexion');
+  };
+
+  const cancelLogout = () => {
+    setShowLogoutModal(false);
   };
 
   if (loading && !user) {
@@ -215,6 +229,47 @@ export default function UserProfile() {
           </div>
         </div>
       </div>
+
+      {/* Modal de confirmation de déconnexion */}
+      {showLogoutModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          {/* Overlay */}
+          <div 
+            className="absolute inset-0 bg-black/70"
+            onClick={cancelLogout}
+          />
+          
+          {/* Modal */}
+          <div className="relative bg-white rounded-xl shadow-xl p-6 max-w-sm w-full mx-4">
+            <div className="flex items-center justify-center w-12 h-12 bg-red-100 rounded-full mx-auto mb-4">
+              <LogOut className="text-red-600" size={24} />
+            </div>
+            
+            <h3 className="text-lg font-semibold text-gray-900 text-center mb-2">
+              Confirmation de déconnexion
+            </h3>
+            
+            <p className="text-gray-600 text-center mb-6">
+              Êtes-vous sûr de vouloir vous déconnecter de votre profil ?
+            </p>
+            
+            <div className="flex gap-3">
+              <button
+                onClick={cancelLogout}
+                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={confirmLogout}
+                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium"
+              >
+                Se déconnecter
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -32,7 +32,9 @@ const storage = new CloudinaryStorage({
       const originalName = file.originalname.split('.')[0];
       const cleanName = originalName.replace(/[^a-zA-Z0-9]/g, '_');
       return `${cleanName}_${timestamp}`;
-    }
+    },
+    // Timeout augmenté pour les mobiles
+    timeout: 60000 // 2 minutes
   }
 });
 
@@ -69,7 +71,8 @@ const upload = multer({
   fileFilter: fileFilter,
   limits: {
     fileSize: 10 * 1024 * 1024, // 10MB max par fichier
-    files: 5 // Maximum 5 fichiers par requête
+    files: 5, // Maximum 5 fichiers par requête
+    timeout: 60000 // 2 minutes timeout pour les connexions mobiles lentes
   }
 });
 

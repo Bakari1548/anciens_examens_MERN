@@ -616,4 +616,122 @@ describe('User Controller Tests', () => {
     });
   });
 
+  describe('PUT /api/users/profile - updateProfile', () => {
+    beforeEach(async () => {
+      testUser = await User.create({
+        firstName: 'User',
+        lastName: 'ToUpdate',
+        email: 'user.update@univ-thies.sn',
+        password: 'password123',
+        ufr: 'UFR Test',
+        filiere: 'Test',
+        role: 'user',
+        status: 'active'
+      });
+
+      userToken = jwt.sign({ userId: testUser._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
+    });
+
+    // Test de mise à jour du profil avec succès
+    it('devrait mettre à jour le profil de l\'utilisateur avec succès', async () => {
+      const updateData = {
+        firstName: 'Updated',
+        lastName: 'User',
+        ufr: 'UFR Sciences',
+        filiere: 'Informatique'
+      };
+
+      const response = await request(app)
+        .put('/api/users/profile')
+        .set('Authorization', `Bearer ${userToken}`)
+        .send(updateData)
+        .expect(200);
+
+      expect(response.body.message).toBe('Profil mis à jour avec succès');
+      expect(response.body.user).toBeDefined();
+      expect(response.body.user.firstName).toBe(updateData.firstName);
+      expect(response.body.user.lastName).toBe(updateData.lastName);
+      expect(response.body.user.ufr).toBe(updateData.ufr);
+      expect(response.body.user.filiere).toBe(updateData.filiere);
+    });
+
+    // Test de mise à jour partielle (uniquement firstName)
+    it('devrait mettre à jour partiellement le profil', async () => {
+      const updateData = {
+        firstName: 'PartiallyUpdated'
+      };
+
+      const response = await request(app)
+        .put('/api/users/profile')
+        .set('Authorization', `Bearer ${userToken}`)
+        .send(updateData)
+        .expect(200);
+
+      expect(response.body.message).toBe('Profil mis à jour avec succès');
+      expect(response.body.user.firstName).toBe(updateData.firstName);
+      expect(response.body.user.lastName).toBe(testUser.lastName); // Non modifié
+      expect(response.body.user.ufr).toBe(testUser.ufr); // Non modifié
+      expect(response.body.user.filiere).toBe(testUser.filiere); // Non modifié
+    });
+
+    // Test de mise à jour avec des données vides (aucun changement)
+    it('devrait accepter des données vides sans erreur', async () => {
+      const response = await request(app)
+        .put('/api/users/profile')
+        .set('Authorization', `Bearer ${userToken}`)
+        .send({})
+        .expect(200);
+
+      expect(response.body.message).toBe('Profil mis à jour avec succès');
+      expect(response.body.user.firstName).toBe(testUser.firstName);
+      expect(response.body.user.lastName).toBe(testUser.lastName);
+    });
+
+    // Test de validation sans token
+    it('devrait retourner 401 sans token', async () => {
+      const updateData = {
+        firstName: 'Updated',
+        lastName: 'User'
+      };
+
+      const response = await request(app)
+        .put('/api/users/profile')
+        .send(updateData)
+        .expect(401);
+    });
+
+    // Test de validation avec token invalide
+    it('devrait retourner 401 avec token invalide', async () => {
+      const updateData = {
+        firstName: 'Updated',
+        lastName: 'User'
+      };
+
+      const response = await request(app)
+        .put('/api/users/profile')
+        .set('Authorization', 'Bearer invalidtoken')
+        .send(updateData)
+        .expect(401);
+    });
+
+    // Test de mise à jour avec utilisateur non trouvé (cas théorique)
+    it('devrait retourner 401 si l\'utilisateur n\'existe plus', async () => {
+      // Supprimer l'utilisateur pour simuler ce cas
+      await User.findByIdAndDelete(testUser._id);
+
+      const updateData = {
+        firstName: 'Updated',
+        lastName: 'User'
+      };
+
+      const response = await request(app)
+        .put('/api/users/profile')
+        .set('Authorization', `Bearer ${userToken}`)
+        .send(updateData)
+        .expect(401);
+
+      expect(response.body.message).toBe('Utilisateur non trouvé');
+    });
+  });
+
 });

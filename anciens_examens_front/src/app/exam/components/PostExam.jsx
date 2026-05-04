@@ -239,9 +239,42 @@ export default function PostExam() {
             }, 2000);
             
         } catch (error) {
-            console.error(error);
-            const errorMessage = error.response?.data?.message || 'Erreur lors du partage de l\'examen';
+            console.error('Erreur détaillée:', error);
+            
+            // Gestion spécifique des erreurs mobiles
+            let errorMessage = 'Erreur lors du partage de l\'examen';
+            
+            if (error.response) {
+                // Erreur serveur avec réponse
+                const errorData = error.response.data;
+                errorMessage = errorData.message || errorMessage;
+                
+                // Erreurs spécifiques aux mobiles
+                if (errorData.error === 'CLOUDINARY_ERROR') {
+                    errorMessage = 'Erreur de téléchargement du fichier. Veuillez réessayer avec une connexion plus stable.';
+                } else if (errorData.error === 'NETWORK_ERROR') {
+                    errorMessage = 'Connexion interrompue. Vérifiez votre réseau et réessayez.';
+                } else if (error.response.status === 413) {
+                    errorMessage = 'Fichier trop volumineux. Essayez avec des fichiers plus petits.';
+                } else if (error.response.status === 408) {
+                    errorMessage = 'Timeout. Vérifiez votre connexion et réessayez.';
+                }
+            } else if (error.request) {
+                // Erreur réseau (pas de réponse du serveur)
+                errorMessage = 'Problème de connexion. Vérifiez votre internet et réessayez.';
+            } else {
+                // Erreur frontend
+                errorMessage = error.message || errorMessage;
+            }
+            
             toast.error(errorMessage);
+            
+            // En mode mobile, proposer de réessayer automatiquement
+            if (window.innerWidth <= 768 && error.response?.status >= 500) {
+                setTimeout(() => {
+                    toast.info('Connexion mobile détectée. Vérifiez votre connexion avant de réessayer.');
+                }, 1000);
+            }
         } finally {
             setLoading(false);
         }

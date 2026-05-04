@@ -245,10 +245,50 @@ const postExam = async (req, res) => {
             }
         });
     } catch (error) {
-        console.log(error);
+        console.error('Erreur lors de la création de l\'examen:', error);
+        
+        // Gestion spécifique des erreurs mobiles
+        if (error.code === 'LIMIT_FILE_SIZE') {
+            return res.status(413).json({
+                message: 'Fichier trop volumineux. Taille maximale: 15MB par fichier',
+                error: 'LIMIT_FILE_SIZE'
+            });
+        }
+        
+        if (error.code === 'LIMIT_FILE_COUNT') {
+            return res.status(413).json({
+                message: 'Trop de fichiers. Maximum: 5 fichiers',
+                error: 'LIMIT_FILE_COUNT'
+            });
+        }
+        
+        if (error.code === 'LIMIT_UNEXPECTED_FILE') {
+            return res.status(400).json({
+                message: 'Champ de fichier inattendu',
+                error: 'LIMIT_UNEXPECTED_FILE'
+            });
+        }
+        
+        // Erreurs Cloudinary
+        if (error.message && error.message.includes('Cloudinary')) {
+            console.error('Erreur Cloudinary:', error);
+            return res.status(500).json({
+                message: 'Erreur lors du téléchargement des fichiers. Veuillez réessayer.',
+                error: 'CLOUDINARY_ERROR'
+            });
+        }
+        
+        // Erreurs réseau mobiles
+        if (error.code === 'ECONNRESET' || error.code === 'ETIMEDOUT') {
+            return res.status(408).json({
+                message: 'La connexion a été interrompue. Vérifiez votre connexion et réessayez.',
+                error: 'NETWORK_ERROR'
+            });
+        }
+        
         res.status(500).json({
-            message: 'Erreur serveur',
-            error: error.message
+            message: 'Erreur serveur lors du partage de l\'examen',
+            error: process.env.NODE_ENV === 'development' ? error.message : 'Erreur interne'
         });
     }
 }

@@ -5,6 +5,7 @@ const {
     login, 
     logout,
     getProfile, 
+    updateProfile,
     changePassword, 
     forgotPassword, 
     resetPassword, 
@@ -34,6 +35,7 @@ router.post('/appeal', submitAppeal);
 
 // Routes protégées par le middleware auth
 router.get('/profile', authMiddleware, getProfile);
+router.put('/profile', authMiddleware, updateProfile);
 router.put('/change-password', authMiddleware, changePassword);
 
 // Routes protégées par le middleware admin

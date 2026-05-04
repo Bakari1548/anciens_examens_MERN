@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { toast } from 'sonner';
 import { Eye, EyeOff } from 'lucide-react';
 import signupImage from '@/assets/student3.webp';
 import { register } from '../services/auth.api';
+import { getAllUfrs, getFilieresByUfr } from '../../exam/services/exam.api';
 
 export default function Register() {
   const [formData, setFormData] = useState({
@@ -19,13 +20,68 @@ export default function Register() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  
+  // Données académiques dynamiques
+  const [ufrs, setUfrs] = useState([]);
+  const [filieres, setFilieres] = useState([]);
+  const [loadingUfrs, setLoadingUfrs] = useState(false);
+  const [loadingFilieres, setLoadingFilieres] = useState(false);
 
   const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+    
+    // Réinitialiser la filière si l'UFR change
+    if (name === 'ufr') {
+      setFormData(prev => ({
+        ...prev,
+        ufr: value,
+        filiere: ''
+      }));
+    }
   };
+
+  // Charger les UFRs au montage
+  useEffect(() => {
+    const loadUfrs = async () => {
+      try {
+        setLoadingUfrs(true);
+        const response = await getAllUfrs();
+        setUfrs([{ value: '', label: 'Sélectionnez votre UFR' }, ...response.data.map(ufr => ({ value: ufr.name, label: ufr.name }))]);
+      } catch (error) {
+        console.error('Erreur lors du chargement des UFRs:', error);
+        toast.error('Erreur lors du chargement des UFRs');
+      } finally {
+        setLoadingUfrs(false);
+      }
+    };
+    loadUfrs();
+  }, []);
+
+  // Charger les filières quand l'UFR change
+  useEffect(() => {
+    const loadFilieres = async () => {
+      if (!formData.ufr) {
+        setFilieres([{ value: '', label: 'Sélectionnez votre filière' }]);
+        return;
+      }
+      try {
+        setLoadingFilieres(true);
+        const response = await getFilieresByUfr(formData.ufr);
+        setFilieres([{ value: '', label: 'Sélectionnez votre filière' }, ...response.data.map(f => ({ value: f.name, label: f.name }))]);
+      } catch (error) {
+        console.error('Erreur lors du chargement des filières:', error);
+        setFilieres([{ value: '', label: 'Sélectionnez votre filière' }]);
+        toast.error('Erreur lors du chargement des filières');
+      } finally {
+        setLoadingFilieres(false);
+      }
+    };
+    loadFilieres();
+  }, [formData.ufr]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -132,13 +188,14 @@ export default function Register() {
                   name="ufr"
                   value={formData.ufr}
                   onChange={handleChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent"
+                  disabled={loadingUfrs}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent disabled:opacity-50"
                 >
-                  <option value="">Sélectionnez votre UFR</option>
-                  <option value="UFR Sciences et Technologies">UFR Sciences et Technologies</option>
-                  <option value="UFR Sciences Économiques et de Gestion">UFR Sciences Économiques et de Gestion</option>
-                  <option value="UFR Lettres, Arts et Communication">UFR Lettres, Arts et Communication</option>
-                  <option value="UFR Sciences Juridiques et Politiques">UFR Sciences Juridiques et Politiques</option>
+                  {ufrs.map(option => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
                 </select>
               </div>
 
@@ -151,14 +208,14 @@ export default function Register() {
                   name="filiere"
                   value={formData.filiere}
                   onChange={handleChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent"
+                  disabled={loadingFilieres || !formData.ufr}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent disabled:opacity-50"
                 >
-                  <option value="">Sélectionnez votre filière</option>
-                  <option value="L1">Licence 1</option>
-                  <option value="L2">Licence 2</option>
-                  <option value="L3">Licence 3</option>
-                  <option value="M1">Master 1</option>
-                  <option value="M2">Master 2</option>
+                  {filieres.map(option => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
                 </select>
               </div>
 

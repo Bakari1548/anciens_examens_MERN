@@ -183,6 +183,34 @@ const getProfile = async (req, res) => {
     }
 };
 
+// @desc    Mettre à jour le profil de l'utilisateur connecté
+// @route   PUT /api/users/profile
+// @access  Private
+const updateProfile = async (req, res) => {
+    try {
+        const user = await User.findById(req.user._id);
+        if (!user) {
+            return res.status(404).json({
+                message: 'Utilisateur non trouvé'
+            });
+        }
+        user.firstName = req.body.firstName || user.firstName;
+        user.lastName = req.body.lastName || user.lastName;
+        user.ufr = req.body.ufr || user.ufr;
+        user.filiere = req.body.filiere || user.filiere;
+        await user.save();
+        res.json({
+            message: 'Profil mis à jour avec succès',
+            user
+        });
+    } catch (error) {
+        res.status(500).json({
+            message: 'Erreur serveur',
+            error: error.message
+        });
+    }
+};
+
 
 // @desc    Déconnexion
 // @route   POST /api/users/logout
@@ -655,6 +683,7 @@ module.exports = {
     login, 
     logout,
     getProfile, 
+    updateProfile,
     changePassword,
     forgotPassword, 
     resetPassword,

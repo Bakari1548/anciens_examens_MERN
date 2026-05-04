@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import logoAnciensExamens from '@/assets/logo_anciens_examens.png';
-import { FileText, LogIn, User, UserPlus, LogOut, Menu, X } from 'lucide-react';
+import { FileText, LogIn, User, UserPlus, LogOut, Menu, X, AlertTriangle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { tokenStorage } from '@/utils/tokenStorage';
 import { logout as authLogout } from '@/app/auth/services/auth.api';
@@ -9,6 +9,7 @@ export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [user, setUser] = useState(null);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -36,10 +37,15 @@ export default function Header() {
   };
 
   const handleLogout = async () => {
+    setShowLogoutModal(true);
+  };
+
+  const confirmLogout = async () => {
     try {
       await authLogout();
       setUser(null);
       setIsMenuOpen(false);
+      setShowLogoutModal(false);
       navigate('/');
     } catch (error) {
       console.error('Erreur lors de la déconnexion:', error);
@@ -47,8 +53,13 @@ export default function Header() {
       tokenStorage.clear();
       setUser(null);
       setIsMenuOpen(false);
+      setShowLogoutModal(false);
       navigate('/');
     }
+  };
+
+  const cancelLogout = () => {
+    setShowLogoutModal(false);
   };
 
   const onNavigate = (path) => {
@@ -229,6 +240,47 @@ export default function Header() {
                   </button>
                 </>
               )}
+            </div>
+          </div>
+        )}
+
+        {/* Modal de confirmation de déconnexion */}
+        {showLogoutModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center">
+            {/* Overlay */}
+            <div 
+              className="absolute inset-0 bg-black/70"
+              onClick={cancelLogout}
+            />
+            
+            {/* Modal */}
+            <div className="relative bg-white rounded-xl shadow-xl p-6 max-w-sm w-full mx-4">
+              <div className="flex items-center justify-center w-12 h-12 bg-red-100 rounded-full mx-auto mb-4">
+                <LogOut className="text-red-600" size={24} />
+              </div>
+              
+              <h3 className="text-lg font-semibold text-gray-900 text-center mb-2">
+                Confirmation de déconnexion
+              </h3>
+              
+              <p className="text-gray-600 text-center mb-6">
+                Êtes-vous sûr de vouloir vous déconnecter ?
+              </p>
+              
+              <div className="flex gap-3">
+                <button
+                  onClick={cancelLogout}
+                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+                >
+                  Annuler
+                </button>
+                <button
+                  onClick={confirmLogout}
+                  className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium"
+                >
+                  Se déconnecter
+                </button>
+              </div>
             </div>
           </div>
         )}

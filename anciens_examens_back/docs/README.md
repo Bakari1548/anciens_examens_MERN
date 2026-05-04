@@ -2,7 +2,7 @@
 
 ## Overview
 
-Cette API RESTful permet de gérer une plateforme de partage d'anciens examens universitaires. Elle inclut la gestion des utilisateurs, des examens, des commentaires et des likes.
+Cette API RESTful permet de gérer une plateforme de partage d'anciens examens universitaires. Elle inclut la gestion des utilisateurs, des examens, des commentaires, des likes, et des demandes de réactivation de compte.
 
 ## Base URL
 
@@ -25,7 +25,7 @@ Toutes les réponses suivent ce format:
 ```json
 {
   "message": "Message descriptif",
-  "data": "Données de la réponse (si applicable)",
+  "data": "Données de la réponse (Si applicable)",
   "error": "Message d'erreur (si applicable)"
 }
 ```
@@ -63,6 +63,9 @@ Réponse paginée:
   - `JWT_SECRET`: Clé secrète pour les tokens JWT
   - `MONGODB_URI`: URI de connexion MongoDB
   - `PORT`: Port du serveur (défaut: 8000)
+  - `CLOUDINARY_CLOUD_NAME`: Nom Cloudinary
+  - `CLOUDINARY_API_KEY`: Clé API Cloudinary
+  - `CLOUDINARY_API_SECRET`: Secret API Cloudinary
 
 ## Démarrage
 
@@ -82,8 +85,96 @@ npm run dev
 
 - `200`: Succès
 - `201`: Créé avec succès
+- `204`: Supprimé avec succès
 - `400`: Requête invalide
 - `401`: Non authentifié
 - `403`: Accès refusé
 - `404`: Ressource non trouvée
+- `408`: Timeout de la requête
+- `409`: Conflit de données
+- `413`: Payload trop large
+- `422`: Entité non traitable
 - `500`: Erreur serveur
+- `503`: Service indisponible
+
+## Gestion des fichiers
+
+### Upload de fichiers
+- **Format**: multipart/form-data
+- **Types acceptés**: PDF, JPG, PNG, GIF
+- **Taille maximale**: 10MB par fichier
+- **Nombre maximum**: 5 fichiers par requête
+- **Timeout**: 60 secondes
+
+### En-têtes requis
+```
+Content-Type: multipart/form-data
+Authorization: Bearer <token_jwt>
+```
+
+## Optimisations Mobiles
+
+### Configuration spécifique
+- Timeout augmenté à 60 secondes pour les connexions mobiles lentes
+- Gestion améliorée des erreurs réseau (ECONNRESET, ETIMEDOUT)
+- Messages d'erreur adaptés aux mobiles
+- Détection automatique du mode mobile dans le frontend
+
+### Gestion des erreurs mobiles
+- **413**: Fichier trop volumineux
+- **408**: Timeout de connexion
+- **500**: Erreur Cloudinary
+- Messages contextuels pour aider l'utilisateur mobile
+
+## Sécurité
+
+### Rate limiting
+- **Authentification**: 10 requêtes par 15 minutes
+- **Tous les endpoints**: 100 requêtes par 15 minutes
+
+### Permissions
+- Seul l'auteur peut modifier/supprimer ses examens
+- Les admins peuvent gérer tous les contenus
+- Validation stricte des entrées utilisateur
+
+## Notes importantes
+
+1. **Tokens JWT**: Valides 24h
+2. **Slug**: Généré automatiquement à partir du titre avec suffixe aléatoire
+3. **Permissions**: Rôles hiérarchiques (user < moderator < admin)
+4. **Files**: Stockage sur Cloudinary avec nettoyage automatique
+5. **Comments**: L'auteur du commentaire ou de l'examen peut supprimer
+6. **Likes**: Un utilisateur peut liker/unliker un examen une seule fois
+7. **Account Appeals**: Système de demande de réactivation pour comptes bannis
+8. **Academic Data**: Gestion dynamique des UFR, filières, niveaux, semestres
+9. **Multi-fichiers**: Support jusqu'à 5 fichiers par examen
+10. **Profile Update**: Mise à jour du profil utilisateur avec validation
+
+## Monitoring et Logs
+
+- Logs détaillés des erreurs et requêtes
+- Configuration Cloudinary avec logs de connexion
+- Gestion des erreurs en production vs développement
+- Surveillance des uploads et des performances
+
+## Déploiement
+
+### Production
+```bash
+npm install
+npm run build
+npm start
+```
+
+### Docker
+```bash
+docker build -t anciens-examens-api .
+docker run -p 8000:8000 anciens-examens-api
+```
+
+## Support et Débogage
+
+- Mode développement: logs détaillés et messages d'erreur complets
+- Mode production: erreurs génériques pour sécurité
+- Monitoring des performances et des timeouts
+- Tests unitaires complets pour toutes les fonctionnalités

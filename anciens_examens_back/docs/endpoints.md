@@ -19,6 +19,7 @@ http://localhost:8000/api
 | Méthode | Endpoint | Description | Auth requise |
 |---------|----------|-------------|--------------|
 | GET | `/users/profile` | Obtenir le profil utilisateur | Oui |
+| PUT | `/users/profile` | Mettre à jour le profil utilisateur | Oui |
 | PUT | `/users/change-password` | Changer le mot de passe | Oui |
 
 ### Routes administratives
@@ -29,8 +30,16 @@ http://localhost:8000/api
 | DELETE | `/users/delete/:id` | Supprimer un utilisateur | Oui | Admin |
 | PUT | `/users/activate/:id` | Activer un utilisateur | Oui | Admin |
 | PUT | `/users/desactivate/:id` | Désactiver un utilisateur | Oui | Admin |
-| PUT | `/users/ban/:id` | Bannir un utilisateur | Oui | Admin |
+| POST | `/users/ban/:id` | Bannir un utilisateur | Oui | Admin |
 | PUT | `/users/unban/:id` | Débannir un utilisateur | Oui | Admin |
+
+### Routes de demandes de réactivation
+| Méthode | Endpoint | Description | Auth requise | Rôle requis |
+|---------|----------|-------------|--------------|-------------|
+| POST | `/users/appeal` | Soumettre une demande de réactivation | Non | Non |
+| GET | `/users/appeals` | Obtenir toutes les demandes | Non | Admin |
+| PATCH | `/users/appeals/:id/approve` | Approuver une demande | Non | Admin |
+| PATCH | `/users/appeals/:id/reject` | Rejeter une demande | Non | Admin |
 
 ### Modération et signalements
 | Méthode | Endpoint | Description | Auth requise | Rôle requis |
@@ -52,9 +61,9 @@ http://localhost:8000/api
 ### Routes protégées
 | Méthode | Endpoint | Description | Auth requise |
 |---------|----------|-------------|--------------|
-| POST | `/exams` | Créer un nouvel examen | Oui |
+| POST | `/exams` | Créer un nouvel examen (multi-fichiers supporté) | Oui |
 | PUT | `/exams/:id` | Mettre à jour un examen | Oui |
-| DELETE | `/exams/:id` | Supprimer un examen | Oui |
+| DELETE | `/exams/:id` | Supprimer un examen (avec fichiers Cloudinary) | Oui |
 
 ### Routes de commentaires
 | Méthode | Endpoint | Description | Auth requise |
@@ -150,7 +159,7 @@ http://localhost:8000/api
 ### Limites de taille
 | Ressource | Limite |
 |-----------|--------|
-| Fichiers d'examen | 10MB |
+| Fichiers d'examen | 10MB par fichier, 5 fichiers maximum |
 | Commentaires | 500 caractères |
 | Noms | 50 caractères |
 | Titres | 100 caractères |
@@ -218,7 +227,39 @@ curl -X GET "http://localhost:8000/api/users/all/1/25?search=jean&role=admin" \
 curl "http://localhost:8000/api/exams?page=1&limit=10&search=math"
 ```
 
-### Créer un examen
+### Demander une réactivation de compte
+```bash
+curl -X POST http://localhost:8000/api/users/appeal \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "user@example.com",
+    "reason": "Compte banni par erreur",
+    "message": "Je souhaite réactiver mon compte pour continuer mes études"
+  }'
+```
+
+### Obtenir les demandes de réactivation (admin)
+```bash
+curl -X GET "http://localhost:8000/api/users/appeals" \
+  -H "Authorization: Bearer <admin_token>"
+```
+
+### Approuver une demande (admin)
+```bash
+curl -X PATCH "http://localhost:8000/api/users/appeals/12345/approve" \
+  -H "Authorization: Bearer <admin_token>"
+```
+
+### Rejeter une demande (admin)
+```bash
+curl -X PATCH "http://localhost:8000/api/users/appeals/12345/reject" \
+  -H "Authorization: Bearer <admin_token>" \
+  -d '{
+    "reason": "Informations insuffisantes"
+  }'
+```
+
+### Créer un examen (multi-fichiers)
 ```bash
 curl -X POST http://localhost:8000/api/exams \
   -H "Authorization: Bearer <token>" \
@@ -227,7 +268,9 @@ curl -X POST http://localhost:8000/api/exams \
   -F "filiere=Informatique" \
   -F "matiere=Mathématiques" \
   -F "year=2023" \
-  -F "file=@exam.pdf"
+  -F "file=@exam1.pdf" \
+  -F "file=@exam2.pdf" \
+  -F "file=@correction.jpg"
 ```
 
 ## Notes importantes

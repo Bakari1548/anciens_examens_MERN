@@ -1,4 +1,7 @@
 import { User, Mail, GraduationCap, Calendar, Edit } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { toast } from 'sonner';
+import { getAllUfrs, getFilieresByUfr } from '../../exam/services/exam.api';
 
 export default function UserPersonalInfo({ 
   user, 
@@ -8,6 +11,67 @@ export default function UserPersonalInfo({
   handleEditSubmit, 
   setIsEditing 
 }) {
+  // Données académiques dynamiques
+  const [ufrs, setUfrs] = useState([]);
+  const [filieres, setFilieres] = useState([]);
+  const [loadingUfrs, setLoadingUfrs] = useState(false);
+  const [loadingFilieres, setLoadingFilieres] = useState(false);
+
+  // Charger les UFRs au montage
+  useEffect(() => {
+    const loadUfrs = async () => {
+      try {
+        setLoadingUfrs(true);
+        const response = await getAllUfrs();
+        setUfrs([{ value: '', label: 'Sélectionnez votre UFR' }, ...response.data.map(ufr => ({ value: ufr.name, label: ufr.name }))]);
+      } catch (error) {
+        console.error('Erreur lors du chargement des UFRs:', error);
+        toast.error('Erreur lors du chargement des UFRs');
+      } finally {
+        setLoadingUfrs(false);
+      }
+    };
+    loadUfrs();
+  }, []);
+
+  // Charger les filières quand l'UFR change
+  useEffect(() => {
+    const loadFilieres = async () => {
+      if (!editForm.ufr) {
+        setFilieres([{ value: '', label: 'Sélectionnez votre filière' }]);
+        return;
+      }
+      try {
+        setLoadingFilieres(true);
+        const response = await getFilieresByUfr(editForm.ufr);
+        setFilieres([{ value: '', label: 'Sélectionnez votre filière' }, ...response.data.map(f => ({ value: f.name, label: f.name }))]);
+      } catch (error) {
+        console.error('Erreur lors du chargement des filières:', error);
+        setFilieres([{ value: '', label: 'Sélectionnez votre filière' }]);
+        toast.error('Erreur lors du chargement des filières');
+      } finally {
+        setLoadingFilieres(false);
+      }
+    };
+    loadFilieres();
+  }, [editForm.ufr]);
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setEditForm(prev => ({
+      ...prev,
+      [name]: value
+    }));
+    
+    // Réinitialiser la filière si l'UFR change
+    if (name === 'ufr') {
+      setEditForm(prev => ({
+        ...prev,
+        ufr: value,
+        filiere: ''
+      }));
+    }
+  };
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
       <div className="flex items-center justify-between mb-8">
@@ -60,23 +124,37 @@ export default function UserPersonalInfo({
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 UFR
               </label>
-              <input
-                type="text"
+              <select
+                name="ufr"
                 value={editForm.ufr}
-                onChange={(e) => setEditForm({ ...editForm, ufr: e.target.value })}
-                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
-              />
+                onChange={handleChange}
+                disabled={loadingUfrs}
+                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all disabled:opacity-50"
+              >
+                {ufrs.map(option => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Filière
               </label>
-              <input
-                type="text"
+              <select
+                name="filiere"
                 value={editForm.filiere}
-                onChange={(e) => setEditForm({ ...editForm, filiere: e.target.value })}
-                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
-              />
+                onChange={handleChange}
+                disabled={loadingFilieres || !editForm.ufr}
+                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all disabled:opacity-50"
+              >
+                {filieres.map(option => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
 

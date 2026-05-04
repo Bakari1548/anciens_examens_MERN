@@ -2,6 +2,26 @@ const Exam = require('../models/Exam');
 const User = require('../models/User');
 const { cloudinary } = require('../config/cloudinary');
 
+// Fonction pour générer un slug unique avec caractères aléatoires
+const generateUniqueSlug = async (baseSlug) => {
+    const characters = 'abcdefghijklmnopqrstuvwxyz0123456789';
+    let randomString = '';
+    for (let i = 0; i < 6; i++) {
+        randomString += characters.charAt(Math.floor(Math.random() * characters.length));
+    }
+    
+    const slug = `${baseSlug}-${randomString}`;
+    
+    // Vérifier si le slug existe déjà
+    const existingExam = await Exam.findOne({ slug });
+    if (existingExam) {
+        // Si le slug existe, régénérer avec une nouvelle chaîne aléatoire
+        return generateUniqueSlug(baseSlug);
+    }
+    
+    return slug;
+};
+
 // @desc    Récupérer tous les examens avec pagination et filtres
 // @route   GET /api/exams
 // @access  Public
@@ -9,7 +29,7 @@ const getAllExams = async (req, res) => {
     try {
         // Paramètres de pagination avec valeurs par défaut
         const page = parseInt(req.query.page) || 1;
-        const limit = parseInt(req.query.limit) || 10;
+        const limit = parseInt(req.query.limit) || 12;
         const skip = (page - 1) * limit;
         
         // Paramètres de tri
@@ -21,6 +41,10 @@ const getAllExams = async (req, res) => {
         if (req.query.filiere) filters.filiere = req.query.filiere;
         if (req.query.ufr) filters.ufr = req.query.ufr;
         if (req.query.matiere) filters.matiere = req.query.matiere;
+        if (req.query.niveau) filters.niveau = req.query.niveau;
+        if (req.query.semestre) filters.semestre = req.query.semestre;
+        if (req.query.anneeExamen) filters.anneeExamen = req.query.anneeExamen;
+        if (req.query.typeExamen) filters.typeExamen = req.query.typeExamen;
         if (req.query.year) filters.year = parseInt(req.query.year);
         
         // Recherche textuelle
@@ -143,64 +167,67 @@ const getUserExams = async (req, res) => {
 const postExam = async (req, res) => {
     try {
        
-        const { title, ufr, filiere, matiere, year } = req.body;
+        const { ufr, filiere, niveau, semestre, anneeExamen, typeExamen, matiere, description } = req.body;
         const author = {
             _id: req.user._id,
             firstName: req.user.firstName,
             lastName: req.user.lastName
         };
         
-        if (!title || !ufr || !filiere || !matiere || !author) {
+        if (!ufr || !filiere || !niveau || !semestre || !typeExamen || !matiere || !author) {
             return res.status(400).json({
                 message: 'Tous les champs sont requis',
                 missing: {
-                    title: !title,
                     ufr: !ufr,
                     filiere: !filiere,
+                    niveau: !niveau,
+                    semestre: !semestre,
+                    typeExamen: !typeExamen,
                     matiere: !matiere,
-                    // year: !year,
                     author: !author
                 }
             });
         }
 
-        // Vérifier si un fichier a été uploadé
-        if (!req.file) {
+        // Vérifier si des fichiers ont été uploadés
+        if (!req.files || req.files.length === 0) {
             return res.status(400).json({
-                message: 'Un fichier est requis pour créer un examen'
+                message: 'Au moins un fichier est requis pour créer un examen'
             });
         }
 
-        // Générer le slug à partir du titre en y ajoutant des caractères aléatoires
+        // Préparer les informations des fichiers uploadés
+        const files = req.files.map((file, index) => ({
+            url: file.path, // URL Cloudinary
+            publicId: file.filename || file.public_id || null, // CloudinaryStorage utilise filename
+            size: file.size,
+            mimeType: file.mimetype,
+            originalName: file.originalname,
+            order: index
+        }));
 
-        // Supprimer les caractères spéciaux et les espaces du titre
-        const slugTitle = title.replace(/[^a-z0-9\s]/gi, '').replace(/\s+/g, ' ').toLowerCase().trim();
-
-        // Générer une chaîne aléatoire de 5 caractères
-        const randomString = Math.random().toString(36).substr(2, 5);
-
-        // Construire le slug en combinant le titre modifié et la chaîne aléatoire
-        const slug = `${slugTitle.replace(/ /g, '-')}-${randomString}`;
-
-        // Récupérer les informations du fichier uploadé sur Cloudinary
-        const filePath = req.file.path; // URL Cloudinary
-        const originalName = req.file.originalname;
-        const fileSize = req.file.size;
-        const mimeType = req.file.mimetype;
+        // Générer le titre formaté et le slug unique
+        const formattedTitle = `${typeExamen} ${matiere}`;
+        const baseSlug = formattedTitle.toLowerCase()
+            .replace(/[^a-z0-9\s]/g, '')
+            .replace(/\s+/g, '-')
+            .trim();
+        
+        const slug = await generateUniqueSlug(baseSlug);
 
         const exam = await Exam.create({
-            title,
+            title: formattedTitle,
             slug,
             ufr,
             filiere,
+            niveau,
+            semestre,
+            anneeExamen,
+            typeExamen,
             matiere,
-            year,
+            description,
             author,
-            filePath, // URL du fichier sur Cloudinary
-            originalName,
-            fileSize,
-            mimeType,
-            cloudinaryPublicId: req.file.public_id || null // ID public Cloudinary pour suppression future
+            files // Tableau des fichiers
         });
 
         // Ajouter l'ID de l'examen au tableau exams de l'utilisateur
@@ -214,7 +241,7 @@ const postExam = async (req, res) => {
             message: 'Examen créé avec succès',
             exam: {
                 ...exam.toObject(),
-                fileUrl: filePath // URL pour le frontend
+                fileUrl: files[0]?.url || null // URL du premier fichier pour compatibilité
             }
         });
     } catch (error) {
@@ -268,11 +295,15 @@ const deleteExam = async (req, res) => {
             });
         };
 
-        // Supprimer le fichier de Cloudinary
-        if (exam.cloudinaryPublicId) {
-            await cloudinary.uploader.destroy(exam.cloudinaryPublicId, {
-                resource_type: 'auto' // Supprimer images et PDF
-            });
+        // Supprimer tous les fichiers de Cloudinary
+        if (exam.files && exam.files.length > 0) {
+            for (const file of exam.files) {
+                if (file.publicId) {
+                    await cloudinary.uploader.destroy(file.publicId, {
+                        resource_type: 'auto' // Supprimer images et PDF
+                    });
+                }
+            }
         }
 
         // Supprimer l'examen de la base de données

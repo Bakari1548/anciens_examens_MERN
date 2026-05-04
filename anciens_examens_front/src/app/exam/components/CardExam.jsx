@@ -14,29 +14,32 @@ export default function CardExam({ exam }) {
             toast.error('Vous devez être connecté pour télécharger cet examen');
             return;
         }
-        if (exam.filePath) {
-            window.open(exam.filePath, '_blank');
+        if (exam.files && exam.files.length > 0) {
+            // Télécharger le premier fichier par défaut
+            window.open(exam.files[0].url, '_blank');
         }
     };
 
     return (
         <div className="bg-white w-full shadow flex sm:flex-row flex-col sm:justify-start justify-center items-center border border-gray-200 rounded-lg py-3 px-4 gap-4">
             <img 
-                className="sm:w-48 opacity-70 w-60 sm:mx-0 mx-auto" 
+                className="sm:w-52 opacity-70 w-60 sm:mx-0 mx-auto" 
                 src={logoFile} 
             />
             <div className="flex flex-col gap-3 mt-3 w-full">
                 <h3 className="font-semibold text-lg text-gray-800">{exam.title}</h3>
-                <div className="flex flex-col justify-start items-start gap-2 mt-4">
-                    <p className="text-md"><span className="font-semibold">UFR :</span> {exam.ufr}</p>
+                <div className="flex flex-col justify-start items-start gap-2 mt-3">
                     <p className="text-md"><span className="font-semibold">Filière :</span> {exam.filiere}</p>
-                    <p className="text-md"><span className="font-semibold">Matiere :</span> {exam.matiere}</p>
-                    {exam.year ? (
-                        <p className="text-md"><span className="font-semibold">Année :</span> {exam.year}</p>
+                    <p className="text-md"><span className="font-semibold">Niveau :</span> {exam.niveau}</p>
+                    <p className="text-md"><span className="font-semibold">Matière :</span> {exam.matiere}</p>
+                    {exam.anneeExamen ? (
+                        <p className="text-md"><span className="font-semibold">Année :</span> {exam.anneeExamen}</p>
                     ) : (
                         <p className="text-md"><span className="font-semibold">Année :</span> non précisée</p>
                     )}
-                    <p className="text-md"><span className="font-semibold">Publié par :</span> {exam.author.firstName}</p>
+                    {/* {exam.files && exam.files.length > 0 && (
+                        <p className="text-md"><span className="font-semibold">Fichiers :</span> {exam.files.length}</p>
+                    )} */}
                 </div>
                 <div className="flex min-[550px]:flex-row flex-col gap-6 w-full">
                     <button 

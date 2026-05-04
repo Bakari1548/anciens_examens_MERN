@@ -33,7 +33,7 @@ export default function DetailExam({ exam, onClose }) {
           {/* Title */}
           <div>
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">{exam.title}</h3>
-            <p className="text-gray-600 dark:text-gray-400">{exam.matiere} - {exam.year}</p>
+            <p className="text-gray-600 dark:text-gray-400">{exam.matiere} - {exam.anneeExamen}</p>
           </div>
 
           {/* Status */}
@@ -59,7 +59,7 @@ export default function DetailExam({ exam, onClose }) {
           </div>
 
           {/* Info Grid */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             <div className="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
               <div className="flex items-center gap-2 mb-2">
                 <User className="text-gray-500 dark:text-gray-400" size={18} />
@@ -99,6 +99,38 @@ export default function DetailExam({ exam, onClose }) {
               </div>
               <p className="text-gray-900 dark:text-white font-medium">{exam.filiere}</p>
             </div>
+
+            <div className="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+              <div className="flex items-center gap-2 mb-2">
+                <FileText className="text-gray-500 dark:text-gray-400" size={18} />
+                <span className="text-sm text-gray-500 dark:text-gray-400">Niveau</span>
+              </div>
+              <p className="text-gray-900 dark:text-white font-medium">{exam.niveau}</p>
+            </div>
+
+            <div className="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+              <div className="flex items-center gap-2 mb-2">
+                <Calendar className="text-gray-500 dark:text-gray-400" size={18} />
+                <span className="text-sm text-gray-500 dark:text-gray-400">Semestre</span>
+              </div>
+              <p className="text-gray-900 dark:text-white font-medium">{exam.semestre}</p>
+            </div>
+
+            <div className="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+              <div className="flex items-center gap-2 mb-2">
+                <FileText className="text-gray-500 dark:text-gray-400" size={18} />
+                <span className="text-sm text-gray-500 dark:text-gray-400">Type d'examen</span>
+              </div>
+              <p className="text-gray-900 dark:text-white font-medium">{exam.typeExamen}</p>
+            </div>
+
+            <div className="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+              <div className="flex items-center gap-2 mb-2">
+                <Calendar className="text-gray-500 dark:text-gray-400" size={18} />
+                <span className="text-sm text-gray-500 dark:text-gray-400">Année examen</span>
+              </div>
+              <p className="text-gray-900 dark:text-white font-medium">{exam.anneeExamen}</p>
+            </div>
           </div>
 
           {/* Description */}
@@ -109,22 +141,33 @@ export default function DetailExam({ exam, onClose }) {
             </div>
           )}
 
-          {/* File Info */}
-          {exam.fileUrl && (
+          {/* Files Info */}
+          {exam.files && exam.files.length > 0 && (
             <div className="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h4 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Fichier</h4>
-                  <p className="text-gray-900 dark:text-white text-sm">{exam.fileUrl.split('/').pop()}</p>
-                </div>
-                <a
-                  href={exam.fileUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                >
-                  <Download size={18} />
-                </a>
+              <h4 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3">
+                Fichiers ({exam.files.length})
+              </h4>
+              <div className="space-y-2">
+                {exam.files.map((file, index) => (
+                  <div key={index} className="flex items-center justify-between p-3 bg-white dark:bg-gray-600 rounded-lg">
+                    <div className="flex-1">
+                      <p className="text-gray-900 dark:text-white font-medium text-sm">
+                        {file.originalName || `Fichier ${index + 1}`}
+                      </p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        {(file.size / 1024 / 1024).toFixed(2)} MB • {file.mimeType?.split('/')[1]?.toUpperCase() || 'FILE'}
+                      </p>
+                    </div>
+                    <a
+                      href={file.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                    >
+                      <Download size={16} />
+                    </a>
+                  </div>
+                ))}
               </div>
             </div>
           )}
@@ -146,16 +189,22 @@ export default function DetailExam({ exam, onClose }) {
           >
             Fermer
           </button>
-          {exam.fileUrl && (
-            <a
-              href={exam.fileUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
-            >
-              <Download size={18} />
-              Télécharger
-            </a>
+          {exam.files && exam.files.length > 0 && (
+            <div className="flex gap-2">
+              {exam.files.map((file, index) => (
+                <a
+                  key={index}
+                  href={file.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2 text-sm"
+                  title={`Télécharger ${file.originalName || `Fichier ${index + 1}`}`}
+                >
+                  <Download size={16} />
+                  {index === 0 && exam.files.length === 1 ? 'Télécharger' : `F${index + 1}`}
+                </a>
+              ))}
+            </div>
           )}
         </div>
       </div>

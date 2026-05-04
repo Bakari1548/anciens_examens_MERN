@@ -15,7 +15,7 @@ const {
 router.get('/', getAllExams);
 router.get('/user', authMiddleware, getUserExams);
 router.get('/:slug', getExamBySlug);
-router.post('/', authMiddleware, upload.single('file'), postExam);
+router.post('/', authMiddleware, upload.array('files', 5), postExam);
 router.put('/:slug', authMiddleware, updateExam);
 router.delete('/:slug', authMiddleware, deleteExam);
 

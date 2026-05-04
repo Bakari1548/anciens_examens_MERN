@@ -17,6 +17,10 @@ export const getAllExams = async (params = {}) => {
         if (params.filiere) queryParams.append('filiere', params.filiere);
         if (params.ufr) queryParams.append('ufr', params.ufr);
         if (params.matiere) queryParams.append('matiere', params.matiere);
+        if (params.niveau) queryParams.append('niveau', params.niveau);
+        if (params.semestre) queryParams.append('semestre', params.semestre);
+        if (params.anneeExamen) queryParams.append('anneeExamen', params.anneeExamen);
+        if (params.typeExamen) queryParams.append('typeExamen', params.typeExamen);
         if (params.year) queryParams.append('year', params.year);
         
         // Ajouter la recherche
@@ -66,6 +70,36 @@ export const updateExam = async (slug, examData) => {
 export const deleteExam = async (slug) => {
     try {
         const response = await api.delete(`/exams/${slug}`);
+        return response.data;
+    } catch (error) {
+        throw error;
+    }
+};
+
+// Récupérer toutes les UFR
+export const getAllUfrs = async () => {
+    try {
+        const response = await api.get('/ufrs');
+        return response.data;
+    } catch (error) {
+        throw error;
+    }
+};
+
+// Récupérer les filières par UFR
+export const getFilieresByUfr = async (ufr) => {
+    try {
+        const response = await api.get(`/ufrs/${encodeURIComponent(ufr)}/filieres`);
+        return response.data;
+    } catch (error) {
+        throw error;
+    }
+};
+
+// Récupérer les niveaux par filière
+export const getNiveauxByFiliere = async (ufr, filiere) => {
+    try {
+        const response = await api.get(`/ufrs/${encodeURIComponent(ufr)}/filieres/${encodeURIComponent(filiere)}/niveaux`);
         return response.data;
     } catch (error) {
         throw error;

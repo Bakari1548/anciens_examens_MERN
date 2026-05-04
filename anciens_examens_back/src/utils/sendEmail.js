@@ -23,7 +23,9 @@ const sendEmail = async (options) => {
     const info = await transporter.sendMail(mailOptions);
     return info; // Retourne les infos de succès
   } catch (error) {
-    console.error("Erreur Nodemailer :", error.message);
+    if (process.env.NODE_ENV !== 'test') {
+      console.error("Erreur Nodemailer :", error.message);
+    }
     throw new Error("L'envoi de l'email a échoué."); 
   }
 };

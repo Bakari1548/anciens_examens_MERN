@@ -27,6 +27,7 @@ import AdminLogsPage from './pages/AdminLogs'
 import AdminAppealsPage from './pages/AdminAppeals'
 import { ThemeProvider } from './app/admin/context/ThemeContext'
 import ResetPasswordWithTokenPage from './pages/ResetPasswordWithToken'
+import RulesPage from './app/legal/components/RulesPage'
 
 function AppContent() {
   const location = useLocation();
@@ -48,7 +49,7 @@ function AppContent() {
         <Route path="/examens" element={<ExamsPage />} />
         <Route path="/profil" element={<ProfilePage />} />
         <Route path="/demande" element={<AccountAppealPage />} />
-        <Route path="/regles" element={<HomePage />} />
+        <Route path="/regles" element={<RulesPage />} />
 
 
 

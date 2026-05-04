@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
-import { Search, Filter, Download, Eye, CheckCircle, XCircle, Trash2, MoreVertical, ChevronLeft, ChevronRight, FileText, Calendar, User, Clock, Plus } from 'lucide-react';
+import { Search, Filter, Download, Eye, CheckCircle, XCircle, Trash2, MoreVertical, ChevronLeft, ChevronRight, FileText, Calendar, User, Clock, Plus, Building2, GraduationCap } from 'lucide-react';
 import { useAdminExams } from '../../hooks/useAdmin.exams';
 import { useTheme } from '../../context/ThemeContext';
 import DetailExam from './DetailExam';
 import AddExam from './AddExam';
+import { getAllUfrs, getFilieresByUfr, getNiveauxByFiliere } from '../../../exam/services/exam.api';
 
 export default function ExamManagement() {
   const { isDark } = useTheme();
@@ -12,23 +13,98 @@ export default function ExamManagement() {
   const [filterStatus, setFilterStatus] = useState('');
   const [filterUFR, setFilterUFR] = useState('');
   const [filterFiliere, setFilterFiliere] = useState('');
+  const [filterNiveau, setFilterNiveau] = useState('');
+  const [filterSemestre, setFilterSemestre] = useState('');
+  const [filterTypeExamen, setFilterTypeExamen] = useState('');
+  const [filterMatiere, setFilterMatiere] = useState('');
   const [selectedExams, setSelectedExams] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [showExamModal, setShowExamModal] = useState(null);
   const [showRejectModal, setShowRejectModal] = useState(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(null);
   const [showActionMenu, setShowActionMenu] = useState(null);
   const [showAddModal, setShowAddModal] = useState(false);
+  
+  // Données académiques dynamiques
+  const [ufrs, setUfrs] = useState([]);
+  const [filieres, setFilieres] = useState([]);
+  const [niveaux, setNiveaux] = useState([]);
+  const [loadingUfrs, setLoadingUfrs] = useState(false);
+  const [loadingFilieres, setLoadingFilieres] = useState(false);
+  const [loadingNiveaux, setLoadingNiveaux] = useState(false);
+
+  // Charger les UFRs au montage
+  useEffect(() => {
+    const loadUfrs = async () => {
+      try {
+        setLoadingUfrs(true);
+        const response = await getAllUfrs();
+        setUfrs([{ value: '', label: 'Toutes les UFR' }, ...response.data.map(ufr => ({ value: ufr.name, label: ufr.name }))]);
+      } catch (error) {
+        console.error('Erreur lors du chargement des UFRs:', error);
+      } finally {
+        setLoadingUfrs(false);
+      }
+    };
+    loadUfrs();
+  }, []);
+
+  // Charger les filières quand l'UFR change
+  useEffect(() => {
+    const loadFilieres = async () => {
+      if (!filterUFR) {
+        setFilieres([{ value: '', label: 'Toutes les filières' }]);
+        return;
+      }
+      try {
+        setLoadingFilieres(true);
+        const response = await getFilieresByUfr(filterUFR);
+        setFilieres([{ value: '', label: 'Toutes les filières' }, ...response.data.map(f => ({ value: f.name, label: f.name }))]);
+      } catch (error) {
+        console.error('Erreur lors du chargement des filières:', error);
+        setFilieres([{ value: '', label: 'Toutes les filières' }]);
+      } finally {
+        setLoadingFilieres(false);
+      }
+    };
+    loadFilieres();
+  }, [filterUFR]);
+
+  // Charger les niveaux quand la filière change
+  useEffect(() => {
+    const loadNiveaux = async () => {
+      if (!filterUFR || !filterFiliere) {
+        setNiveaux([{ value: '', label: 'Tous les niveaux' }]);
+        return;
+      }
+      try {
+        setLoadingNiveaux(true);
+        const response = await getNiveauxByFiliere(filterUFR, filterFiliere);
+        setNiveaux([{ value: '', label: 'Tous les niveaux' }, ...response.data.map(n => ({ value: n.name, label: n.name }))]);
+      } catch (error) {
+        console.error('Erreur lors du chargement des niveaux:', error);
+        setNiveaux([{ value: '', label: 'Tous les niveaux' }]);
+      } finally {
+        setLoadingNiveaux(false);
+      }
+    };
+    loadNiveaux();
+  }, [filterUFR, filterFiliere]);
 
   useEffect(() => {
     fetchExams({
       page: currentPage,
-      limit: 25, // ou 35, 50 selon le choix
+      limit: 25,
       search: searchTerm,
       status: filterStatus,
       ufr: filterUFR,
-      filiere: filterFiliere
+      filiere: filterFiliere,
+      niveau: filterNiveau,
+      semestre: filterSemestre,
+      typeExamen: filterTypeExamen,
+      matiere: filterMatiere
     });
-  }, [currentPage, searchTerm, filterStatus, filterUFR, filterFiliere]);
+  }, [currentPage, searchTerm, filterStatus, filterUFR, filterFiliere, filterNiveau, filterSemestre, filterTypeExamen, filterMatiere]);
 
   const handleSelectExam = (examId) => {
     setSelectedExams(prev => 
@@ -55,9 +131,15 @@ export default function ExamManagement() {
     setShowRejectModal(null);
   };
 
-  const handleDelete = async (examId) => {
-    if (confirm('Êtes-vous sûr de vouloir supprimer cet examen ?')) {
-      await deleteExam(examId);
+  const handleDelete = async (examSlug) => {
+    setShowDeleteModal(examSlug);
+  };
+
+  const confirmDelete = async () => {
+    if (showDeleteModal) {
+      await deleteExam(showDeleteModal);
+      setShowDeleteModal(null);
+      setShowActionMenu(null);
     }
   };
 
@@ -154,7 +236,11 @@ export default function ExamManagement() {
     const matchesStatus = !filterStatus || exam.status === filterStatus;
     const matchesUFR = !filterUFR || exam.ufr === filterUFR;
     const matchesFiliere = !filterFiliere || exam.filiere === filterFiliere;
-    return matchesSearch && matchesStatus && matchesUFR && matchesFiliere;
+    const matchesNiveau = !filterNiveau || exam.niveau === filterNiveau;
+    const matchesSemestre = !filterSemestre || exam.semestre === filterSemestre;
+    const matchesTypeExamen = !filterTypeExamen || exam.typeExamen === filterTypeExamen;
+    const matchesMatiere = !filterMatiere || exam.matiere === filterMatiere;
+    return matchesSearch && matchesStatus && matchesUFR && matchesFiliere && matchesNiveau && matchesSemestre && matchesTypeExamen && matchesMatiere;
   });
 
   const getStatusBadge = (status) => {
@@ -176,9 +262,10 @@ export default function ExamManagement() {
   const getUFRColor = (ufr) => {
     const colors = {
       'UFR Sciences et Technologies': 'from-blue-500 to-blue-600',
-      'UFR Sciences Économiques et de Gestion': 'from-green-500 to-green-600',
-      'UFR Lettres, Arts et Communication': 'from-purple-500 to-purple-600',
-      'UFR Sciences Juridiques et Politiques': 'from-red-500 to-red-600'
+      'UFR Sciences Économiques et Sociales': 'from-green-500 to-green-600',
+      'UFR Sciences de la Santé': 'from-purple-500 to-purple-600',
+      'UFR Sciences de l\'Ingénierie': 'from-red-500 to-red-600',
+      'Institut Universitaire de Technologie': 'from-orange-500 to-orange-600'
     };
     return colors[ufr] || 'from-gray-500 to-gray-600';
   };
@@ -191,7 +278,7 @@ export default function ExamManagement() {
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Gestion des examens</h1>
           <p className="text-gray-600 dark:text-gray-400 mt-1">{exams.length} examens au total</p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex sm:flex-row flex-col items-center gap-3">
           <button
             onClick={() => setShowAddModal(true)}
             className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2"
@@ -229,7 +316,7 @@ export default function ExamManagement() {
 
       {/* Filtres et recherche */}
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-        <div className="flex flex-col lg:flex-row gap-4">
+        <div className="grid md:grid-cols-4 sm:grid-cols-2 grid-cols-1 gap-4">
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" size={20} />
             <input
@@ -253,26 +340,77 @@ export default function ExamManagement() {
           <select
             value={filterUFR}
             onChange={(e) => setFilterUFR(e.target.value)}
-            className="px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            disabled={loadingUfrs}
+            className="px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
           >
-            <option value="">Toutes les UFR</option>
-            <option value="UFR Sciences et Technologies">UFR Sciences et Technologies</option>
-            <option value="UFR Sciences Économiques et de Gestion">UFR Sciences Économiques et de Gestion</option>
-            <option value="UFR Lettres, Arts et Communication">UFR Lettres, Arts et Communication</option>
-            <option value="UFR Sciences Juridiques et Politiques">UFR Sciences Juridiques et Politiques</option>
+            {ufrs.map(option => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
           </select>
           <select
             value={filterFiliere}
             onChange={(e) => setFilterFiliere(e.target.value)}
+            disabled={loadingFilieres || !filterUFR}
+            className="px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+          >
+            {filieres.map(option => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+          <select
+            value={filterNiveau}
+            onChange={(e) => setFilterNiveau(e.target.value)}
+            disabled={loadingNiveaux || !filterFiliere}
+            className="px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+          >
+            {niveaux.map(option => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+          <select
+            value={filterSemestre}
+            onChange={(e) => setFilterSemestre(e.target.value)}
             className="px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
-            <option value="">Toutes les filières</option>
-            <option value="L1">L1</option>
-            <option value="L2">L2</option>
-            <option value="L3">L3</option>
-            <option value="M1">M1</option>
-            <option value="M2">M2</option>
+            <option value="">Tous les semestres</option>
+            <option value="S1">S1</option>
+            <option value="S2">S2</option>
+            <option value="S3">S3</option>
+            <option value="S4">S4</option>
+            <option value="S5">S5</option>
+            <option value="S6">S6</option>
+            <option value="S7">S7</option>
+            <option value="S8">S8</option>
+            <option value="S9">S9</option>
+            <option value="S10">S10</option>
+            <option value="S11">S11</option>
+            <option value="S12">S12</option>
           </select>
+          <select
+            value={filterTypeExamen}
+            onChange={(e) => setFilterTypeExamen(e.target.value)}
+            className="px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="">Tous les types</option>
+            <option value="Examen Final">Examen Final</option>
+            <option value="Contrôle Continu">Contrôle Continu</option>
+            <option value="Session de Rattrapage">Session de Rattrapage</option>
+            <option value="Devoir">Devoir</option>
+            <option value="TP">TP</option>
+          </select>
+          <input
+            type="text"
+            placeholder="Matière..."
+            value={filterMatiere}
+            onChange={(e) => setFilterMatiere(e.target.value)}
+            className="px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
         </div>
       </div>
 
@@ -439,8 +577,7 @@ export default function ExamManagement() {
                                 )}
                             <button
                               onClick={() => {
-                                handleDelete(exam._id);
-                                setShowActionMenu(null);
+                                handleDelete(exam.slug);
                               }}
                               className="flex items-center gap-2 w-full px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700"
                             >
@@ -518,6 +655,42 @@ export default function ExamManagement() {
                 className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
               >
                 Rejeter
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de confirmation de suppression */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-6 max-w-md w-full mx-4">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-12 h-12 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center">
+                <Trash2 className="text-red-600 dark:text-red-400" size={24} />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                Confirmer la suppression
+              </h3>
+            </div>
+            <p className="text-gray-600 dark:text-gray-400 mb-6">
+              Êtes-vous sûr de vouloir supprimer cet examen ? Cette action est irréversible et supprimera également les fichiers associés de Cloudinary.
+            </p>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => {
+                  setShowDeleteModal(null);
+                  setShowActionMenu(null);
+                }}
+                className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-white rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={confirmDelete}
+                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+              >
+                Supprimer
               </button>
             </div>
           </div>

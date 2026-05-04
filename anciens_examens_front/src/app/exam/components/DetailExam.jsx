@@ -68,11 +68,12 @@ export default function ExamDetail() {
     );
   }
 
-  const handleDownload = () => {
-    if (exam.filePath) {
+  const handleDownload = (fileIndex = 0) => {
+    if (exam.files && exam.files.length > 0) {
+      const file = exam.files[fileIndex];
       const link = document.createElement('a');
-      link.href = exam.filePath;
-      link.download = `${exam.title}.pdf`;
+      link.href = file.url;
+      link.download = file.originalName || `${exam.title}_${fileIndex + 1}`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -129,14 +130,14 @@ export default function ExamDetail() {
                   <Calendar size={20} className="text-gray-500 flex-shrink-0 mt-0.5" />
                   <div>
                     <p className="text-sm text-gray-500">Année de l'examen</p>
-                    <p className="font-medium">{exam.year}</p>
+                    <p className="font-medium">{exam.anneeExamen}</p>
                   </div>
                 </div>
 
                 <div className="flex items-start gap-3">
                   <User size={20} className="text-gray-500 flex-shrink-0 mt-0.5" />
                   <div>
-                    <p className="text-sm text-gray-500">Téléversé par</p>
+                    <p className="text-sm text-gray-500">Partagé par</p>
                     <p className="font-medium">{exam.author?.firstName || 'Utilisateur'}</p>
                   </div>
                 </div>
@@ -152,6 +153,21 @@ export default function ExamDetail() {
                 </div>
 
                 <div>
+                  <p className="text-sm text-gray-500">Niveau</p>
+                  <p className="font-medium">{exam.niveau}</p>
+                </div>
+
+                <div>
+                  <p className="text-sm text-gray-500">Semestre</p>
+                  <p className="font-medium">{exam.semestre}</p>
+                </div>
+
+                <div>
+                  <p className="text-sm text-gray-500">Type d'examen</p>
+                  <p className="font-medium">{exam.typeExamen}</p>
+                </div>
+
+                <div>
                   <p className="text-sm text-gray-500">Matière</p>
                   <p className="font-medium">{exam.matiere}</p>
                 </div>
@@ -162,23 +178,33 @@ export default function ExamDetail() {
                 </div>
               </div>
 
-              <button
-                onClick={() => {
-                  if (!isUserLoggedIn) {
-                    toast.error('Vous devez être connecté pour télécharger cet examen');
-                    return;
-                  }
-                  handleDownload();
-                }}
-                className={`flex justify-center gap-2 text-white items-center p-2 w-full font-semibold rounded-lg shadow active:scale-95 transition-all duration-200 ease-in-out ${
-                  isUserLoggedIn 
-                    ? 'bg-blue-500 hover:bg-blue-600 active:bg-blue-600' 
-                    : 'bg-gray-400 cursor-not-allowed'
-                }`}
-              >
-                <Download size={20} />
-                <span>Télécharger l'examen</span>
-              </button>
+              {exam.files && exam.files.length > 0 && (
+              <div className="space-y-2">
+                <p className="text-sm text-gray-500 text-center">
+                  {exam.files.length} fichier{exam.files.length > 1 ? 's' : ''} disponible{exam.files.length > 1 ? 's' : ''}
+                </p>
+                {exam.files.map((file, index) => (
+                  <button
+                    key={index}
+                    onClick={() => {
+                      if (!isUserLoggedIn) {
+                        toast.error('Vous devez être connecté pour télécharger cet examen');
+                        return;
+                      }
+                      handleDownload(index);
+                    }}
+                    className={`flex justify-center gap-2 text-white items-center p-2 w-full font-semibold rounded-lg shadow active:scale-95 transition-all duration-200 ease-in-out ${
+                      isUserLoggedIn 
+                        ? 'bg-blue-500 hover:bg-blue-600 active:bg-blue-600' 
+                        : 'bg-gray-400 cursor-not-allowed'
+                    }`}
+                  >
+                    <Download size={20} />
+                    <span>Télécharger fichier {index + 1}</span>
+                  </button>
+                ))}
+              </div>
+            )}
             </div>
           </div>
 

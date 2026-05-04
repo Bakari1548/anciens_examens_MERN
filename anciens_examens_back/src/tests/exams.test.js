@@ -23,14 +23,16 @@ jest.mock('../config/cloudinary', () => ({
     }
   },
   upload: {
-    single: jest.fn(() => (req, res, next) => {
-      req.file = {
-        path: 'http://cloudinary.com/test.pdf',
-        public_id: 'exams/test-exam',
-        size: 1024,
-        mimetype: 'application/pdf',
-        originalname: 'test.pdf'
-      };
+    array: jest.fn(() => (req, res, next) => {
+      req.files = [
+        {
+          path: 'http://cloudinary.com/test.pdf',
+          public_id: 'exams/test-exam',
+          size: 1024,
+          mimetype: 'application/pdf',
+          originalname: 'test.pdf'
+        }
+      ];
       next();
     })
   }
@@ -99,39 +101,51 @@ describe('Exam Controller Tests', () => {
       // Créer des examens de test
       await Exam.create([
         {
-          title: 'Examen Mathématiques',
+          title: 'Examen Mathématiques L1 S1',
           slug: 'examen-mathematiques-abc12',
-          ufr: 'UFR Sciences',
-          filiere: 'Mathématiques',
+          ufr: 'UFR Sciences Économiques et Sociales',
+          filiere: 'Sciences Économiques et Gestion',
+          niveau: 'L1',
+          semestre: 'S1',
+          typeExamen: 'Examen Final',
           matiere: 'Algèbre',
-          year: 2023,
+          anneeExamen: '2023-2024',
           author: {
             _id: testUser._id,
             firstName: testUser.firstName,
             lastName: testUser.lastName
           },
-          filePath: 'http://cloudinary.com/file1.pdf',
-          originalName: 'maths.pdf',
-          fileSize: 1024,
-          mimeType: 'application/pdf',
+          files: [{
+            url: 'http://cloudinary.com/file1.pdf',
+            publicId: 'exams/maths-1',
+            size: 1024,
+            mimeType: 'application/pdf',
+            originalName: 'maths.pdf'
+          }],
           status: 'approved'
         },
         {
-          title: 'Examen Physique',
+          title: 'Examen Physique L1 S1',
           slug: 'examen-physique-def34',
-          ufr: 'UFR Sciences',
+          ufr: 'UFR Sciences et Technologies',
           filiere: 'Physique',
+          niveau: 'L1',
+          semestre: 'S1',
+          typeExamen: 'Contrôle Continu',
           matiere: 'Mécanique',
-          year: 2024,
+          anneeExamen: '2023-2024',
           author: {
             _id: testUser._id,
             firstName: testUser.firstName,
             lastName: testUser.lastName
           },
-          filePath: 'http://cloudinary.com/file2.pdf',
-          originalName: 'physique.pdf',
-          fileSize: 2048,
-          mimeType: 'application/pdf',
+          files: [{
+            url: 'http://cloudinary.com/file2.pdf',
+            publicId: 'exams/physique-1',
+            size: 2048,
+            mimeType: 'application/pdf',
+            originalName: 'physique.pdf'
+          }],
           status: 'pending'
         }
       ]);
@@ -152,20 +166,65 @@ describe('Exam Controller Tests', () => {
 
     it('devrait filtrer par filière', async () => {
       const response = await request(app)
-        .get('/api/exams?filiere=Mathématiques')
+        .get('/api/exams?filiere=Sciences Économiques et Gestion')
         .expect(200);
 
       expect(response.body.exams).toBeDefined();
-      expect(response.body.exams.every(exam => exam.filiere === 'Mathématiques')).toBe(true);
+      expect(response.body.exams.every(exam => exam.filiere === 'Sciences Économiques et Gestion')).toBe(true);
     });
 
     it('devrait filtrer par année', async () => {
       const response = await request(app)
-        .get('/api/exams?year=2023')
+        .get('/api/exams?anneeExamen=2023-2024')
         .expect(200);
 
       expect(response.body.exams).toBeDefined();
-      expect(response.body.exams.every(exam => exam.year === 2023)).toBe(true);
+      expect(response.body.exams.every(exam => exam.anneeExamen === '2023-2024')).toBe(true);
+    });
+
+    it('devrait filtrer par niveau', async () => {
+      const response = await request(app)
+        .get('/api/exams?niveau=L1')
+        .expect(200);
+
+      expect(response.body.exams).toBeDefined();
+      expect(response.body.exams.every(exam => exam.niveau === 'L1')).toBe(true);
+    });
+
+    it('devrait filtrer par semestre', async () => {
+      const response = await request(app)
+        .get('/api/exams?semestre=S1')
+        .expect(200);
+
+      expect(response.body.exams).toBeDefined();
+      expect(response.body.exams.every(exam => exam.semestre === 'S1')).toBe(true);
+    });
+
+    it('devrait filtrer par typeExamen', async () => {
+      const response = await request(app)
+        .get('/api/exams?typeExamen=Examen Final')
+        .expect(200);
+
+      expect(response.body.exams).toBeDefined();
+      expect(response.body.exams.every(exam => exam.typeExamen === 'Examen Final')).toBe(true);
+    });
+
+    it('devrait filtrer par UFR', async () => {
+      const response = await request(app)
+        .get('/api/exams?ufr=UFR Sciences Économiques et Sociales')
+        .expect(200);
+
+      expect(response.body.exams).toBeDefined();
+      expect(response.body.exams.every(exam => exam.ufr === 'UFR Sciences Économiques et Sociales')).toBe(true);
+    });
+
+    it('devrait filtrer par matière', async () => {
+      const response = await request(app)
+        .get('/api/exams?matiere=Algèbre')
+        .expect(200);
+
+      expect(response.body.exams).toBeDefined();
+      expect(response.body.exams.every(exam => exam.matiere === 'Algèbre')).toBe(true);
     });
 
     it('devrait rechercher par texte', async () => {
@@ -195,21 +254,27 @@ describe('Exam Controller Tests', () => {
   describe('GET /api/exams/:slug - getExamBySlug', () => {
     beforeEach(async () => {
       testExam = await Exam.create({
-        title: 'Examen Test',
+        title: 'Examen Test M1 S7',
         slug: 'examen-test-xyz78',
-        ufr: 'UFR Test',
-        filiere: 'Test',
+        ufr: 'UFR Sciences Économiques et Sociales',
+        filiere: 'Sciences Économiques et Gestion',
+        niveau: 'M1',
+        semestre: 'S7',
+        typeExamen: 'Devoir',
         matiere: 'Test',
-        year: 2024,
+        anneeExamen: '2024-2025',
         author: {
           _id: testUser._id,
           firstName: testUser.firstName,
           lastName: testUser.lastName
         },
-        filePath: 'http://cloudinary.com/test.pdf',
-        originalName: 'test.pdf',
-        fileSize: 512,
-        mimeType: 'application/pdf',
+        files: [{
+          url: 'http://cloudinary.com/test.pdf',
+          publicId: 'exams/test-1',
+          size: 512,
+          mimeType: 'application/pdf',
+          originalName: 'test.pdf'
+        }],
         status: 'approved'
       });
     });
@@ -237,39 +302,51 @@ describe('Exam Controller Tests', () => {
     beforeEach(async () => {
       await Exam.create([
         {
-          title: 'Examen User 1',
+          title: 'Examen User 1 L3 S5',
           slug: 'examen-user-1-abc12',
-          ufr: 'UFR Test',
-          filiere: 'Test',
+          ufr: 'UFR Sciences Économiques et Sociales',
+          filiere: 'Sciences Économiques et Gestion',
+          niveau: 'L3',
+          semestre: 'S5',
+          typeExamen: 'Session de Rattrapage',
           matiere: 'Test',
-          year: 2024,
+          anneeExamen: '2024-2025',
           author: {
             _id: testUser._id,
             firstName: testUser.firstName,
             lastName: testUser.lastName
           },
-          filePath: 'http://cloudinary.com/user1.pdf',
-          originalName: 'user1.pdf',
-          fileSize: 1024,
-          mimeType: 'application/pdf',
+          files: [{
+            url: 'http://cloudinary.com/user1.pdf',
+            publicId: 'exams/user1-1',
+            size: 1024,
+            mimeType: 'application/pdf',
+            originalName: 'user1.pdf'
+          }],
           status: 'approved'
         },
         {
-          title: 'Examen User 2',
+          title: 'Examen User 2 M2 S10',
           slug: 'examen-user-2-def34',
-          ufr: 'UFR Test',
-          filiere: 'Test',
+          ufr: 'UFR Sciences et Technologies',
+          filiere: 'Informatique',
+          niveau: 'M2',
+          semestre: 'S10',
+          typeExamen: 'TP',
           matiere: 'Test',
-          year: 2024,
+          anneeExamen: '2024-2025',
           author: {
             _id: testAdmin._id,
             firstName: testAdmin.firstName,
             lastName: testAdmin.lastName
           },
-          filePath: 'http://cloudinary.com/user2.pdf',
-          originalName: 'user2.pdf',
-          fileSize: 2048,
-          mimeType: 'application/pdf',
+          files: [{
+            url: 'http://cloudinary.com/user2.pdf',
+            publicId: 'exams/user2-1',
+            size: 2048,
+            mimeType: 'application/pdf',
+            originalName: 'user2.pdf'
+          }],
           status: 'approved'
         }
       ]);
@@ -308,6 +385,74 @@ describe('Exam Controller Tests', () => {
     });
   });
 
+  describe('Exam Model - Validation des niveaux académiques', () => {
+    it('devrait accepter tous les niveaux académiques valides', async () => {
+      const validLevels = ['L1', 'L2', 'L3', 'L4', 'M1', 'M2', 'D1', 'D2', 'D3', 'D4', 'D5', 'D6', 
+                         'PCEM1', 'PCEM2', 'DCEM1', 'DCEM2', 'DCEM3', 'DCEM4', 'LP', 'ING1', 'ING2', 'ING3', 'DUT1', 'DUT2'];
+
+      for (const level of validLevels) {
+        const exam = new Exam({
+          title: 'Test',
+          slug: `test-${level}`,
+          ufr: 'UFR Test',
+          filiere: 'Test',
+          niveau: level,
+          semestre: 'S1',
+          typeExamen: 'Examen Final',
+          matiere: 'Test',
+          author: {
+            _id: testUser._id,
+            firstName: testUser.firstName,
+            lastName: testUser.lastName
+          },
+          files: [{
+            url: 'http://test.com/file.pdf',
+            publicId: 'test',
+            size: 1024,
+            mimeType: 'application/pdf',
+            originalName: 'file.pdf'
+          }]
+        });
+
+        const validationError = exam.validateSync();
+        expect(validationError).toBeUndefined();
+      }
+    });
+
+    it('devrait rejeter les niveaux académiques invalides', async () => {
+      const invalidLevels = ['L5', 'M3', 'D7', 'INVALID'];
+
+      for (const level of invalidLevels) {
+        const exam = new Exam({
+          title: 'Test',
+          slug: `test-${level}`,
+          ufr: 'UFR Test',
+          filiere: 'Test',
+          niveau: level,
+          semestre: 'S1',
+          typeExamen: 'Examen Final',
+          matiere: 'Test',
+          author: {
+            _id: testUser._id,
+            firstName: testUser.firstName,
+            lastName: testUser.lastName
+          },
+          files: [{
+            url: 'http://test.com/file.pdf',
+            publicId: 'test',
+            size: 1024,
+            mimeType: 'application/pdf',
+            originalName: 'file.pdf'
+          }]
+        });
+
+        const validationError = exam.validateSync();
+        expect(validationError).toBeDefined();
+        expect(validationError.errors.niveau).toBeDefined();
+      }
+    });
+  });
+
   describe('PUT /api/exams/:slug - updateExam', () => {
     it('devrait retourner 401 sans authentification', async () => {
       const response = await request(app)
@@ -318,6 +463,53 @@ describe('Exam Controller Tests', () => {
   });
 
   describe('DELETE /api/exams/:slug - deleteExam', () => {
+    it('devrait supprimer un examen avec plusieurs fichiers', async () => {
+      // Créer un examen avec plusieurs fichiers
+      const testExam = await Exam.create({
+        title: 'Examen Multi-fichiers Test',
+        slug: 'examen-multi-fichiers-test',
+        ufr: 'UFR Sciences et Technologies',
+        filiere: 'Informatique',
+        niveau: 'L1',
+        semestre: 'S1',
+        typeExamen: 'Examen Final',
+        matiere: 'Test',
+        author: {
+          _id: testUser._id,
+          firstName: testUser.firstName,
+          lastName: testUser.lastName
+        },
+        files: [
+          {
+            url: 'http://cloudinary.com/file1.pdf',
+            publicId: 'exams/test-1',
+            size: 1024,
+            mimeType: 'application/pdf',
+            originalName: 'file1.pdf'
+          },
+          {
+            url: 'http://cloudinary.com/file2.pdf',
+            publicId: 'exams/test-2',
+            size: 2048,
+            mimeType: 'application/pdf',
+            originalName: 'file2.pdf'
+          }
+        ],
+        status: 'approved'
+      });
+
+      const response = await request(app)
+        .delete(`/api/exams/${testExam.slug}`)
+        .set('Authorization', `Bearer ${userToken}`)
+        .expect(200);
+
+      expect(response.body.message).toBe('Examen supprimé avec succès');
+      
+      // Vérifier que l'examen est supprimé
+      const deletedExam = await Exam.findOne({ slug: testExam.slug });
+      expect(deletedExam).toBeNull();
+    });
+
     it('devrait retourner 401 sans authentification', async () => {
       const response = await request(app)
         .delete('/api/exams/test-slug')

@@ -51,11 +51,11 @@ export default function Register() {
       setLoading(true);
       const response = await register(formData.firstName, formData.lastName, formData.email, formData.password, formData.ufr, formData.filiere);
       
-      toast.success('Inscription réussie ! Vous pouvez maintenant vous connecter.');
+      toast.success('Inscription réussie !');
       
       // Rediriger vers la page de connexion après 2 secondes
       setTimeout(() => {
-        navigate('/connexion');
+        navigate('/');
       }, 500);
       
     } catch (error) {
@@ -67,15 +67,15 @@ export default function Register() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center px-6 py-12">
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center px-2 sm:px-6 py-12">
       <div className="max-w-6xl w-full bg-white rounded-2xl shadow-lg overflow-hidden">
         <div className="grid md:grid-cols-2 gap-8 items-center">
           {/* Formulaire */}
-          <div className="p-8 md:p-12 order-2 md:order-1">
+          <div className="sm:p-8 p-5 py-6 md:p-12 order-2 md:order-1">
             <h2 className="text-2xl font-bold pb-6 pt-2 text-gray-800">Créer un compte</h2>
             
             <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid sm:grid-cols-2 grid-cols-1 gap-4">
                 <div>
                   <label htmlFor="firstName" className="block text-md font-medium text-gray-800 mb-2">
                     Prénom :
@@ -115,6 +115,7 @@ export default function Register() {
                   type="email"
                   id="email"
                   name="email"
+                  placeholder='monemail@univ-thies.sn'
                   value={formData.email}
                   onChange={handleChange}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent"

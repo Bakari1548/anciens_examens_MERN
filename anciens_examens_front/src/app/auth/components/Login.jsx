@@ -55,11 +55,11 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center px-6 py-12">
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center sm:px-6 px-2 py-12">
       <div className="max-w-6xl w-full bg-white rounded-2xl shadow-lg overflow-hidden">
         <div className="grid md:grid-cols-2 gap-8 items-center">
           {/* Formulaire */}
-          <div className="p-8 md:p-12">
+          <div className="sm:p-8 p-5 py-6 md:p-12">
             <h2 className="text-2xl font-bold pb-6 pt-2 text-gray-800">Se connecter</h2>
             
             <form onSubmit={handleSubmit} className="space-y-6">

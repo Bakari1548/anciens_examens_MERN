@@ -1,11 +1,30 @@
 import { useState } from 'react';
-import { X, Download, Maximize2 } from 'lucide-react';
+import { X, Download, Maximize2, ChevronLeft, ChevronRight } from 'lucide-react';
 
 export default function ExamViewer({ exam, isUserLoggedIn, onDownload }) {
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [currentFileIndex, setCurrentFileIndex] = useState(0);
 
   const handleFullscreen = () => {
     setIsFullscreen(!isFullscreen);
+  };
+
+  // Obtenir le fichier actuel
+  const currentFile = exam.files && exam.files.length > 0 && currentFileIndex < exam.files.length ? exam.files[currentFileIndex] : null;
+  const fileUrl = currentFile ? currentFile.url : null;
+  const mimeType = currentFile ? currentFile.mimeType : exam.mimeType;
+
+  // Navigation entre fichiers
+  const goToPreviousFile = () => {
+    if (currentFileIndex > 0) {
+      setCurrentFileIndex(currentFileIndex - 1);
+    }
+  };
+
+  const goToNextFile = () => {
+    if (currentFileIndex < exam.files.length - 1) {
+      setCurrentFileIndex(currentFileIndex + 1);
+    }
   };
 
   const handleDownloadClick = () => {
@@ -17,25 +36,36 @@ export default function ExamViewer({ exam, isUserLoggedIn, onDownload }) {
   };
 
   const renderContent = () => {
-    if (exam.mimeType === 'application/pdf') {
+    if (!fileUrl) {
+      return (
+        <div className="w-full h-full flex items-center justify-center text-gray-500">
+          Aucun fichier disponible
+        </div>
+      );
+    }
+
+    if (mimeType === 'application/pdf') {
       return (
         <iframe
-          src={exam.filePath}
+          src={fileUrl}
           className="w-full h-full"
           title={exam.title}
         />
       );
     } else {
       return (
-        <img
-          src={exam.filePath}
-          alt={exam.title}
-          className="w-full h-full"
-          style={{
-            objectFit: 'contain',
-            cursor: isFullscreen ? 'zoom-in' : 'default'
-          }}
-        />
+        <div className="w-full h-full flex items-center justify-center p-4">
+          <img
+            src={fileUrl}
+            alt={exam.title}
+            className="max-w-none"
+            style={{
+              maxWidth: '100%',
+              height: 'auto',
+              cursor: 'zoom-in'
+            }}
+          />
+        </div>
       );
     }
   };
@@ -46,12 +76,36 @@ export default function ExamViewer({ exam, isUserLoggedIn, onDownload }) {
         {/* Barre d'outils */}
         <div className="flex items-center justify-between bg-gray-100 px-4 py-2 border-b">
           <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-gray-700 truncate max-w-xs">
+            <span className="text-sm font-medium text-gray-700 truncate text-wrap max-w-xs">
               {exam.title}
             </span>
           </div>
           <div className="flex items-center gap-2">
-            <button
+            {/* Navigation entre fichiers */}
+            {exam.files && exam.files.length > 1 && (
+              <>
+                <button
+                  onClick={goToPreviousFile}
+                  disabled={currentFileIndex === 0}
+                  className="p-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="Fichier précédent"
+                >
+                  <ChevronLeft size={16} />
+                </button>
+                <span className="text-sm text-gray-600 px-2">
+                  {currentFileIndex + 1} / {exam.files.length}
+                </span>
+                <button
+                  onClick={goToNextFile}
+                  disabled={currentFileIndex === exam.files.length - 1}
+                  className="p-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="Fichier suivant"
+                >
+                  <ChevronRight size={16} />
+                </button>
+              </>
+            )}
+            {/* <button
               onClick={handleDownloadClick}
               className={`p-2 rounded-lg transition-colors ${
                 isUserLoggedIn
@@ -61,7 +115,7 @@ export default function ExamViewer({ exam, isUserLoggedIn, onDownload }) {
               title={isUserLoggedIn ? 'Télécharger' : 'Connectez-vous pour télécharger'}
             >
               <Download size={16} />
-            </button>
+            </button> */}
             <button
               onClick={handleFullscreen}
               className="p-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
@@ -85,12 +139,36 @@ export default function ExamViewer({ exam, isUserLoggedIn, onDownload }) {
             {/* Barre d'outils plein écran */}
             <div className="flex items-center justify-between bg-gray-900 px-4 py-3">
               <div className="flex items-center gap-2">
-                <span className="text-white font-medium truncate max-w-md">
+                <span className="text-white font-medium truncate text-wrap max-w-md">
                   {exam.title}
                 </span>
               </div>
               <div className="flex items-center gap-2">
-                <button
+                {/* Navigation entre fichiers */}
+                {exam.files && exam.files.length > 1 && (
+                  <>
+                    <button
+                      onClick={goToPreviousFile}
+                      disabled={currentFileIndex === 0}
+                      className="p-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      title="Fichier précédent"
+                    >
+                      <ChevronLeft size={20} />
+                    </button>
+                    <span className="text-white text-sm px-2">
+                      {currentFileIndex + 1} / {exam.files.length}
+                    </span>
+                    <button
+                      onClick={goToNextFile}
+                      disabled={currentFileIndex === exam.files.length - 1}
+                      className="p-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      title="Fichier suivant"
+                    >
+                      <ChevronRight size={20} />
+                    </button>
+                  </>
+                )}
+                {/* <button
                   onClick={handleDownloadClick}
                   className={`p-2 rounded-lg transition-colors ${
                     isUserLoggedIn
@@ -100,7 +178,7 @@ export default function ExamViewer({ exam, isUserLoggedIn, onDownload }) {
                   title={isUserLoggedIn ? 'Télécharger' : 'Connectez-vous pour télécharger'}
                 >
                   <Download size={18} />
-                </button>
+                </button> */}
                 <button
                   onClick={handleFullscreen}
                   className="p-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
@@ -113,16 +191,16 @@ export default function ExamViewer({ exam, isUserLoggedIn, onDownload }) {
             
             {/* Contenu plein écran */}
             <div className="flex-1 bg-gray-100 overflow-auto">
-              {exam.mimeType === 'application/pdf' ? (
+              {mimeType === 'application/pdf' ? (
                 <iframe
-                  src={exam.filePath}
+                  src={fileUrl}
                   className="w-full h-full"
                   title={exam.title}
                 />
               ) : (
                 <div className="min-w-full min-h-full flex items-center justify-center p-4">
                   <img
-                    src={exam.filePath}
+                    src={fileUrl}
                     alt={exam.title}
                     className="max-w-none"
                     style={{

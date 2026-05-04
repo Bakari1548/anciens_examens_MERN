@@ -6,6 +6,7 @@ const connectDB = require('./src/config/db');
 const userRoutes = require('./src/routes/user.route');
 const examRoutes = require('./src/routes/exam.route');
 const adminRoutes = require('./src/routes/admin.route');
+const ufrRoutes = require('./src/routes/ufr.route');
 
 require('dotenv').config();
 
@@ -31,6 +32,7 @@ app.get('/', (req, res) => {
 app.use('/api/users', userRoutes);
 app.use('/api/exams', examRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/ufrs', ufrRoutes);
 
 // Ne démarrer le serveur que si ce fichier n'est pas importé par les tests
 if (require.main === module) {

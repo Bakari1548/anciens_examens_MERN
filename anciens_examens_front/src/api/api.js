@@ -5,7 +5,7 @@ const url = import.meta.env.VITE_API_URL || '/api';
 
 const api = axios.create({
   baseURL: url,
-  timeout: 10000,
+  timeout: 30000,
   withCredentials: true, // Important pour envoyer les cookies HTTP-only
   // Pas de Content-Type par défaut pour permettre multipart/form-data
 });

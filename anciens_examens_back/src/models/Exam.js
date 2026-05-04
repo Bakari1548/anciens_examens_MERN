@@ -19,14 +19,43 @@ const examSchema = new mongoose.Schema({
     ufr: {
         type: String,
         required: [true, 'l\'ufr est requise'],
-        trim: true,
-        minlength: [3, 'l\'ufr doit avoir au moins 3 characters long']
+        trim: true
     },
     filiere: {
         type: String,
         required: [true, 'la filiere est requise'],
-        trim: true,
-        minlength: [2, 'la filiere doit avoir au moins 2 characters long']
+        trim: true
+    },
+    niveau: {
+        type: String,
+        required: [true, 'le niveau est requis'],
+        enum: [
+            'L1', 'L2', 'L3', 'L4',
+            'M1', 'M2', 
+            'D1', 'D2', 'D3', 'D4', 'D5', 'D6',
+            'PCEM1', 'PCEM2', 'DCEM1', 'DCEM2', 'DCEM3', 'DCEM4',
+            'LP',
+            'ING1', 'ING2', 'ING3',
+            'DUT1', 'DUT2'
+        ],
+        trim: true
+    },
+    semestre: {
+        type: String,
+        required: [true, 'le semestre est requis'],
+        enum: ['S1', 'S2', 'S3', 'S4', 'S5', 'S6', 'S7', 'S8', 'S9', 'S10', 'S11', 'S12'],
+        trim: true
+    },
+    anneeExamen: {
+        type: String,
+        required: false,
+        trim: true
+    },
+    typeExamen: {
+        type: String,
+        required: [true, 'le type d\'examen est requis'],
+        enum: ['Examen Final', 'Contrôle Continu', 'Session de Rattrapage', 'Devoir', 'TP'],
+        trim: true
     },
     matiere: {
         type: String,
@@ -37,17 +66,6 @@ const examSchema = new mongoose.Schema({
     description : {
         type: String,
         nullable: true
-    },
-    year: {
-        type: Number,
-        nullable: true,
-        validate: {
-            validator: function(v) {
-                if (v === null || v === undefined) return true;
-                return v.toString().length === 4;
-            },
-            message: 'l\'année doit avoir 4 chiffres'
-        }
     },
     status: {
         type: String,
@@ -69,27 +87,33 @@ const examSchema = new mongoose.Schema({
             required: true
         }
     },
-    filePath: {
-        type: String,
-        required: true
-    },
-    originalName: {
-        type: String,
-        required: true
-    },
-    fileSize: {
-        type: Number,
-        required: true
-    },
-    mimeType: {
-        type: String,
-        required: true,
-        enum: ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png', 'image/gif']
-    },
-    cloudinaryPublicId: {
-        type: String,
-        required: false
-    },
+    files: [{
+        url: {
+            type: String,
+            required: true
+        },
+        originalName: {
+            type: String,
+            required: true
+        },
+        size: {
+            type: Number,
+            required: true
+        },
+        mimeType: {
+            type: String,
+            required: true,
+            enum: ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png', 'image/gif']
+        },
+        publicId: {
+            type: String,
+            required: false
+        },
+        order: {
+            type: Number,
+            default: 0
+        }
+    }],
     createdAt: {
         type: Date,
         default: Date.now
@@ -114,16 +138,6 @@ examSchema.pre('save', function() {
     this.updatedAt = Date.now();
 });
 
-examSchema.pre('save', function() {
-    if (this.title && !this.slug) {
-        this.slug = this.title
-            .toLowerCase()
-            .replace(/[^a-z0-9\s-]/g, '') // Supprime les caractères spéciaux
-            .replace(/\s+/g, '-') // Remplace les espaces par des tirets
-            .replace(/-+/g, '-') // Supprime les tirets multiples
-            .trim(); // Supprime les espaces en début/fin
-    }
-});
 
 // Méthode pour ajouter un commentaire
 examSchema.methods.addComment = function(userId, content) {

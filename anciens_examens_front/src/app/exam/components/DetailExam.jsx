@@ -1,7 +1,7 @@
 import { useParams, useNavigate, Link } from 'react-router';
 import { ArrowLeft, FileText, Calendar, User, Heart, MessageSquare, Send, ThumbsUp, Download } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import { getExamBySlug } from '../services/exam.api';
+import { getExamBySlug, getLikeStatus, likeExam, unlikeExam, getComments, addComment, deleteComment } from '../services/exam.api';
 import { toast } from 'sonner';
 import ExamViewer from './ExamViewer';
 import { tokenStorage } from '../../../utils/tokenStorage';
@@ -29,7 +29,25 @@ export default function ExamDetail() {
         const response = await getExamBySlug(slug);
         setExam(response.exam);
         setLikesCount(response.exam.likesCount || 0);
-        setComments(response.exam.comments || []);
+
+        // Récupérer les commentaires avec les infos utilisateur peuplées
+        try {
+          const commentsResponse = await getComments(slug);
+          setComments(commentsResponse.comments || []);
+        } catch (error) {
+          console.error('Erreur lors de la récupération des commentaires:', error);
+          setComments([]);
+        }
+
+        // Si l'utilisateur est connecté, vérifier le statut du like
+        if (isUserLoggedIn) {
+          try {
+            const likeResponse = await getLikeStatus(slug);
+            setIsLiked(likeResponse.isLiked);
+          } catch (error) {
+            console.error('Erreur lors de la vérification du like:', error);
+          }
+        }
       } catch (error) {
         console.error('Erreur lors de la récupération de l\'examen:', error);
         toast.error('Examen non trouvé');
@@ -42,7 +60,7 @@ export default function ExamDetail() {
     if (slug) {
       fetchExam();
     }
-  }, [slug, navigate]);
+  }, [slug, navigate, isUserLoggedIn]);
 
   if (loading) {
     return (
@@ -82,21 +100,70 @@ export default function ExamDetail() {
     }
   };
 
-  const handleLike = () => {
-    setIsLiked(!isLiked);
-    setLikesCount(isLiked ? likesCount - 1 : likesCount + 1);
+  const handleLike = async () => {
+    if (!isUserLoggedIn) {
+      toast.error('Vous devez être connecté pour liker un examen');
+      return;
+    }
+    
+    try {
+      if (isLiked) {
+        await unlikeExam(slug);
+        setIsLiked(false);
+        setLikesCount(prev => prev - 1);
+        toast.success('Like retiré');
+      } else {
+        await likeExam(slug);
+        setIsLiked(true);
+        setLikesCount(prev => prev + 1);
+        toast.success('Examen liké !');
+      }
+    } catch (error) {
+      console.error('Erreur lors du like:', error);
+      toast.error(error.response?.data?.message || 'Erreur lors du like');
+    }
   };
 
-  const handleAddComment = () => {
-    if (newComment.trim()) {
-      const newCommentObj = {
-        user: 'current_user', // En production, utiliser l'ID de l'utilisateur connecté
-        content: newComment,
-        createdAt: new Date(),
-      };
-      setComments([...comments, newCommentObj]);
+  const handleAddComment = async () => {
+    if (!isUserLoggedIn) {
+      toast.error('Vous devez être connecté pour commenter');
+      return;
+    }
+    
+    if (!newComment.trim()) {
+      toast.error('Le commentaire ne peut pas être vide');
+      return;
+    }
+    
+    if (newComment.length > 500) {
+      toast.error('Le commentaire ne peut pas dépasser 500 caractères');
+      return;
+    }
+    
+    try {
+      const response = await addComment(slug, newComment);
+      setComments([...comments, response.comment]);
       setNewComment('');
       toast.success('Commentaire ajouté');
+    } catch (error) {
+      console.error('Erreur lors de l\'ajout du commentaire:', error);
+      toast.error(error.response?.data?.message || 'Erreur lors de l\'ajout du commentaire');
+    }
+  };
+  
+  const handleDeleteComment = async (commentId) => {
+    if (!isUserLoggedIn) {
+      toast.error('Vous devez être connecté pour supprimer un commentaire');
+      return;
+    }
+    
+    try {
+      await deleteComment(slug, commentId);
+      setComments(comments.filter(comment => comment._id !== commentId));
+      toast.success('Commentaire supprimé');
+    } catch (error) {
+      console.error('Erreur lors de la suppression du commentaire:', error);
+      toast.error(error.response?.data?.message || 'Erreur lors de la suppression');
     }
   };
 
@@ -258,23 +325,44 @@ export default function ExamDetail() {
 
                 {/* Liste des commentaires */}
                 <div className="space-y-4">
-                  {comments.map((comment) => (
-                    <div key={comment.id} className="bg-gray-50 p-4 rounded-lg">
-                      <div className="flex items-start gap-3">
-                        <div className="bg-blue-200 text-blue-700 font-bold w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0">
-                          {comment.avatar}
-                        </div>
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <p className="font-medium">{comment.author}</p>
-                            <span className="text-gray-400">•</span>
-                            <p className="text-sm text-gray-500">{comment.date}</p>
+                  {comments.length === 0 ? (
+                    <p className="text-gray-500 text-center py-4">Aucun commentaire. Soyez le premier à commenter !</p>
+                  ) : (
+                    comments.map((comment) => (
+                      <div key={comment._id} className="bg-gray-50 p-4 rounded-lg">
+                        <div className="flex items-start gap-3">
+                          <div className="bg-blue-200 text-blue-700 font-bold w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 text-sm">
+                            {comment.user?.firstName?.charAt(0)}{comment.user?.lastName?.charAt(0)}
                           </div>
-                          <p className="text-gray-700">{comment.content}</p>
+                          <div className="flex-1">
+                            <div className="flex items-center justify-between mb-1">
+                              <div className="flex items-center gap-2">
+                                <p className="font-medium">{comment.user?.firstName} {comment.user?.lastName}</p>
+                                <span className="text-gray-400">•</span>
+                                <p className="text-sm text-gray-500">
+                                  {new Date(comment.createdAt).toLocaleDateString('fr-FR', {
+                                    day: 'numeric',
+                                    month: 'short',
+                                    year: 'numeric'
+                                  })}
+                                </p>
+                              </div>
+                              {/* Bouton supprimer pour l'auteur du commentaire ou de l'examen */}
+                              {isUserLoggedIn && (comment.user?._id === tokenStorage.getUser()?._id || exam.author?._id === tokenStorage.getUser()?._id) && (
+                                <button
+                                  onClick={() => handleDeleteComment(comment._id)}
+                                  className="text-red-500 hover:text-red-700 text-sm"
+                                >
+                                  Supprimer
+                                </button>
+                              )}
+                            </div>
+                            <p className="text-gray-700">{comment.content}</p>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    ))
+                  )}
                 </div>
               </div>
             </div>

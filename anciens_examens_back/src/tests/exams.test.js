@@ -516,4 +516,543 @@ describe('Exam Controller Tests', () => {
         .expect(401);
     });
   });
+
+  describe('POST /api/exams/:slug/like - likeExam', () => {
+    beforeEach(async () => {
+      testExam = await Exam.create({
+        title: 'Examen Like Test',
+        slug: 'examen-like-test',
+        ufr: 'UFR Sciences et Technologies',
+        filiere: 'Informatique',
+        niveau: 'L1',
+        semestre: 'S1',
+        typeExamen: 'Examen Final',
+        matiere: 'Test',
+        author: {
+          _id: testUser._id,
+          firstName: testUser.firstName,
+          lastName: testUser.lastName
+        },
+        files: [{
+          url: 'http://cloudinary.com/test.pdf',
+          publicId: 'exams/test',
+          size: 1024,
+          mimeType: 'application/pdf',
+          originalName: 'test.pdf'
+        }],
+        status: 'approved',
+        likes: [],
+        likesCount: 0
+      });
+    });
+
+    it('devrait liker un examen', async () => {
+      const response = await request(app)
+        .post(`/api/exams/${testExam.slug}/like`)
+        .set('Authorization', `Bearer ${userToken}`)
+        .expect(200);
+
+      expect(response.body.message).toBe('Examen liké avec succès');
+      expect(response.body.isLiked).toBe(true);
+      expect(response.body.likesCount).toBe(1);
+
+      // Vérifier dans la base de données
+      const updatedExam = await Exam.findOne({ slug: testExam.slug });
+      expect(updatedExam.likesCount).toBe(1);
+      expect(updatedExam.likes.some(like => like.user.toString() === testUser._id.toString())).toBe(true);
+    });
+
+    it('devrait retourner 400 si déjà liké', async () => {
+      // Liker une première fois
+      await request(app)
+        .post(`/api/exams/${testExam.slug}/like`)
+        .set('Authorization', `Bearer ${userToken}`)
+        .expect(200);
+
+      // Essayer de liker une deuxième fois
+      const response = await request(app)
+        .post(`/api/exams/${testExam.slug}/like`)
+        .set('Authorization', `Bearer ${userToken}`)
+        .expect(400);
+
+      expect(response.body.message).toBe('Vous avez déjà liké cet examen');
+    });
+
+    it('devrait retourner 401 sans authentification', async () => {
+      const response = await request(app)
+        .post(`/api/exams/${testExam.slug}/like`)
+        .expect(401);
+    });
+
+    it('devrait retourner 404 si l\'examen n\'existe pas', async () => {
+      const response = await request(app)
+        .post('/api/exams/slug-inexistant/like')
+        .set('Authorization', `Bearer ${userToken}`)
+        .expect(404);
+
+      expect(response.body.message).toBe('Examen non trouvé');
+    });
+  });
+
+  describe('DELETE /api/exams/:slug/like - unlikeExam', () => {
+    beforeEach(async () => {
+      testExam = await Exam.create({
+        title: 'Examen Unlike Test',
+        slug: 'examen-unlike-test',
+        ufr: 'UFR Sciences et Technologies',
+        filiere: 'Informatique',
+        niveau: 'L1',
+        semestre: 'S1',
+        typeExamen: 'Examen Final',
+        matiere: 'Test',
+        author: {
+          _id: testUser._id,
+          firstName: testUser.firstName,
+          lastName: testUser.lastName
+        },
+        files: [{
+          url: 'http://cloudinary.com/test.pdf',
+          publicId: 'exams/test',
+          size: 1024,
+          mimeType: 'application/pdf',
+          originalName: 'test.pdf'
+        }],
+        status: 'approved',
+        likes: [{ user: testUser._id }],
+        likesCount: 1
+      });
+    });
+
+    it('devrait retirer un like', async () => {
+      const response = await request(app)
+        .delete(`/api/exams/${testExam.slug}/like`)
+        .set('Authorization', `Bearer ${userToken}`)
+        .expect(200);
+
+      expect(response.body.message).toBe('Like retiré avec succès');
+      expect(response.body.isLiked).toBe(false);
+      expect(response.body.likesCount).toBe(0);
+
+      // Vérifier dans la base de données
+      const updatedExam = await Exam.findOne({ slug: testExam.slug });
+      expect(updatedExam.likesCount).toBe(0);
+      expect(updatedExam.likes.some(like => like.user.toString() === testUser._id.toString())).toBe(false);
+    });
+
+    it('devrait retourner 401 sans authentification', async () => {
+      const response = await request(app)
+        .delete(`/api/exams/${testExam.slug}/like`)
+        .expect(401);
+    });
+
+    it('devrait retourner 404 si l\'examen n\'existe pas', async () => {
+      const response = await request(app)
+        .delete('/api/exams/slug-inexistant/like')
+        .set('Authorization', `Bearer ${userToken}`)
+        .expect(404);
+
+      expect(response.body.message).toBe('Examen non trouvé');
+    });
+  });
+
+  describe('GET /api/exams/:slug/like/status - getLikeStatus', () => {
+    beforeEach(async () => {
+      testExam = await Exam.create({
+        title: 'Examen Like Status Test',
+        slug: 'examen-like-status-test',
+        ufr: 'UFR Sciences et Technologies',
+        filiere: 'Informatique',
+        niveau: 'L1',
+        semestre: 'S1',
+        typeExamen: 'Examen Final',
+        matiere: 'Test',
+        author: {
+          _id: testUser._id,
+          firstName: testUser.firstName,
+          lastName: testUser.lastName
+        },
+        files: [{
+          url: 'http://cloudinary.com/test.pdf',
+          publicId: 'exams/test',
+          size: 1024,
+          mimeType: 'application/pdf',
+          originalName: 'test.pdf'
+        }],
+        status: 'approved',
+        likes: [{ user: testUser._id }],
+        likesCount: 1
+      });
+    });
+
+    it('devrait retourner le statut du like (true)', async () => {
+      const response = await request(app)
+        .get(`/api/exams/${testExam.slug}/like/status`)
+        .set('Authorization', `Bearer ${userToken}`)
+        .expect(200);
+
+      expect(response.body.isLiked).toBe(true);
+      expect(response.body.likesCount).toBe(1);
+    });
+
+    it('devrait retourner le statut du like (false)', async () => {
+      // Créer un examen sans like de l'utilisateur
+      const examWithoutLike = await Exam.create({
+        title: 'Examen No Like Test',
+        slug: 'examen-no-like-test',
+        ufr: 'UFR Sciences et Technologies',
+        filiere: 'Informatique',
+        niveau: 'L1',
+        semestre: 'S1',
+        typeExamen: 'Examen Final',
+        matiere: 'Test',
+        author: {
+          _id: testAdmin._id,
+          firstName: testAdmin.firstName,
+          lastName: testAdmin.lastName
+        },
+        files: [{
+          url: 'http://cloudinary.com/test.pdf',
+          publicId: 'exams/test2',
+          size: 1024,
+          mimeType: 'application/pdf',
+          originalName: 'test2.pdf'
+        }],
+        status: 'approved',
+        likes: [],
+        likesCount: 0
+      });
+
+      const response = await request(app)
+        .get(`/api/exams/${examWithoutLike.slug}/like/status`)
+        .set('Authorization', `Bearer ${userToken}`)
+        .expect(200);
+
+      expect(response.body.isLiked).toBe(false);
+      expect(response.body.likesCount).toBe(0);
+    });
+
+    it('devrait retourner 401 sans authentification', async () => {
+      const response = await request(app)
+        .get(`/api/exams/${testExam.slug}/like/status`)
+        .expect(401);
+    });
+
+    it('devrait retourner 404 si l\'examen n\'existe pas', async () => {
+      const response = await request(app)
+        .get('/api/exams/slug-inexistant/like/status')
+        .set('Authorization', `Bearer ${userToken}`)
+        .expect(404);
+
+      expect(response.body.message).toBe('Examen non trouvé');
+    });
+  });
+
+  describe('POST /api/exams/:slug/comments - addComment', () => {
+    beforeEach(async () => {
+      testExam = await Exam.create({
+        title: 'Examen Comment Test',
+        slug: 'examen-comment-test',
+        ufr: 'UFR Sciences et Technologies',
+        filiere: 'Informatique',
+        niveau: 'L1',
+        semestre: 'S1',
+        typeExamen: 'Examen Final',
+        matiere: 'Test',
+        author: {
+          _id: testUser._id,
+          firstName: testUser.firstName,
+          lastName: testUser.lastName
+        },
+        files: [{
+          url: 'http://cloudinary.com/test.pdf',
+          publicId: 'exams/test',
+          size: 1024,
+          mimeType: 'application/pdf',
+          originalName: 'test.pdf'
+        }],
+        status: 'approved',
+        comments: [],
+        commentsCount: 0
+      });
+    });
+
+    it('devrait ajouter un commentaire', async () => {
+      const commentContent = 'Ceci est un commentaire de test';
+      
+      const response = await request(app)
+        .post(`/api/exams/${testExam.slug}/comments`)
+        .set('Authorization', `Bearer ${userToken}`)
+        .send({ content: commentContent })
+        .expect(201);
+
+      expect(response.body.message).toBe('Commentaire ajouté avec succès');
+      expect(response.body.comment).toBeDefined();
+      expect(response.body.comment.content).toBe(commentContent);
+      expect(response.body.commentsCount).toBe(1);
+
+      // Vérifier dans la base de données
+      const updatedExam = await Exam.findOne({ slug: testExam.slug });
+      expect(updatedExam.commentsCount).toBe(1);
+      expect(updatedExam.comments[0].content).toBe(commentContent);
+    });
+
+    it('devrait retourner 400 si le commentaire est vide', async () => {
+      const response = await request(app)
+        .post(`/api/exams/${testExam.slug}/comments`)
+        .set('Authorization', `Bearer ${userToken}`)
+        .send({ content: '' })
+        .expect(400);
+
+      expect(response.body.message).toBe('Le contenu du commentaire est requis');
+    });
+
+    it('devrait retourner 400 si le commentaire dépasse 500 caractères', async () => {
+      const longComment = 'a'.repeat(501);
+      
+      const response = await request(app)
+        .post(`/api/exams/${testExam.slug}/comments`)
+        .set('Authorization', `Bearer ${userToken}`)
+        .send({ content: longComment })
+        .expect(400);
+
+      expect(response.body.message).toBe('Le commentaire ne peut pas dépasser 500 caractères');
+    });
+
+    it('devrait retourner 401 sans authentification', async () => {
+      const response = await request(app)
+        .post(`/api/exams/${testExam.slug}/comments`)
+        .send({ content: 'Test commentaire' })
+        .expect(401);
+    });
+
+    it('devrait retourner 404 si l\'examen n\'existe pas', async () => {
+      const response = await request(app)
+        .post('/api/exams/slug-inexistant/comments')
+        .set('Authorization', `Bearer ${userToken}`)
+        .send({ content: 'Test' })
+        .expect(404);
+
+      expect(response.body.message).toBe('Examen non trouvé');
+    });
+  });
+
+  describe('GET /api/exams/:slug/comments - getComments', () => {
+    beforeEach(async () => {
+      testExam = await Exam.create({
+        title: 'Examen Get Comments Test',
+        slug: 'examen-get-comments-test',
+        ufr: 'UFR Sciences et Technologies',
+        filiere: 'Informatique',
+        niveau: 'L1',
+        semestre: 'S1',
+        typeExamen: 'Examen Final',
+        matiere: 'Test',
+        author: {
+          _id: testUser._id,
+          firstName: testUser.firstName,
+          lastName: testUser.lastName
+        },
+        files: [{
+          url: 'http://cloudinary.com/test.pdf',
+          publicId: 'exams/test',
+          size: 1024,
+          mimeType: 'application/pdf',
+          originalName: 'test.pdf'
+        }],
+        status: 'approved',
+        comments: [
+          { user: testUser._id, content: 'Premier commentaire', createdAt: new Date() },
+          { user: testAdmin._id, content: 'Deuxième commentaire', createdAt: new Date() }
+        ],
+        commentsCount: 2
+      });
+    });
+
+    it('devrait récupérer les commentaires d\'un examen (public)', async () => {
+      const response = await request(app)
+        .get(`/api/exams/${testExam.slug}/comments`)
+        .expect(200);
+
+      expect(response.body.message).toBe('Commentaires récupérés avec succès');
+      expect(response.body.comments).toBeDefined();
+      expect(response.body.comments.length).toBe(2);
+      expect(response.body.commentsCount).toBe(2);
+    });
+
+    it('devrait retourner un tableau vide si pas de commentaires', async () => {
+      const examWithoutComments = await Exam.create({
+        title: 'Examen No Comments',
+        slug: 'examen-no-comments',
+        ufr: 'UFR Sciences et Technologies',
+        filiere: 'Informatique',
+        niveau: 'L1',
+        semestre: 'S1',
+        typeExamen: 'Examen Final',
+        matiere: 'Test',
+        author: {
+          _id: testUser._id,
+          firstName: testUser.firstName,
+          lastName: testUser.lastName
+        },
+        files: [{
+          url: 'http://cloudinary.com/test.pdf',
+          publicId: 'exams/test3',
+          size: 1024,
+          mimeType: 'application/pdf',
+          originalName: 'test3.pdf'
+        }],
+        status: 'approved',
+        comments: [],
+        commentsCount: 0
+      });
+
+      const response = await request(app)
+        .get(`/api/exams/${examWithoutComments.slug}/comments`)
+        .expect(200);
+
+      expect(response.body.comments).toHaveLength(0);
+      expect(response.body.commentsCount).toBe(0);
+    });
+
+    it('devrait retourner 404 si l\'examen n\'existe pas', async () => {
+      const response = await request(app)
+        .get('/api/exams/slug-inexistant/comments')
+        .expect(404);
+
+      expect(response.body.message).toBe('Examen non trouvé');
+    });
+  });
+
+  describe('DELETE /api/exams/:slug/comments/:commentId - deleteComment', () => {
+    beforeEach(async () => {
+      testExam = await Exam.create({
+        title: 'Examen Delete Comment Test',
+        slug: 'examen-delete-comment-test',
+        ufr: 'UFR Sciences et Technologies',
+        filiere: 'Informatique',
+        niveau: 'L1',
+        semestre: 'S1',
+        typeExamen: 'Examen Final',
+        matiere: 'Test',
+        author: {
+          _id: testUser._id,
+          firstName: testUser.firstName,
+          lastName: testUser.lastName
+        },
+        files: [{
+          url: 'http://cloudinary.com/test.pdf',
+          publicId: 'exams/test',
+          size: 1024,
+          mimeType: 'application/pdf',
+          originalName: 'test.pdf'
+        }],
+        status: 'approved',
+        comments: [
+          { user: testUser._id, content: 'Commentaire à supprimer', createdAt: new Date() }
+        ],
+        commentsCount: 1
+      });
+    });
+
+    it('devrait supprimer son propre commentaire', async () => {
+      const commentId = testExam.comments[0]._id;
+      
+      const response = await request(app)
+        .delete(`/api/exams/${testExam.slug}/comments/${commentId}`)
+        .set('Authorization', `Bearer ${userToken}`)
+        .expect(200);
+
+      expect(response.body.message).toBe('Commentaire supprimé avec succès');
+      expect(response.body.commentsCount).toBe(0);
+
+      // Vérifier dans la base de données
+      const updatedExam = await Exam.findOne({ slug: testExam.slug });
+      expect(updatedExam.commentsCount).toBe(0);
+      expect(updatedExam.comments).toHaveLength(0);
+    });
+
+    it('devrait permettre à l\'auteur de l\'examen de supprimer un commentaire', async () => {
+      // Créer un commentaire par admin
+      const examWithAdminComment = await Exam.create({
+        title: 'Examen Admin Comment Test',
+        slug: 'examen-admin-comment-test',
+        ufr: 'UFR Sciences et Technologies',
+        filiere: 'Informatique',
+        niveau: 'L1',
+        semestre: 'S1',
+        typeExamen: 'Examen Final',
+        matiere: 'Test',
+        author: {
+          _id: testUser._id,
+          firstName: testUser.firstName,
+          lastName: testUser.lastName
+        },
+        files: [{
+          url: 'http://cloudinary.com/test.pdf',
+          publicId: 'exams/test',
+          size: 1024,
+          mimeType: 'application/pdf',
+          originalName: 'test.pdf'
+        }],
+        status: 'approved',
+        comments: [
+          { user: testAdmin._id, content: 'Commentaire de l\'admin', createdAt: new Date() }
+        ],
+        commentsCount: 1
+      });
+
+      const commentId = examWithAdminComment.comments[0]._id;
+      
+      // L'auteur de l'examen (testUser) supprime le commentaire de l'admin
+      const response = await request(app)
+        .delete(`/api/exams/${examWithAdminComment.slug}/comments/${commentId}`)
+        .set('Authorization', `Bearer ${userToken}`)
+        .expect(200);
+
+      expect(response.body.message).toBe('Commentaire supprimé avec succès');
+    });
+
+    it('devrait retourner 403 si l\'utilisateur n\'a pas la permission', async () => {
+      // Créer un examen par testUser
+      const commentId = testExam.comments[0]._id;
+      
+      // L'admin tente de supprimer le commentaire (n'est ni l'auteur du commentaire ni de l'examen)
+      const response = await request(app)
+        .delete(`/api/exams/${testExam.slug}/comments/${commentId}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(403);
+
+      expect(response.body.message).toBe('Vous n\'avez pas la permission de supprimer ce commentaire');
+    });
+
+    it('devrait retourner 401 sans authentification', async () => {
+      const commentId = testExam.comments[0]._id;
+      
+      const response = await request(app)
+        .delete(`/api/exams/${testExam.slug}/comments/${commentId}`)
+        .expect(401);
+    });
+
+    it('devrait retourner 404 si le commentaire n\'existe pas', async () => {
+      const fakeCommentId = new mongoose.Types.ObjectId();
+      
+      const response = await request(app)
+        .delete(`/api/exams/${testExam.slug}/comments/${fakeCommentId}`)
+        .set('Authorization', `Bearer ${userToken}`)
+        .expect(404);
+
+      expect(response.body.message).toBe('Commentaire non trouvé');
+    });
+
+    it('devrait retourner 404 si l\'examen n\'existe pas', async () => {
+      const commentId = testExam.comments[0]._id;
+      
+      const response = await request(app)
+        .delete(`/api/exams/slug-inexistant/comments/${commentId}`)
+        .set('Authorization', `Bearer ${userToken}`)
+        .expect(404);
+
+      expect(response.body.message).toBe('Examen non trouvé');
+    });
+  });
 });

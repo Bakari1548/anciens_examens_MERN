@@ -65,17 +65,24 @@ http://localhost:8000/api
 | PUT | `/exams/:id` | Mettre à jour un examen | Oui |
 | DELETE | `/exams/:id` | Supprimer un examen (avec fichiers Cloudinary) | Oui |
 
-### Routes de commentaires
+### Routes de commentaires (nouveau)
 | Méthode | Endpoint | Description | Auth requise |
 |---------|----------|-------------|--------------|
-| POST | `/exams/:id/comment` | Ajouter un commentaire | Oui |
-| DELETE | `/exams/:id/comment/:commentId` | Supprimer un commentaire | Oui |
+| GET | `/exams/:slug/comments` | Récupérer tous les commentaires | Non |
+| POST | `/exams/:slug/comments` | Ajouter un commentaire | Oui |
+| DELETE | `/exams/:slug/comments/:commentId` | Supprimer un commentaire | Oui |
 
-### Routes de likes
+### Routes de likes (nouveau)
 | Méthode | Endpoint | Description | Auth requise |
 |---------|----------|-------------|--------------|
-| POST | `/exams/:id/like` | Liker un examen | Oui |
-| DELETE | `/exams/:id/like` | Unliker un examen | Oui |
+| GET | `/exams/:slug/like/status` | Vérifier le statut du like | Oui |
+| POST | `/exams/:slug/like` | Liker un examen | Oui |
+| DELETE | `/exams/:slug/like` | Retirer un like | Oui |
+
+**Notes importantes:**
+- Les likes et commentaires utilisent le `slug` de l'examen, pas l'ID
+- Les commentaires sont publics en lecture, mais requièrent une authentification pour créer/supprimer
+- Seul l'auteur d'un commentaire ou l'auteur de l'examen peut supprimer un commentaire
 
 ## Paramètres de Requête
 
@@ -273,11 +280,49 @@ curl -X POST http://localhost:8000/api/exams \
   -F "file=@correction.jpg"
 ```
 
+### Liker un examen
+```bash
+curl -X POST http://localhost:8000/api/exams/examen-math-abc12/like \
+  -H "Authorization: Bearer <token>"
+```
+
+### Retirer un like
+```bash
+curl -X DELETE http://localhost:8000/api/exams/examen-math-abc12/like \
+  -H "Authorization: Bearer <token>"
+```
+
+### Vérifier le statut du like
+```bash
+curl http://localhost:8000/api/exams/examen-math-abc12/like/status \
+  -H "Authorization: Bearer <token>"
+```
+
+### Ajouter un commentaire
+```bash
+curl -X POST http://localhost:8000/api/exams/examen-math-abc12/comments \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{"content": "Super examen, merci pour le partage !"}'
+```
+
+### Récupérer les commentaires (public)
+```bash
+curl http://localhost:8000/api/exams/examen-math-abc12/comments
+```
+
+### Supprimer un commentaire
+```bash
+curl -X DELETE http://localhost:8000/api/exams/examen-math-abc12/comments/commentId123 \
+  -H "Authorization: Bearer <token>"
+```
+
 ## Notes importantes
 
 1. **Tokens JWT**: Valides 24h
 2. **Slug**: Généré automatiquement à partir du titre
 3. **Permissions**: Seul l'auteur peut modifier/supprimer ses examens
 4. **Comments**: L'auteur du commentaire ou de l'examen peut supprimer
-5. **Likes**: Un utilisateur peut liker/unliker un examen une seule fois
+5. **Likes**: Un utilisateur peut liker/unliker un examen une seule fois (idempotent)
 6. **Files**: Format PDF uniquement pour les examens
+7. **Social features**: Likes et commentaires intégrés avec compteurs automatiques

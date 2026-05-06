@@ -1,6 +1,47 @@
 # Changelog - Anciens Examens API
 
-## Version 2.0.0 - Dernière mise à jour
+## Version 2.1.0 - Likes et Commentaires (Dernière mise à jour)
+
+### 🆕 Nouvelles fonctionnalités
+
+#### 👍❤️ Système de Likes
+- **Routes API**: `GET/POST/DELETE /api/exams/:slug/like`
+- **Statut du like**: `GET /api/exams/:slug/like/status`
+- **Compteur automatique**: likesCount mis à jour automatiquement
+- **Idempotent**: Un seul like par utilisateur par examen
+- **Frontend**: Bouton Like avec animation et mise à jour temps réel
+
+#### 💬 Système de Commentaires
+- **Routes API**: `GET /api/exams/:slug/comments` (public)
+- **Création**: `POST /api/exams/:slug/comments` (auth requis)
+- **Suppression**: `DELETE /api/exams/:slug/comments/:commentId`
+- **Permissions**: Auteur du commentaire OU auteur de l'examen peut supprimer
+- **Validation**: 500 caractères maximum, contenu requis
+- **Compteur automatique**: commentsCount mis à jour automatiquement
+- **Frontend**: Section commentaires avec formulaire et liste
+
+#### 🧪 Tests Unitaires
+- **27 nouveaux tests** pour likes et commentaires
+- **Couverture complète**: Cas positifs, erreurs, authentification, permissions
+- **Tests passants**: 45 tests au total ✅
+
+### 🔧 Implémentation Technique
+
+#### Backend
+- **Contrôleurs**: `likeExam`, `unlikeExam`, `getLikeStatus`, `addComment`, `deleteComment`, `getComments`
+- **Modèle Exam**: Méthodes `addLike`, `removeLike`, `addComment`, `removeComment`, `isLikedBy`
+- **Routes**: Intégration dans `/src/routes/exam.route.js`
+- **Sécurité**: Auth middleware sur toutes les routes protégées
+
+#### Frontend
+- **Services API**: `exam.api.js` avec 6 nouvelles fonctions
+- **Composant DetailExam**: Intégration complète des fonctionnalités
+- **UX**: Messages de confirmation, validation, gestion des erreurs
+- **Responsive**: Adapté mobile et desktop
+
+---
+
+## Version 2.0.0 - Optimisations et Multi-fichiers
 
 ### 🆕 Nouvelles fonctionnalités
 
@@ -44,9 +85,9 @@
 - **Formulaire responsive**: Adapté mobile/desktop
 - **Gestion d'erreurs**: Messages clairs et actions suggérées
 
-### 📊 Statistiques
-- **62 tests unitaires**: Tous passants ✅
-- **Couverture complète**: Examens, utilisateurs, authentification
+#### 📊 Statistiques
+- **45 tests unitaires**: Tous passants ✅
+- **Couverture complète**: Examens, utilisateurs, authentification, likes, commentaires
 - **Performance**: Optimisations mobiles et timeout
 
 ### 🐛 Bugs corrigés

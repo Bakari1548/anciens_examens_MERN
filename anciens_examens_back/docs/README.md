@@ -63,6 +63,7 @@ Réponse paginée:
   - `JWT_SECRET`: Clé secrète pour les tokens JWT
   - `MONGODB_URI`: URI de connexion MongoDB
   - `PORT`: Port du serveur (défaut: 8000)
+  - `FRONTEND_URL`: URL du frontend pour CORS (ex: https://votre-frontend.com)
   - `CLOUDINARY_CLOUD_NAME`: Nom Cloudinary
   - `CLOUDINARY_API_KEY`: Clé API Cloudinary
   - `CLOUDINARY_API_SECRET`: Secret API Cloudinary
@@ -137,6 +138,24 @@ Authorization: Bearer <token_jwt>
 - Les admins peuvent gérer tous les contenus
 - Validation stricte des entrées utilisateur
 
+## Fonctionnalités Sociales (Nouveau v2.1.0)
+
+### 👍 Système de Likes
+- **Routes**: `GET/POST/DELETE /api/exams/:slug/like`
+- **Statut du like**: Vérification en temps réel
+- **Compteurs automatiques**: likesCount mis à jour automatiquement
+- **Frontend**: Bouton avec animation et état persistant
+
+### 💬 Système de Commentaires
+- **Routes**:
+  - `GET /api/exams/:slug/comments` - Public (lecture)
+  - `POST /api/exams/:slug/comments` - Authentifié (création)
+  - `DELETE /api/exams/:slug/comments/:commentId` - Authentifié (suppression)
+- **Permissions**: Auteur du commentaire OU auteur de l'examen
+- **Validation**: 500 caractères maximum
+- **Compteurs automatiques**: commentsCount mis à jour
+- **Frontend**: Formulaire, liste avec noms d'utilisateurs, bouton suppression
+
 ## Notes importantes
 
 1. **Tokens JWT**: Valides 24h
@@ -144,11 +163,12 @@ Authorization: Bearer <token_jwt>
 3. **Permissions**: Rôles hiérarchiques (user < moderator < admin)
 4. **Files**: Stockage sur Cloudinary avec nettoyage automatique
 5. **Comments**: L'auteur du commentaire ou de l'examen peut supprimer
-6. **Likes**: Un utilisateur peut liker/unliker un examen une seule fois
+6. **Likes**: Un utilisateur peut liker/unliker un examen une seule fois (idempotent)
 7. **Account Appeals**: Système de demande de réactivation pour comptes bannis
 8. **Academic Data**: Gestion dynamique des UFR, filières, niveaux, semestres
 9. **Multi-fichiers**: Support jusqu'à 5 fichiers par examen
 10. **Profile Update**: Mise à jour du profil utilisateur avec validation
+11. **Social Features**: Likes et commentaires intégrés avec mise à jour temps réel
 
 ## Monitoring et Logs
 

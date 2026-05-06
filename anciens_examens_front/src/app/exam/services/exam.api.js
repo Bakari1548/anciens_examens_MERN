@@ -1,5 +1,7 @@
 import api from '@/api/api';
 
+// ================ EXAMS ================
+
 // Récupérer tous les examens avec filtres et pagination
 export const getAllExams = async (params = {}) => {
     try {
@@ -76,6 +78,8 @@ export const deleteExam = async (slug) => {
     }
 };
 
+// =================== UFRs, Filieres, Niveaux ===================
+
 // Récupérer toutes les UFR
 export const getAllUfrs = async () => {
     try {
@@ -100,6 +104,70 @@ export const getFilieresByUfr = async (ufr) => {
 export const getNiveauxByFiliere = async (ufr, filiere) => {
     try {
         const response = await api.get(`/ufrs/${encodeURIComponent(ufr)}/filieres/${encodeURIComponent(filiere)}/niveaux`);
+        return response.data;
+    } catch (error) {
+        throw error;
+    }
+};
+
+// =================== LIKES ===================
+
+// Vérifier si l'utilisateur a liké un examen
+export const getLikeStatus = async (slug) => {
+    try {
+        const response = await api.get(`/exams/${slug}/like/status`);
+        return response.data;
+    } catch (error) {
+        throw error;
+    }
+};
+
+// Liker un examen
+export const likeExam = async (slug) => {
+    try {
+        const response = await api.post(`/exams/${slug}/like`);
+        return response.data;
+    } catch (error) {
+        throw error;
+    }
+};
+
+// Unliker un examen
+export const unlikeExam = async (slug) => {
+    try {
+        const response = await api.delete(`/exams/${slug}/like`);
+        return response.data;
+    } catch (error) {
+        throw error;
+    }
+};
+
+// =================== COMMENTAIRES ===================
+
+// Récupérer les commentaires d'un examen
+export const getComments = async (slug) => {
+    try {
+        const response = await api.get(`/exams/${slug}/comments`);
+        return response.data;
+    } catch (error) {
+        throw error;
+    }
+};
+
+// Ajouter un commentaire
+export const addComment = async (slug, content) => {
+    try {
+        const response = await api.post(`/exams/${slug}/comments`, { content });
+        return response.data;
+    } catch (error) {
+        throw error;
+    }
+};
+
+// Supprimer un commentaire
+export const deleteComment = async (slug, commentId) => {
+    try {
+        const response = await api.delete(`/exams/${slug}/comments/${commentId}`);
         return response.data;
     } catch (error) {
         throw error;

@@ -198,11 +198,36 @@ Authorization: Bearer <token>
 }
 ```
 
-## Routes de commentaires (authentification requise)
+## Routes de commentaires
 
-### Ajouter un commentaire
+### Récupérer les commentaires (public)
 ```http
-POST /api/exams/:id/comment
+GET /api/exams/:slug/comments
+```
+
+**Réponse (200):**
+```json
+{
+  "message": "Commentaires récupérés avec succès",
+  "comments": [
+    {
+      "_id": "64f1a2b3c4d5e6f7g8h9i0j8",
+      "user": {
+        "_id": "64f1a2b3c4d5e6f7g8h9i0j1",
+        "firstName": "Jean",
+        "lastName": "Dupont"
+      },
+      "content": "Excellent examen, très utile !",
+      "createdAt": "2023-09-03T11:00:00.000Z"
+    }
+  ],
+  "commentsCount": 1
+}
+```
+
+### Ajouter un commentaire (authentification requise)
+```http
+POST /api/exams/:slug/comments
 Authorization: Bearer <token>
 ```
 
@@ -217,39 +242,55 @@ Authorization: Bearer <token>
 ```json
 {
   "message": "Commentaire ajouté avec succès",
-  "exam": {
-    "_id": "64f1a2b3c4d5e6f7g8h9i0j1",
-    "commentsCount": 9,
-    "comments": [
-      {
-        "_id": "64f1a2b3c4d5e6f7g8h9i0j8",
-        "user": "64f1a2b3c4d5e6f7g8h9i0j1",
-        "content": "Excellent examen, très utile !",
-        "createdAt": "2023-09-03T11:00:00.000Z"
-      }
-    ]
-  }
+  "comment": {
+    "_id": "64f1a2b3c4d5e6f7g8h9i0j8",
+    "user": {
+      "_id": "64f1a2b3c4d5e6f7g8h9i0j1",
+      "firstName": "Jean",
+      "lastName": "Dupont"
+    },
+    "content": "Excellent examen, très utile !",
+    "createdAt": "2023-09-03T11:00:00.000Z"
+  },
+  "commentsCount": 2
 }
 ```
 
-### Supprimer un commentaire
+### Supprimer un commentaire (authentification requise)
 ```http
-DELETE /api/exams/:id/comment/:commentId
+DELETE /api/exams/:slug/comments/:commentId
+Authorization: Bearer <token>
+```
+
+**Permissions:** L'auteur du commentaire OU l'auteur de l'examen
+
+**Réponse (200):**
+```json
+{
+  "message": "Commentaire supprimé avec succès",
+  "commentsCount": 1
+}
+```
+
+## Routes de likes (authentification requise)
+
+### Vérifier le statut du like
+```http
+GET /api/exams/:slug/like/status
 Authorization: Bearer <token>
 ```
 
 **Réponse (200):**
 ```json
 {
-  "message": "Commentaire supprimé avec succès"
+  "isLiked": true,
+  "likesCount": 16
 }
 ```
 
-## Routes de likes (authentification requise)
-
 ### Liker un examen
 ```http
-POST /api/exams/:id/like
+POST /api/exams/:slug/like
 Authorization: Bearer <token>
 ```
 
@@ -257,17 +298,21 @@ Authorization: Bearer <token>
 ```json
 {
   "message": "Examen liké avec succès",
-  "exam": {
-    "_id": "64f1a2b3c4d5e6f7g8h9i0j1",
-    "likesCount": 16,
-    "isLiked": true
-  }
+  "likesCount": 16,
+  "isLiked": true
 }
 ```
 
-### Unliker un examen
+**Erreur (400) - Déjà liké:**
+```json
+{
+  "message": "Vous avez déjà liké cet examen"
+}
+```
+
+### Retirer un like
 ```http
-DELETE /api/exams/:id/like
+DELETE /api/exams/:slug/like
 Authorization: Bearer <token>
 ```
 
@@ -275,11 +320,8 @@ Authorization: Bearer <token>
 ```json
 {
   "message": "Like retiré avec succès",
-  "exam": {
-    "_id": "64f1a2b3c4d5e6f7g8h9i0j1",
-    "likesCount": 15,
-    "isLiked": false
-  }
+  "likesCount": 15,
+  "isLiked": false
 }
 ```
 

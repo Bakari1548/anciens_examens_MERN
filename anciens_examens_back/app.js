@@ -14,8 +14,23 @@ const app = express();
 const port = process.env.PORT || 8000;
 
 // CORS configuration pour permettre les cookies
+const getAllowedOrigins = () => {
+  const defaultOrigins = [
+    'http://localhost:3000',
+    'capacitor://localhost',
+    'ionic://localhost'
+  ];
+  
+  // Si FRONTEND_URL est défini, l'ajouter aux origines par défaut
+  if (process.env.FRONTEND_URL) {
+    return [process.env.FRONTEND_URL, ...defaultOrigins];
+  }
+  
+  return defaultOrigins;
+};
+
 const corsOptions = {
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  origin: getAllowedOrigins(),
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']

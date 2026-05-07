@@ -190,6 +190,13 @@ const postExam = async (req, res) => {
         }
 
         // Vérifier si des fichiers ont été uploadés
+        console.log('Vérification des fichiers uploadés:', {
+            files: req.files,
+            filesLength: req.files?.length,
+            body: req.body,
+            headers: req.headers['content-type']
+        });
+        
         if (!req.files || req.files.length === 0) {
             return res.status(400).json({
                 message: 'Au moins un fichier est requis pour créer un examen'
@@ -197,6 +204,8 @@ const postExam = async (req, res) => {
         }
 
         // Préparer les informations des fichiers uploadés
+        console.log('Traitement de', req.files.length, 'fichiers');
+        
         const files = req.files.map((file, index) => ({
             url: file.path, // URL Cloudinary
             publicId: file.filename || file.public_id || null, // CloudinaryStorage utilise filename
@@ -205,6 +214,8 @@ const postExam = async (req, res) => {
             originalName: file.originalname,
             order: index
         }));
+        
+        console.log('Fichiers traités:', files.map(f => ({ name: f.originalName, type: f.mimeType, size: f.size })));
 
         // Générer le titre formaté et le slug unique
         const formattedTitle = `${typeExamen} ${matiere}`;
@@ -250,7 +261,7 @@ const postExam = async (req, res) => {
         // Gestion spécifique des erreurs mobiles
         if (error.code === 'LIMIT_FILE_SIZE') {
             return res.status(413).json({
-                message: 'Fichier trop volumineux. Taille maximale: 15MB par fichier',
+                message: 'Fichier trop volumineux. Taille maximale: 10MB par fichier',
                 error: 'LIMIT_FILE_SIZE'
             });
         }
@@ -269,9 +280,30 @@ const postExam = async (req, res) => {
             });
         }
         
-        // Erreurs Cloudinary
-        if (error.message && error.message.includes('Cloudinary')) {
-            console.error('Erreur Cloudinary:', error);
+        // Erreur timeout spécifique
+        if (error.code === 'ETIMEDOUT' || error.code === 'TIMEOUT' || error.message?.includes('timeout')) {
+            return res.status(408).json({
+                message: 'Le téléchargement a pris trop de temps. Essayez avec moins de fichiers ou une meilleure connexion.',
+                error: 'TIMEOUT_ERROR'
+            });
+        }
+        
+        // Erreurs Cloudinary spécifiques
+        if (error.message && (error.message.includes('Cloudinary') || error.http_code)) {
+            console.error('Erreur Cloudinary détaillée:', {
+                message: error.message,
+                http_code: error.http_code,
+                name: error.name
+            });
+            
+            // Erreur spécifique pour mobile: transformation ou type de ressource
+            if (error.message.includes('Resource not found') || error.message.includes('Transformation')) {
+                return res.status(500).json({
+                    message: 'Erreur de traitement des fichiers. Veuillez réessayer avec des fichiers PDF ou images (JPG/PNG).',
+                    error: 'CLOUDINARY_TRANSFORMATION_ERROR'
+                });
+            }
+            
             return res.status(500).json({
                 message: 'Erreur lors du téléchargement des fichiers. Veuillez réessayer.',
                 error: 'CLOUDINARY_ERROR'
@@ -279,7 +311,7 @@ const postExam = async (req, res) => {
         }
         
         // Erreurs réseau mobiles
-        if (error.code === 'ECONNRESET' || error.code === 'ETIMEDOUT') {
+        if (error.code === 'ECONNRESET' || error.code === 'ENOTFOUND' || error.code === 'ECONNREFUSED') {
             return res.status(408).json({
                 message: 'La connexion a été interrompue. Vérifiez votre connexion et réessayez.',
                 error: 'NETWORK_ERROR'

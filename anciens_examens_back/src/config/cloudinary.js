@@ -17,24 +17,22 @@ cloudinary.config({
 // Configuration du stockage pour multer
 const storage = new CloudinaryStorage({
   cloudinary: cloudinary,
-  params: {
-    folder: 'anciens_examens', // Dossier dans Cloudinary
-    resource_type: 'auto',     // Accepter images et PDF
-    allowed_formats: ['jpg', 'jpeg', 'png', 'gif', 'pdf'],
-    // Transformation pour optimiser les fichiers
-    transformation: [
-      { width: 1200, crop: 'limit' }, // Limiter la largeur pour les images
-      { quality: 'auto' }              // Qualité automatique
-    ],
-    // Nom de fichier personnalisé
-    public_id: (req, file) => {
-      const timestamp = Date.now();
-      const originalName = file.originalname.split('.')[0];
-      const cleanName = originalName.replace(/[^a-zA-Z0-9]/g, '_');
-      return `${cleanName}_${timestamp}`;
-    },
-    // Timeout augmenté pour les mobiles
-    timeout: 60000 // 2 minutes
+  params: async (req, file) => {
+    // Déterminer le type de ressource selon le fichier
+    const isPDF = file.mimetype === 'application/pdf';
+    
+    return {
+      folder: 'anciens_examens',
+      resource_type: isPDF ? 'raw' : 'image', // PDF = raw, images = image
+      allowed_formats: isPDF ? ['pdf'] : ['jpg', 'jpeg', 'png', 'gif'],
+      // Pas de transformation pour éviter les erreurs sur mobile
+      public_id: () => {
+        const timestamp = Date.now();
+        const originalName = file.originalname.split('.')[0];
+        const cleanName = originalName.replace(/[^a-zA-Z0-9]/g, '_');
+        return `${cleanName}_${timestamp}`;
+      }
+    };
   }
 });
 
@@ -71,8 +69,7 @@ const upload = multer({
   fileFilter: fileFilter,
   limits: {
     fileSize: 10 * 1024 * 1024, // 10MB max par fichier
-    files: 5, // Maximum 5 fichiers par requête
-    timeout: 60000 // 2 minutes timeout pour les connexions mobiles lentes
+    files: 5 // Maximum 5 fichiers par requête
   }
 });
 

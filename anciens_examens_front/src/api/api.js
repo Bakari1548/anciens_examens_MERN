@@ -5,8 +5,10 @@ const url = import.meta.env.VITE_API_URL || '/api';
 
 const api = axios.create({
   baseURL: url,
-  timeout: 30000,
+  timeout: 120000, // 2 minutes pour les uploads mobiles lents
   withCredentials: true, // Important pour envoyer les cookies HTTP-only
+  maxContentLength: Infinity,
+  maxBodyLength: Infinity,
   // Pas de Content-Type par défaut pour permettre multipart/form-data
 });
 

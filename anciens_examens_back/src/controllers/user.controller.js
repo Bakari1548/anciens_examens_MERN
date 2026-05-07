@@ -33,6 +33,13 @@ const register = async (req, res) => {
             });
         }
 
+        // Validation du mot de passe (minimum 8 caractères)
+        if (password.length < 8) {
+            return res.status(400).json({
+                message: 'Le mot de passe doit contenir au moins 8 caractères'
+            });
+        }
+
         // Verifier si l'utilisateur existe deja
         const userExists = await User.findOne({ email });
         if (userExists) {

@@ -49,6 +49,21 @@ app.use('/api/exams', examRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/ufrs', ufrRoutes);
 
+
+app.use((req, res, next) => {
+  console.log('=== REQUÊTE ENTRANTE ===');
+  console.log('Method:', req.method);
+  console.log('URL:', req.url);
+  console.log('Content-Type:', req.headers['content-type']);
+  console.log('User-Agent:', req.headers['user-agent']);
+  console.log('Body keys:', Object.keys(req.body));
+  console.log('Files:', req.files ? req.files.length : 'undefined');
+  console.log('File:', req.file ? 'présent' : 'undefined');
+  console.log('========================');
+  next();
+});
+
+
 // Ne démarrer le serveur que si ce fichier n'est pas importé par les tests
 if (require.main === module) {
   connectDB();

@@ -17,6 +17,13 @@ api.interceptors.request.use(
   (config) => {
     // Le token est maintenant géré par HTTP-only cookie
     // Plus besoin d'ajouter l'en-tête Authorization manuellement
+    
+    // IMPORTANT: Pour FormData, supprimer Content-Type pour laisser 
+    // le navigateur le définir automatiquement avec le bon boundary multipart
+    if (config.data instanceof FormData) {
+      delete config.headers['Content-Type'];
+    }
+    
     return config;
   },
   (error) => {

@@ -5,10 +5,24 @@ import sheet4 from '@/assets/sheet4.png';
 import sheet5 from '@/assets/sheet5.png';
 import sheet6 from '@/assets/sheet6.png';
 import { useNavigate } from 'react-router-dom';
+import { tokenStorage } from '@/utils/tokenStorage';
 
 export default function HeroSection() {
 
     const navigate = useNavigate();
+
+    // Vérifier si l'utilisateur est connecté et gérer la redirection
+    const handleShareExam = () => {
+        const user = tokenStorage.getUser();
+        if (user) {
+            // Utilisateur connecté, rediriger directement vers la page de partage
+            navigate('/partager-examen');
+        } else {
+            // Utilisateur non connecté, stocker la destination et rediriger vers login
+            localStorage.setItem('redirectAfterLogin', '/partager-examen');
+            navigate('/connexion');
+        }
+    };
 
   return (
     <div className="flex flex-row bg-radial-[at_50%_50%] from-gray-50 via-gray-400/50 to-gray-100 to-90% w-full py-14 pb-48 justify-center items-center mx-auto p-4 md:px-4 px-6">
@@ -68,7 +82,7 @@ export default function HeroSection() {
                 <button onClick={() => navigate('/examens')} className="font-medium bg-gray-500 text-white py-3 px-4 rounded-lg shadow hover:bg-gray-700 active:scale-95 transition-all duration-300 ease-in-out">
                     Consulter les Examens
                 </button>
-                <button onClick={() => navigate('/partager-examen')} className="font-medium border border-gray-700 text-gray-800 py-3 px-4 rounded-lg shadow hover:bg-gray-300/80 hover:shadow active:scale-95 transition-all duration-300 ease-in-out">
+                <button onClick={handleShareExam} className="font-medium border border-gray-700 text-gray-800 py-3 px-4 rounded-lg shadow hover:bg-gray-300/80 hover:shadow active:scale-95 transition-all duration-300 ease-in-out">
                     Partager un examen
                 </button>
             </div>

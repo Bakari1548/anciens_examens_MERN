@@ -91,6 +91,7 @@ export default function ExamDetail() {
       const file = exam.files[fileIndex];
       const link = document.createElement('a');
       link.href = file.url;
+      link.target = '_blank';
       link.download = file.originalName || `${exam.title}_${fileIndex + 1}`;
       document.body.appendChild(link);
       link.click();
@@ -173,7 +174,7 @@ export default function ExamDetail() {
         {/* En-tête avec bouton retour */}
         <div className="mb-6">
           <button
-            onClick={() => navigate('/examens')}
+            onClick={() => navigate(-1)}
             className="flex items-center gap-2 text-gray-600 hover:text-blue-600 transition-colors"
           >
             <ArrowLeft size={20} />

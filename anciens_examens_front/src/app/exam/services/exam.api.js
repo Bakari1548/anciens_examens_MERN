@@ -54,6 +54,7 @@ export const postNewExam = async (examData) => {
         const response = await api.post('/exams', examData);
         return response.data;
     } catch (error) {
+        console.log(error);
         throw error;
     }
 };

@@ -1,33 +1,43 @@
-const nodemailer = require('nodemailer');
+const { Resend } = require('resend');
 
-const sendEmail = async (options) => {
-  try {
-    const transporter = nodemailer.createTransport({
-      host: process.env.EMAIL_HOST,
-      port: process.env.EMAIL_PORT,
-      secure: process.env.EMAIL_PORT == 465, // true pour le port 465, false pour les autres
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS
-      }
-    });
+// Configuration avec la clé API
+const resend = new Resend(process.env.RESEND_API_KEY);
 
-    const mailOptions = {
-      from: `Support <${process.env.EMAIL_FROM}>`,
-      to: options.email,
-      subject: options.subject,
-      text: options.message,
-      html: options.html || null
-    };
+/**
+ * Envoyer un email via Resend
+ * @param {string} to - Email du destinataire
+ * @param {string} subject - Sujet
+ * @param {string} html - Contenu HTML
+ * @param {string} text - Contenu texte (optionnel, pour les clients qui ne supportent pas HTML)
+ */
+async function sendEmail(to, subject, html, text = null) {
+    try {
+        const msg = {
+            from: process.env.EMAIL_FROM,
+            to,
+            subject,
+            html,
+        };
 
-    const info = await transporter.sendMail(mailOptions);
-    return info; // Retourne les infos de succès
-  } catch (error) {
-    if (process.env.NODE_ENV !== 'test') {
-      console.error("Erreur Nodemailer :", error.message);
+        // Ajouter texte si fourni
+        if (text) {
+            msg.text = text;
+        }
+
+        const { data, error } = await resend.emails.send(msg);
+
+        if (error) {
+            console.error('❌ Erreur Resend:', error);
+            return { success: false, error: error.message };
+        }
+
+        console.log('✅ Email envoyé via Resend:', data.id);
+        return { success: true, id: data.id };
+
+    } catch (error) {
+        console.error('❌ Erreur inattendue:', error.message);
+        return { success: false, error: error.message };
     }
-    throw new Error("L'envoi de l'email a échoué."); 
-  }
-};
+}
 
-module.exports = sendEmail;
+module.exports = { sendEmail };

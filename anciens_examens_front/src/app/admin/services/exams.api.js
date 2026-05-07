@@ -31,8 +31,8 @@ export const examsApi = {
     return response.data;
   },
 
-  deleteExam: async (examId) => {
-    const response = await api.delete(`/exams/${examId}`);
+  deleteExam: async (examSlug) => {
+    const response = await api.delete(`/exams/${examSlug}`);
     return response.data;
   },
 

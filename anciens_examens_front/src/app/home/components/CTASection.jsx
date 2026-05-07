@@ -1,9 +1,23 @@
 import studentExample from '@/assets/student1.webp'
 import { ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom'
+import { tokenStorage } from '../../../utils/tokenStorage';
 
 export default function CTASection() {
     const navigate = useNavigate();
+
+    // Vérifier si l'utilisateur est connecté et gérer la redirection
+    const handleShareExam = () => {
+        const user = tokenStorage.getUser();
+        if (user) {
+            // Utilisateur connecté, rediriger directement vers la page de partage
+            navigate('/partager-examen');
+        } else {
+            // Utilisateur non connecté, stocker la destination et rediriger vers login
+            localStorage.setItem('redirectAfterLogin', '/partager-examen');
+            navigate('/connexion');
+        }
+    };
 
 
   return (
@@ -12,7 +26,7 @@ export default function CTASection() {
             <h2 className="text-4xl font-bold mb-10 text-gray-700">Vous êtes étudiant(e) ou enseignant(e) ?</h2>
             <p className="mb-6 text-lg">Contribuez à la communauté en partageant vos anciens examens pour aider les étudiants à préparer leurs examens.</p>
             <button
-                onClick={() => navigate('/partager-examen')}
+                onClick={handleShareExam}
                 className="flex items-center gap-3 bg-gray-500 text-white px-6 py-4 rounded-lg font-semibold hover:bg-gray-600 transition-all duration-300 shadow-lg hover:shadow-xl group"
             >
                 <span>Partager un examen</span>

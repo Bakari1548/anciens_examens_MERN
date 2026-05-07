@@ -37,10 +37,17 @@ export default function Login() {
       // console.log('Login response user data:', response.user);
       toast.success('Connexion réussie !');
       
-      // Rediriger vers le dashboard admin si l'utilisateur est admin, sinon vers l'accueil
+      // Vérifier s'il y a une redirection stockée après connexion
+      const redirectPath = localStorage.getItem('redirectAfterLogin');
+      
+      // Rediriger vers le dashboard admin si l'utilisateur est admin, sinon vers la page stockée ou l'accueil
       setTimeout(() => {
         if (response.user.role === 'admin') {
           navigate('/admin/dashboard');
+        } else if (redirectPath) {
+          // Rediriger vers la page stockée et nettoyer le localStorage
+          navigate(redirectPath);
+          localStorage.removeItem('redirectAfterLogin');
         } else {
           navigate('/');
         }

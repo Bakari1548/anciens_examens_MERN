@@ -5,6 +5,7 @@ import { Upload, X, FileText, Calendar, BookOpen, Save, Loader2 } from 'lucide-r
 import { postNewExam } from '../services/exam.api';
 import { getAllUfrs, getFilieresByUfr, getNiveauxByFiliere } from '../../../services/ufr.api';
 import { useNavigate } from 'react-router-dom';
+import logoAnciensExamens from '@/assets/logo_anciens_examens.png'
 
 export default function PostExam() {
     const [formData, setFormData] = useState({
@@ -287,14 +288,16 @@ export default function PostExam() {
                     {/* Formulaire pleine largeur */}
                     <div className="sm:p-8 p-3 lg:p-12">
                             <div className="mb-8 text-center">
-                                <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full mb-4">
-                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-8 h-8 text-white">
+                                <div className="inline-flex items-center justify-center w-28 h-28 rounded-full mb-4">
+                                    {/* <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-8 h-8 text-white">
                                         <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                                    </svg>
+                                    </svg> */}
+                                    <img src={logoAnciensExamens} alt="" />
                                 </div>
                                 <h1 className="text-3xl font-bold text-gray-900 mb-2">Partager un examen</h1>
                                 <p className="text-gray-600 max-w-md mx-auto">
-                                    Contribuez à la communauté en partageant vos anciens examens. Tous les champs sont obligatoires sauf la description.
+                                    Contribuez à la communauté en partageant vos anciens examens. 
+                                    Lisez les champs obligatoires avant de soumettre.
                                 </p>
                             </div>
                             

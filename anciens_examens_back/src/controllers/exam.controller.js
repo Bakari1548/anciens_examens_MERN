@@ -190,12 +190,12 @@ const postExam = async (req, res) => {
         }
 
         // Vérifier si des fichiers ont été uploadés
-        console.log('Vérification des fichiers uploadés:', {
-            files: req.files,
-            filesLength: req.files?.length,
-            body: req.body,
-            headers: req.headers['content-type']
-        });
+        // console.log('Vérification des fichiers uploadés:', {
+        //     files: req.files,
+        //     filesLength: req.files?.length,
+        //     body: req.body,
+        //     headers: req.headers['content-type']
+        // });
         
         if (!req.files || req.files.length === 0) {
             return res.status(400).json({
@@ -204,18 +204,26 @@ const postExam = async (req, res) => {
         }
 
         // Préparer les informations des fichiers uploadés
-        console.log('Traitement de', req.files.length, 'fichiers');
+        // console.log('Traitement de', req.files.length, 'fichiers');
         
-        const files = req.files.map((file, index) => ({
-            url: file.path, // URL Cloudinary
-            publicId: file.filename || file.public_id || null, // CloudinaryStorage utilise filename
-            size: file.size,
-            mimeType: file.mimetype,
-            originalName: file.originalname,
-            order: index
-        }));
+        const files = req.files.map((file, index) => {
+
+            let url = file.path
+            
+            if (file.mimetype === 'application/pdf' && url.includes('/raw/upload/')) {
+                url = url.replace('/raw/upload/', '/image/upload/')
+            }
+            return {
+                url: url, // URL Cloudinary
+                publicId: file.filename || file.public_id || null, // CloudinaryStorage utilise filename
+                size: file.size,
+                mimeType: file.mimetype,
+                originalName: file.originalname,
+                order: index
+            };
+        });
         
-        console.log('Fichiers traités:', files.map(f => ({ name: f.originalName, type: f.mimeType, size: f.size })));
+        // console.log('Fichiers traités:', files.map(f => ({ name: f.originalName, type: f.mimeType, size: f.size })));
 
         // Générer le titre formaté et le slug unique
         const formattedTitle = `${typeExamen} ${matiere}`;
@@ -257,67 +265,6 @@ const postExam = async (req, res) => {
         });
     } catch (error) {
         console.error('Erreur lors de la création de l\'examen:', error);
-        
-        // Gestion spécifique des erreurs mobiles
-        if (error.code === 'LIMIT_FILE_SIZE') {
-            return res.status(413).json({
-                message: 'Fichier trop volumineux. Taille maximale: 10MB par fichier',
-                error: 'LIMIT_FILE_SIZE'
-            });
-        }
-        
-        if (error.code === 'LIMIT_FILE_COUNT') {
-            return res.status(413).json({
-                message: 'Trop de fichiers. Maximum: 5 fichiers',
-                error: 'LIMIT_FILE_COUNT'
-            });
-        }
-        
-        if (error.code === 'LIMIT_UNEXPECTED_FILE') {
-            return res.status(400).json({
-                message: 'Champ de fichier inattendu',
-                error: 'LIMIT_UNEXPECTED_FILE'
-            });
-        }
-        
-        // Erreur timeout spécifique
-        if (error.code === 'ETIMEDOUT' || error.code === 'TIMEOUT' || error.message?.includes('timeout')) {
-            return res.status(408).json({
-                message: 'Le téléchargement a pris trop de temps. Essayez avec moins de fichiers ou une meilleure connexion.',
-                error: 'TIMEOUT_ERROR'
-            });
-        }
-        
-        // Erreurs Cloudinary spécifiques
-        if (error.message && (error.message.includes('Cloudinary') || error.http_code)) {
-            console.error('Erreur Cloudinary détaillée:', {
-                message: error.message,
-                http_code: error.http_code,
-                name: error.name
-            });
-            
-            // Erreur spécifique pour mobile: transformation ou type de ressource
-            if (error.message.includes('Resource not found') || error.message.includes('Transformation')) {
-                return res.status(500).json({
-                    message: 'Erreur de traitement des fichiers. Veuillez réessayer avec des fichiers PDF ou images (JPG/PNG).',
-                    error: 'CLOUDINARY_TRANSFORMATION_ERROR'
-                });
-            }
-            
-            return res.status(500).json({
-                message: 'Erreur lors du téléchargement des fichiers. Veuillez réessayer.',
-                error: 'CLOUDINARY_ERROR'
-            });
-        }
-        
-        // Erreurs réseau mobiles
-        if (error.code === 'ECONNRESET' || error.code === 'ENOTFOUND' || error.code === 'ECONNREFUSED') {
-            return res.status(408).json({
-                message: 'La connexion a été interrompue. Vérifiez votre connexion et réessayez.',
-                error: 'NETWORK_ERROR'
-            });
-        }
-        
         res.status(500).json({
             message: 'Erreur serveur lors du partage de l\'examen',
             error: process.env.NODE_ENV === 'development' ? error.message : 'Erreur interne'
@@ -356,7 +303,7 @@ const updateExam = async (req, res) => {
 }
 
 // @desc    Supprimer un examen
-// @route   DELETE /api/exams/:id
+// @route   DELETE /api/exams/:slug
 // @access  Private
 const deleteExam = async (req, res) => {
     try {
@@ -365,15 +312,45 @@ const deleteExam = async (req, res) => {
             return res.status(404).json({
                 message: 'Examen non trouvé'
             });
-        };
+        }
 
-        // Supprimer tous les fichiers de Cloudinary
+        // Supprimer tous les fichiers de Cloudinary avec gestion d'erreurs
         if (exam.files && exam.files.length > 0) {
             for (const file of exam.files) {
                 if (file.publicId) {
-                    await cloudinary.uploader.destroy(file.publicId, {
-                        resource_type: 'auto' // Supprimer images et PDF
-                    });
+                    try {
+                        // Nettoyer le publicId pour éviter les erreurs d'encodage
+                        let cleanPublicId = file.publicId;
+                        
+                        // Si le publicId contient des caractères encodés, les décoder
+                        if (cleanPublicId.includes('%2F')) {
+                            cleanPublicId = decodeURIComponent(cleanPublicId);
+                        }
+                        
+                        // S'assurer que le publicId ne contient que des caractères valides
+                        cleanPublicId = cleanPublicId.replace(/[^a-zA-Z0-9_\-\/]/g, '');
+                        
+                        console.log(`Suppression du fichier Cloudinary: ${cleanPublicId} (original: ${file.publicId})`);
+                        
+                        // Déterminer le resource_type selon l'extension du fichier
+                        const isPDF = cleanPublicId.toLowerCase().endsWith('.pdf') || 
+                                     file.mimeType === 'application/pdf';
+                        const resourceType = isPDF ? 'raw' : 'image';
+                        
+                        const result = await cloudinary.uploader.destroy(cleanPublicId, {
+                            resource_type: resourceType,
+                            invalidate: true
+                        });
+                        
+                        if (result.result === 'ok') {
+                            console.log(`Fichier Cloudinary supprimé avec succès: ${cleanPublicId}`);
+                        } else {
+                            console.log(`Fichier Cloudinary non trouvé (déjà supprimé?): ${cleanPublicId}`);
+                        }
+                    } catch (cloudinaryError) {
+                        console.error(`Erreur suppression Cloudinary ${file.publicId}:`, cloudinaryError);
+                        // Continuer même si un fichier ne peut pas être supprimé
+                    }
                 }
             }
         }
@@ -381,13 +358,23 @@ const deleteExam = async (req, res) => {
         // Supprimer l'examen de la base de données
         await Exam.findByIdAndDelete(exam._id);
         
+        // Retirer l'ID de l'examen de la liste de l'utilisateur
+        await User.findByIdAndUpdate(
+            exam.author,
+            { $pull: { exams: exam._id } }
+        );
+        
+        console.log(`Examen supprimé: ${exam.title} (${exam.slug})`);
+        
         res.status(200).json({
-            message: 'Examen supprimé avec succès'
+            message: 'Examen supprimé avec succès',
+            examId: exam._id,
+            slug: exam.slug
         });
     } catch (error) {
-        console.log('Erreur lors de la suppression:', error);
+        console.error('Erreur lors de la suppression de l\'examen:', error);
         res.status(500).json({
-            message: 'Erreur serveur',
+            message: 'Erreur serveur lors de la suppression',
             error: error.message
         });
     }

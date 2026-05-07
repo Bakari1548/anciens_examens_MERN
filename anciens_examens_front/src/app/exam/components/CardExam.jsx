@@ -20,6 +20,16 @@ export default function CardExam({ exam }) {
         }
     };
 
+    const handleReadExam = () => {
+        if (!isUserLoggedIn) {
+            // Stocker la destination et rediriger vers login
+            localStorage.setItem('redirectAfterLogin', `/examen/${exam.slug}`);
+            navigate('/connexion');
+            return;
+        }
+        navigate(`/examen/${exam.slug}`);
+    };
+
     return (
         <div className="bg-white w-full shadow flex sm:flex-row flex-col sm:justify-start justify-center items-center border border-gray-200 rounded-lg py-3 px-4 gap-4">
             <img 
@@ -43,7 +53,7 @@ export default function CardExam({ exam }) {
                 </div>
                 <div className="flex min-[550px]:flex-row flex-col gap-6 w-full">
                     <button 
-                        onClick={() => navigate(`/examen/${exam.slug}`)}
+                        onClick={handleReadExam}
                         className="bg-blue-400/40 flex justify-center gap-2 text-black items-center p-2 min-[550px]:w-1/2 font-semibold rounded-lg shadow active:scale-95 hover:bg-blue-400 active:bg-blue-400 transition-all duration-200 ease-in-out"
                     >
                         <span>Lire</span>

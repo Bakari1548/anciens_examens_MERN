@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const authMiddleware = require('../middlewares/auth.middleware');
+const adminMiddleware = require('../middlewares/admin.middleware');
 const { upload } = require('../config/cloudinary');
 const { 
     getAllExams, 
@@ -25,7 +26,7 @@ router.get('/user', authMiddleware, getUserExams);
 router.get('/:slug', getExamBySlug);
 router.post('/', authMiddleware, upload.array('files', 5), postExam);
 router.put('/:slug', authMiddleware, updateExam);
-router.delete('/:slug', authMiddleware, deleteExam);
+router.delete('/:slug', authMiddleware, adminMiddleware, deleteExam);
 
 // Routes pour les likes
 router.get('/:slug/like/status', authMiddleware, getLikeStatus);

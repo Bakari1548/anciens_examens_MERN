@@ -170,14 +170,8 @@ export default function AddExam({ onClose, onAddExam }) {
     e.preventDefault();
 
     if (!formData.ufr || !formData.filiere || !formData.niveau || !formData.semestre || 
-        !formData.anneeExamen || !formData.typeExamen || !formData.matiere || formData.files.length === 0) {
-      toast.error('Veuillez remplir tous les champs obligatoires, y compris au moins un fichier');
-      return;
-    }
-
-    // Validation de l'année d'examen
-    if (formData.anneeExamen.length !== 4) {
-      toast.error('L\'année de l\'examen doit être un nombre de 4 chiffres');
+       !formData.typeExamen || !formData.matiere || formData.files.length === 0) {
+      toast.error('Veuillez remplir tous les champs avec (*), y compris au moins un fichier');
       return;
     }
 
@@ -361,11 +355,10 @@ export default function AddExam({ onClose, onAddExam }) {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Année de l'examen *
+                  Année de l'examen
                 </label>
                 <input
                   type="text"
-                  required
                   maxLength={4}
                   value={formData.anneeExamen}
                   onChange={(e) => setFormData(prev => ({ ...prev, anneeExamen: e.target.value }))}

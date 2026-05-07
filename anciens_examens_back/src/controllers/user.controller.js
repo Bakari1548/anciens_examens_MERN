@@ -1,7 +1,8 @@
 const User = require('../models/User');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
-const sendEmail = require('../utils/sendEmail');
+// const sendEmail = require('../utils/sendEmail');
+const { sendEmail } = require('../utils/sendEmail');
 require('dotenv').config();
 
 
@@ -309,12 +310,20 @@ const forgotPassword = async (req, res) => {
         const userName = `${user.firstName} ${user.lastName}`;
         
         // Envoyer l'email avec le template HTML
-        await sendEmail({
-            email: user.email,
-            subject: 'Réinitialisation de mot de passe - Anciens Examens',
-            message: `Vous avez demandé à réinitialiser votre mot de passe. Cliquez sur le lien suivant pour réinitialiser votre mot de passe: ${resetLink}`,
-            html: resetPasswordTemplate(resetLink, userName)
-        });
+        const emailResult = await sendEmail(
+            user.email,
+            'Réinitialisation de mot de passe - Anciens Examens',
+            `Vous avez demandé à réinitialiser votre mot de passe. Cliquez sur le lien suivant pour réinitialiser votre mot de passe: ${resetLink}`,
+            resetPasswordTemplate(resetLink, userName)
+        );
+
+        if (!emailResult.success) {
+            console.error('Échec envoi email:', emailResult.error);
+            return res.status(500).json({ 
+                success: false, 
+                message: 'Erreur lors de l\'envoi de l\'email. Veuillez réessayer.' 
+            });
+        }
         
         res.json({
             message: 'Un email avec un lien de réinitialisation de mot de passe a été envoyé à votre adresse email'

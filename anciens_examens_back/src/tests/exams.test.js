@@ -57,6 +57,21 @@ jest.mock('../middlewares/auth.middleware', () => {
   };
 });
 
+// Mock du middleware admin - autorise toutes les requêtes avec token pour les tests
+jest.mock('../middlewares/admin.middleware', () => {
+  return (req, res, next) => {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+    
+    if (token) {
+      // Pour les tests, on autorise toutes les requêtes avec token
+      next();
+    } else {
+      res.status(401).json({ message: 'Token manquant' });
+    }
+  };
+});
+
 const app = require('../../app');
 
 describe('Exam Controller Tests', () => {
@@ -466,6 +481,7 @@ describe('Exam Controller Tests', () => {
     it('devrait supprimer un examen avec plusieurs fichiers', async () => {
       // Créer un examen avec plusieurs fichiers
       const testExam = await Exam.create({
+        _id: new mongoose.Types.ObjectId(),
         title: 'Examen Multi-fichiers Test',
         slug: 'examen-multi-fichiers-test',
         ufr: 'UFR Sciences et Technologies',
@@ -500,13 +516,13 @@ describe('Exam Controller Tests', () => {
 
       const response = await request(app)
         .delete(`/api/exams/${testExam.slug}`)
-        .set('Authorization', `Bearer ${userToken}`)
+        .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
 
       expect(response.body.message).toBe('Examen supprimé avec succès');
       
       // Vérifier que l'examen est supprimé
-      const deletedExam = await Exam.findOne({ slug: testExam.slug });
+      const deletedExam = await Exam.findByIdAndDelete(testExam._id);
       expect(deletedExam).toBeNull();
     });
 

@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const { createLog } = require('../utils/logger');
 require('dotenv').config();
 
 
@@ -44,6 +45,7 @@ const authMiddleware = async (req, res, next) => {
         req.user = user[0];
         next();
     } catch (err) {
+        await createLog({ level: 'error', action: 'AUTH_ERROR', message: `Token invalide ou expiré: ${err.message}`, req, metadata: { url: req.url, method: req.method } });
         res.status(401).json({ 
             message: 'Erreur lors de la verification de l\'utilisateur',
             error: err

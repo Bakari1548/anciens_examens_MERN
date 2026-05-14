@@ -46,6 +46,7 @@ const ADMIN_ACTIONS = {
   REJECT_EXAM: 'REJECT_EXAM',
   DELETE_EXAM: 'DELETE_EXAM',
   ADD_EXAM: 'ADD_EXAM',
+  UPDATE_EXAM: 'UPDATE_EXAM',
   RESOLVE_REPORT: 'RESOLVE_REPORT'
 };
 
@@ -157,6 +158,14 @@ const adminReducer = (state, action) => {
       return {
         ...state,
         exams: [action.payload, ...state.exams]
+      };
+
+    case ADMIN_ACTIONS.UPDATE_EXAM:
+      return {
+        ...state,
+        exams: action.payload ? state.exams.map(exam =>
+          exam._id === action.payload._id ? action.payload : exam
+        ) : state.exams
       };
 
     case ADMIN_ACTIONS.RESOLVE_REPORT:
@@ -380,6 +389,26 @@ export function AdminProvider({ children }) {
           message: 'Examen créé avec succès'
         });
         return response.exam;
+      } catch (error) {
+        actions.setError(error.message);
+        throw error;
+      } finally {
+        actions.setLoading(false);
+      }
+    },
+
+    updateExam: async (examSlug, formData) => {
+      try {
+        actions.setLoading(true);
+        const response = await examsApi.updateExam(examSlug, formData);
+        dispatch({ type: ADMIN_ACTIONS.UPDATE_EXAM, payload: response.data || response });
+        actions.addNotification({
+          type: 'success',
+          message: 'Examen mis à jour avec succès'
+        });
+        // Rafraîchir la liste des examens pour s'assurer que les données sont à jour
+        await actions.fetchExams();
+        return response.data || response;
       } catch (error) {
         actions.setError(error.message);
         throw error;

@@ -5,7 +5,7 @@ import { Upload, X, FileText, Calendar, BookOpen, Save, Loader2 } from 'lucide-r
 import { postNewExam } from '../services/exam.api';
 import { getAllUfrs, getFilieresByUfr, getNiveauxByFiliere } from '../../../services/ufr.api';
 import { useNavigate } from 'react-router-dom';
-import logoAnciensExamens from '@/assets/logo_anciens_examens.png'
+import logoAnciensExamens from '@/assets/logo_anciens_examens.png';
 
 export default function PostExam() {
     const [formData, setFormData] = useState({
@@ -213,7 +213,10 @@ export default function PostExam() {
             examData.append('anneeExamen', formData.anneeExamen);
             examData.append('typeExamen', formData.typeExamen);
             examData.append('matiere', formData.matiere);
-            examData.append('description', formData.description);
+            // examData.append('description', formData.description);
+            if (formData.description && formData.description.trim() !== "") {
+                examData.append('description', formData.description);
+            }
             
             // Ajouter tous les fichiers
             formData.files.forEach((file) => {
@@ -231,50 +234,76 @@ export default function PostExam() {
             }
 
             const response = await postNewExam(examData);
-            
+            console.log('Response:', response);
             toast.success('Examen partagé avec succès !');
             
             // Rediriger vers la page de détails de l'examen
             setTimeout(() => {
                 navigate(`/examen/${response.exam.slug}`);
-            }, 2000);
+            }, 1500);
             
         } catch (error) {
             console.error('Erreur détaillée:', error);
-            
-            // Gestion spécifique des erreurs mobiles
-            let errorMessage = 'Erreur lors du partage de l\'examen';
-            
+
+            let errorMessage = "Erreur lors du partage de l'examen";
+            let hint = null;
+
             if (error.response) {
-                // Erreur serveur avec réponse
-                const errorData = error.response.data;
-                errorMessage = errorData.message || errorMessage;
-                
-                // Erreurs spécifiques aux mobiles
-                if (errorData.error === 'CLOUDINARY_ERROR') {
-                    errorMessage = 'Erreur de téléchargement du fichier. Veuillez réessayer avec une connexion plus stable.';
-                } else if (errorData.error === 'NETWORK_ERROR') {
-                    errorMessage = 'Connexion interrompue. Vérifiez votre réseau et réessayez.';
-                } else if (error.response.status === 413) {
-                    errorMessage = 'Fichier trop volumineux. Essayez avec des fichiers plus petits.';
-                } else if (error.response.status === 408) {
-                    errorMessage = 'Timeout. Vérifiez votre connexion et réessayez.';
+                // Le serveur a répondu avec un code d'erreur (4xx / 5xx)
+                const status = error.response.status;
+                const data = error.response.data || {};
+                const serverMsg = data.message;
+
+                switch (status) {
+                    case 400:
+                        // Validation, type de fichier non supporté, etc.
+                        errorMessage = serverMsg || 'Données invalides. Vérifiez vos informations.';
+                        if (serverMsg && /type de fichier/i.test(serverMsg)) {
+                            hint = 'Formats acceptés : PDF, JPG, PNG, GIF.';
+                        }
+                        break;
+                    case 401:
+                        errorMessage = 'Votre session a expiré. Veuillez vous reconnecter.';
+                        break;
+                    case 403:
+                        errorMessage = "Vous n'avez pas l'autorisation de partager un examen.";
+                        break;
+                    case 408:
+                        errorMessage = "Délai d'attente dépassé.";
+                        hint = 'Vérifiez votre connexion et réessayez.';
+                        break;
+                    case 413:
+                        errorMessage = 'Fichier trop volumineux (max 10 Mo par fichier).';
+                        break;
+                    case 415:
+                        errorMessage = 'Type de fichier non supporté (PDF, JPG, PNG, GIF uniquement).';
+                        break;
+                    case 500:
+                    case 502:
+                    case 503:
+                    case 504:
+                        errorMessage = 'Le serveur rencontre un problème.';
+                        hint = 'Réessayez dans quelques instants.';
+                        break;
+                    default:
+                        errorMessage = serverMsg || errorMessage;
                 }
-            } else if (error.request) {
-                // Erreur réseau (pas de réponse du serveur)
-                errorMessage = 'Problème de connexion. Vérifiez votre internet et réessayez.';
+            } else if (error.code === 'ECONNABORTED' || /timeout/i.test(error.message || '')) {
+                errorMessage = "Délai d'attente dépassé.";
+                hint = 'Connexion trop lente. Réessayez avec une meilleure connexion.';
+            } else if (error.code === 'ERR_NETWORK' || error.request) {
+                // Pas de réponse du serveur — typique des coupures mobiles
+                errorMessage = 'Connexion interrompue.';
+                hint = window.innerWidth <= 768
+                    ? 'Vérifiez votre réseau mobile (4G/Wi-Fi) et réessayez.'
+                    : 'Vérifiez votre connexion internet et réessayez.';
             } else {
-                // Erreur frontend
                 errorMessage = error.message || errorMessage;
             }
-            
+
             toast.error(errorMessage);
-            
-            // En mode mobile, proposer de réessayer automatiquement
-            if (window.innerWidth <= 768 && error.response?.status >= 500) {
-                setTimeout(() => {
-                    toast.info('Connexion mobile détectée. Vérifiez votre connexion avant de réessayer.');
-                }, 1000);
+            if (hint) {
+                setTimeout(() => toast.info(hint), 600);
             }
         } finally {
             setLoading(false);
@@ -535,10 +564,9 @@ export default function PostExam() {
                                             >
                                                 <option value="">Sélectionnez un type</option>
                                                 <option value="Examen Final">Examen Final</option>
-                                                <option value="Contrôle Continu">Contrôle Continu</option>
                                                 <option value="Session de Rattrapage">Session de Rattrapage</option>
                                                 <option value="Devoir">Devoir</option>
-                                                <option value="TP">TP</option>
+                                                <option value="TD/TP">TD/TP</option>
                                             </select>
                                         </div>
 

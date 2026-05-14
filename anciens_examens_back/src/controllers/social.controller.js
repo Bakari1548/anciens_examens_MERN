@@ -1,5 +1,6 @@
 const Exam = require('../models/Exam');
 const User = require('../models/User');
+const { createLog } = require('../utils/logger');
 
 // @desc    Ajouter un like à un examen
 // @route   POST /api/exams/:slug/like
@@ -26,6 +27,7 @@ const likeExam = async (req, res) => {
         // Ajouter le like
         await exam.addLike(req.user._id);
         
+        await createLog({ level: 'info', action: 'EXAM_LIKED', message: `Like ajouté sur l'examen: ${exam.title}`, req, user: req.user, metadata: { examId: exam._id, slug: exam.slug } });
         res.status(200).json({
             message: 'Examen liké avec succès',
             likesCount: exam.likesCount,
@@ -56,6 +58,7 @@ const unlikeExam = async (req, res) => {
         // Retirer le like
         await exam.removeLike(req.user._id);
         
+        await createLog({ level: 'info', action: 'EXAM_UNLIKED', message: `Like retiré de l'examen: ${exam.title}`, req, user: req.user, metadata: { examId: exam._id, slug: exam.slug } });
         res.status(200).json({
             message: 'Like retiré avec succès',
             likesCount: exam.likesCount,
@@ -128,6 +131,7 @@ const addComment = async (req, res) => {
             }
         };
         
+        await createLog({ level: 'info', action: 'COMMENT_ADDED', message: `Nouveau commentaire sur l'examen: ${exam.title}`, req, user: req.user, metadata: { examId: exam._id, slug: exam.slug, commentId: newComment._id } });
         res.status(201).json({
             message: 'Commentaire ajouté avec succès',
             comment: populatedComment,
@@ -177,6 +181,7 @@ const deleteComment = async (req, res) => {
         // Supprimer le commentaire
         await exam.removeComment(commentId);
         
+        await createLog({ level: 'info', action: 'COMMENT_DELETED', message: `Commentaire supprimé sur l'examen: ${exam.title}`, req, user: req.user, metadata: { examId: exam._id, slug: exam.slug, commentId } });
         res.status(200).json({
             message: 'Commentaire supprimé avec succès',
             commentsCount: exam.commentsCount

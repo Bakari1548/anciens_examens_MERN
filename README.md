@@ -128,7 +128,7 @@ npm install
 
 3. Créer un fichier `.env` :
 ```env
-PORT=8000
+PORT=5000
 MONGODB_URI=mongodb://127.0.0.1:27017/anciens_examens_db
 JWT_SECRET=votre_secret_jwt
 CLOUDINARY_CLOUD_NAME=votre_cloud_name
@@ -150,7 +150,7 @@ npm install
 
 3. Créer un fichier `.env` :
 ```env
-VITE_API_URL=http://localhost:8000
+VITE_API_URL=http://localhost:5000
 ```
 
 ## ▶️ Lancer le Projet
@@ -160,7 +160,7 @@ VITE_API_URL=http://localhost:8000
 cd anciens_examens_back
 npm run dev
 ```
-Le serveur démarre sur `http://localhost:8000`
+Le serveur démarre sur `http://localhost:5000`
 
 ### Frontend
 ```bash
@@ -185,7 +185,7 @@ L'application démarre sur `http://localhost:3000`
 ### Backend (.env)
 | Variable | Description |
 |----------|-------------|
-| PORT | Port du serveur (défaut: 8000) |
+| PORT | Port du serveur (défaut: 5000) |
 | MONGODB_URI | URI de connexion MongoDB |
 | JWT_SECRET | Secret pour signer les tokens JWT |
 | CLOUDINARY_CLOUD_NAME | Nom du cloud Cloudinary |

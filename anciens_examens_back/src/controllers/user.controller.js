@@ -3,6 +3,7 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 // const sendEmail = require('../utils/sendEmail');
 const { sendEmail } = require('../utils/sendEmail');
+const { createLog } = require('../utils/logger');
 require('dotenv').config();
 
 
@@ -44,6 +45,7 @@ const register = async (req, res) => {
         // Verifier si l'utilisateur existe deja
         const userExists = await User.findOne({ email });
         if (userExists) {
+            await createLog({ level: 'warning', action: 'REGISTER_FAILED', message: `Tentative d'inscription avec un email déjà utilisé: ${email}`, req, userName: email, metadata: { email } });
             return res.status(400).json({
                 message: 'Cet email est déjà utilisé'
             });
@@ -74,6 +76,7 @@ const register = async (req, res) => {
                 path: '/'
             });
             
+            await createLog({ level: 'info', action: 'REGISTER', message: `Nouvel utilisateur inscrit: ${user.firstName} ${user.lastName} (${user.email})`, req, user });
             res.status(201).json({
                 message: "Incription reussie !",
                 user: {
@@ -90,6 +93,7 @@ const register = async (req, res) => {
             });
         }
     } catch (error) {
+        await createLog({ level: 'error', action: 'SYSTEM_ERROR', message: `Erreur lors de l'inscription: ${error.message}`, req });
         res.status(500).json({
             message: 'Erreur serveur',
             error: error.message
@@ -115,6 +119,7 @@ const login = async (req, res) => {
         const user = await User.findOne({ email });
         
         if (!user) {
+            await createLog({ level: 'warning', action: 'FAILED_LOGIN', message: `Tentative de connexion échouée - email inconnu: ${email}`, req, userName: email });
             return res.status(401).json({
                 message: 'Email incorrect'
             });
@@ -123,6 +128,7 @@ const login = async (req, res) => {
         const isPasswordValid = await user.comparePassword(password);
         
         if (!isPasswordValid) {
+            await createLog({ level: 'warning', action: 'FAILED_LOGIN', message: `Mot de passe incorrect pour ${email}`, req, user });
             return res.status(401).json({
                 message: 'Email ou mot de passe incorrect'
             });
@@ -131,10 +137,12 @@ const login = async (req, res) => {
         // Vérifier le statut de l'utilisateur
         if (user.status !== 'active') {
             if (user.status === 'banned') {
+                await createLog({ level: 'warning', action: 'LOGIN_BANNED', message: `Tentative de connexion d'un utilisateur banni: ${email}`, req, user });
                 return res.status(403).json({
                     message: 'Vous avez été banni'
                 });
             } else if (user.status === 'inactive') {
+                await createLog({ level: 'warning', action: 'LOGIN_INACTIVE', message: `Tentative de connexion d'un compte désactivé: ${email}`, req, user });
                 return res.status(403).json({
                     message: 'Votre compte a été désactivé par un admin'
                 });
@@ -154,6 +162,7 @@ const login = async (req, res) => {
             path: '/'
         });
 
+        await createLog({ level: 'info', action: 'LOGIN', message: `Connexion réussie: ${user.firstName} ${user.lastName}`, req, user });
         res.json({
            message: "Utilisateur connectee avec succès !",
             user: {
@@ -166,6 +175,7 @@ const login = async (req, res) => {
             }
         });
     } catch (error) {
+        await createLog({ level: 'error', action: 'SYSTEM_ERROR', message: `Erreur lors de la connexion: ${error.message}`, req });
         res.status(500).json({
             message: 'Erreur serveur',
             error: error.message
@@ -234,6 +244,7 @@ const logout = async (req, res) => {
             path: '/'
         });
         
+        await createLog({ level: 'info', action: 'LOGOUT', message: `Déconnexion`, req, user: req.user });
         res.json({
             message: 'Déconnexion réussie'
         });
@@ -271,6 +282,7 @@ const changePassword = async (req, res) => {
         user.password = newPassword;
         await user.save();
         
+        await createLog({ level: 'info', action: 'PASSWORD_CHANGED', message: `Mot de passe modifié`, req, user });
         res.json({
             message: 'Mot de passe modifié avec succès'
         });
@@ -319,12 +331,14 @@ const forgotPassword = async (req, res) => {
 
         if (!emailResult.success) {
             console.error('Échec envoi email:', emailResult.error);
+            await createLog({ level: 'error', action: 'EMAIL_FAILED', message: `Échec d'envoi de l'email de réinitialisation à ${user.email}`, req, user, metadata: { error: emailResult.error } });
             return res.status(500).json({ 
                 success: false, 
                 message: 'Erreur lors de l\'envoi de l\'email. Veuillez réessayer.' 
             });
         }
         
+        await createLog({ level: 'info', action: 'PASSWORD_RESET_REQUEST', message: `Demande de réinitialisation de mot de passe pour ${user.email}`, req, user });
         res.json({
             message: 'Un email avec un lien de réinitialisation de mot de passe a été envoyé à votre adresse email'
         });
@@ -347,6 +361,7 @@ const resetPassword = async (req, res) => {
 
         const user = await User.findOne({ passwordResetToken: token });
         if (!user) {
+            await createLog({ level: 'warning', action: 'PASSWORD_RESET_FAILED', message: `Tentative de réinitialisation avec token invalide`, req });
             return res.status(401).json({
                 message: 'Token incorrect'
             });
@@ -355,6 +370,7 @@ const resetPassword = async (req, res) => {
         user.password = password;
         await user.save();
         
+        await createLog({ level: 'info', action: 'PASSWORD_RESET_SUCCESS', message: `Mot de passe réinitialisé pour ${user.email}`, req, user });
         res.json({
             message: 'Mot de passe réinitialisé'
         });
@@ -415,6 +431,7 @@ const updateUser = async (req, res) => {
         const { id } = req.params;
         const { firstName, lastName, email, role, status } = req.body;
         const user = await User.findByIdAndUpdate(id, { firstName, lastName, email, role, status }, { new: true });
+        await createLog({ level: 'info', action: 'USER_UPDATED', message: `Utilisateur ${user.firstName} ${user.lastName} mis à jour`, req, user: req.user, metadata: { targetUserId: id, changes: { firstName, lastName, email, role, status } } });
         res.status(200).json({
             message: 'Utilisateur mis à jour',
             user
@@ -435,6 +452,7 @@ const deleteUser = async (req, res) => {
     try {
         const { id } = req.params;
         const user = await User.findByIdAndDelete(id);
+        await createLog({ level: 'warning', action: 'USER_DELETED', message: `Utilisateur ${user?.firstName || ''} ${user?.lastName || ''} (${user?.email || id}) supprimé`, req, user: req.user, metadata: { targetUserId: id } });
         res.status(200).json({
             message: 'Utilisateur supprimé'
         });
@@ -472,6 +490,7 @@ const activateUser = async (req, res) => {
     try {
         const { id } = req.params;
         await User.findByIdAndUpdate(id, { status: 'active' });
+        await createLog({ level: 'info', action: 'USER_ACTIVATED', message: `Utilisateur ${id} activé`, req, user: req.user, metadata: { targetUserId: id } });
         res.status(200).json({
             message: 'Utilisateur activé'
         });
@@ -490,6 +509,7 @@ const desactivateUser = async (req, res) => {
     try {
         const { id } = req.params;
         await User.findByIdAndUpdate(id, { status: 'inactive' });
+        await createLog({ level: 'warning', action: 'USER_DESACTIVATED', message: `Utilisateur ${id} désactivé`, req, user: req.user, metadata: { targetUserId: id } });
         res.status(200).json({
             message: 'Utilisateur désactivé'
         });
@@ -509,6 +529,7 @@ const banUser = async (req, res) => {
         const { id } = req.params;
         const { duration, reason } = req.body;
         await User.findByIdAndUpdate(id, { status: 'banned', banUntil: new Date(Date.now() + duration * 24 * 60 * 60 * 1000), banReason: reason });
+        await createLog({ level: 'warning', action: 'USER_BANNED', message: `Utilisateur ${id} banni pour ${duration} jour(s). Raison: ${reason}`, req, user: req.user, metadata: { targetUserId: id, duration, reason } });
         res.status(200).json({
             message: 'Utilisateur banni'
         });
@@ -527,6 +548,7 @@ const unbanUser = async (req, res) => {
     try {
         const { id } = req.params;
         await User.findByIdAndUpdate(id, { status: 'active', banUntil: null, banReason: null });
+        await createLog({ level: 'info', action: 'USER_UNBANNED', message: `Utilisateur ${id} débanni`, req, user: req.user, metadata: { targetUserId: id } });
         res.status(200).json({
             message: 'Utilisateur débanni'
         });
@@ -579,6 +601,7 @@ const submitAppeal = async (req, res) => {
 
         await user.save();
 
+        await createLog({ level: 'info', action: 'APPEAL_SUBMITTED', message: `Demande d'appel soumise par ${user.email}`, req, user });
         res.status(200).json({
             message: 'Demande soumise avec succès',
             appeal: user.appeal
@@ -642,6 +665,7 @@ const approveAppeal = async (req, res) => {
 
         await user.save();
 
+        await createLog({ level: 'info', action: 'APPEAL_APPROVED', message: `Appel approuvé pour ${user.email}`, req, user: req.user, metadata: { targetUserId: id, reviewMessage } });
         res.status(200).json({
             message: 'Demande approuvée et compte réactivé'
         });
@@ -682,6 +706,7 @@ const rejectAppeal = async (req, res) => {
 
         await user.save();
 
+        await createLog({ level: 'info', action: 'APPEAL_REJECTED', message: `Appel rejeté pour ${user.email}`, req, user: req.user, metadata: { targetUserId: id, reviewMessage } });
         res.status(200).json({
             message: 'Demande rejetée'
         });

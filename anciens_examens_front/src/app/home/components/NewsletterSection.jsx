@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import { Mail, Send, CheckCircle, Bell, BookOpen, Users } from 'lucide-react';
 import { toast } from 'sonner';
+import { useTheme } from '@/app/admin/context/ThemeContext';
 
 export default function NewsletterSection() {
   const [email, setEmail] = useState('');
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [loading, setLoading] = useState(false);
+  const { isDark } = useTheme();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -33,7 +35,7 @@ export default function NewsletterSection() {
 
   if (isSubscribed) {
     return (
-      <section className="py-16 bg-gradient-to-r from-blue-600 to-purple-600">
+      <section className={`py-16 ${isDark ? 'bg-gradient-to-br from-blue-50 to-purple-50' : 'bg-gradient-to-r from-blue-600 to-purple-600'}`}>
         <div className="max-w-4xl mx-auto px-6 text-center">
           <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-8">
             <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -66,16 +68,16 @@ export default function NewsletterSection() {
   }
 
   return (
-    <section className="py-16 bg-gradient-to-r from-blue-600 to-purple-600">
+    <section className={`py-16 ${isDark ? 'bg-gradient-to-br from-blue-50 to-purple-50' : 'bg-gradient-to-r from-blue-600 to-purple-600'}`}>
       <div className="max-w-4xl mx-auto px-6">
         <div className="text-center mb-12">
           <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-6">
             <Mail className="text-white" size={32} />
           </div>
-          <h2 className="text-4xl font-bold text-white mb-4">
+          <h2 className={`text-4xl font-bold ${isDark ? 'text-gray-900' : 'text-white'} mb-4`}>
             Ne manquez aucune actualité
           </h2>
-          <p className="text-xl text-white/90 max-w-2xl mx-auto">
+          <p className={`text-xl ${isDark ? 'text-gray-600' : 'text-white/90'} max-w-2xl mx-auto`}>
             Recevez les derniers examens, conseils d'étudiants et offres exclusives directement dans votre boîte mail
           </p>
         </div>
@@ -85,10 +87,10 @@ export default function NewsletterSection() {
             <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
               <BookOpen className="text-white" size={24} />
             </div>
-            <h3 className="text-lg font-semibold text-white mb-2">
+            <h3 className={`text-lg font-semibold ${isDark ? 'text-gray-900' : 'text-white'} mb-2`}>
               Nouveaux examens
             </h3>
-            <p className="text-white/80 text-sm">
+            <p className={`text-gray-600 text-sm ${isDark ? 'text-gray-600' : 'text-white/90'}`}>
               Soyez le premier à découvrir les nouveaux examens ajoutés chaque semaine
             </p>
           </div>
@@ -96,10 +98,10 @@ export default function NewsletterSection() {
             <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
               <Users className="text-white" size={24} />
             </div>
-            <h3 className="text-lg font-semibold text-white mb-2">
+            <h3 className={`text-lg font-semibold ${isDark ? 'text-gray-900' : 'text-white'} mb-2`}>
               Conseils d'étudiants
             </h3>
-            <p className="text-white/80 text-sm">
+            <p className={`text-gray-600 text-sm ${isDark ? 'text-gray-600' : 'text-white/90'}`}>
               Recevez des astuces et méthodes de révision de la communauté
             </p>
           </div>
@@ -107,10 +109,10 @@ export default function NewsletterSection() {
             <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
               <Bell className="text-white" size={24} />
             </div>
-            <h3 className="text-lg font-semibold text-white mb-2">
+            <h3 className={`text-lg font-semibold ${isDark ? 'text-gray-900' : 'text-white'} mb-2`}>
               Alertes examens
             </h3>
-            <p className="text-white/80 text-sm">
+            <p className={`text-gray-600 text-sm ${isDark ? 'text-gray-600' : 'text-white/90'}`}>
               Soyez notifié des examens importants à ne pas manquer
             </p>
           </div>
@@ -146,7 +148,7 @@ export default function NewsletterSection() {
               )}
             </button>
           </div>
-          <p className="text-center text-white/70 text-sm mt-4">
+          <p className={`text-center ${isDark ? 'text-white/70' : 'text-white/70'} text-sm mt-4`}>
             Nous respectons votre vie privée. Désabonnez-vous à tout moment.
           </p>
         </form>

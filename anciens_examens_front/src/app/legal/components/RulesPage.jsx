@@ -198,7 +198,7 @@ export default function RulesPage() {
                   </li>
                   <li>
                     <span className="font-medium text-gray-800">Type d'examen :</span>
-                    Indiquez le type d'examen (ex: Examen Final, Contrôle Continu, Session de Rattrapage)
+                    Indiquez le type d'examen (ex: Examen Final, Devoir, Session de Rattrapage)
                   </li>
                   <li>
                     <span className="font-medium text-gray-800">Semestre :</span>

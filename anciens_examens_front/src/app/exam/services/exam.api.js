@@ -51,7 +51,11 @@ export const getExamBySlug = async (slug) => {
 // Créer un nouvel examen
 export const postNewExam = async (examData) => {
     try {
-        const response = await api.post('/exams', examData);
+        const response = await api.post('/exams', examData, {
+            headers: {
+                'Content-Type': undefined, // On force Axios à ne rien envoyer
+            }
+        });
         return response.data;
     } catch (error) {
         console.log(error);

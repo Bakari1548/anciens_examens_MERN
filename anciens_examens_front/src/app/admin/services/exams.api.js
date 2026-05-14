@@ -21,6 +21,15 @@ export const examsApi = {
     return response.data;
   },
 
+  updateExam: async (examSlug, formData) => {
+    const response = await api.put(`/exams/${examSlug}`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    });
+    return response.data;
+  },
+
   approveExam: async (examId) => {
     const response = await api.patch(`/admin/exams/${examId}/approve`);
     return response.data;

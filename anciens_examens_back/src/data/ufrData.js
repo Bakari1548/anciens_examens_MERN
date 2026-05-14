@@ -262,6 +262,12 @@ const ufrData = {
         "niveaux": [
           "LP"
         ]
+      },
+      "Licence Professionnelle Système Automatisé et Maintenance": {
+        "code": "LP-SAM",
+        "niveaux": [
+          "LP"
+        ]
       }
     }
   }

@@ -343,6 +343,77 @@ const user = await User.findById(id).select('-password');
 const exam = await Exam.findById(id).select('title filiere matiere year');
 ```
 
+## Modèle Log (v2.2.0)
+
+### Fichier: `src/models/Log.js`
+
+### Schéma
+
+```javascript
+const logSchema = new mongoose.Schema({
+  level: {
+    type: String,
+    enum: ['info', 'warning', 'error'],
+    required: true,
+    default: 'info'
+  },
+  action: {
+    type: String,
+    required: true,
+    trim: true
+  },
+  user: {
+    type: String,
+    trim: true,
+    default: 'System'
+  },
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    default: null
+  },
+  message: {
+    type: String,
+    required: true,
+    trim: true
+  },
+  ip: { type: String, trim: true, default: 'localhost' },
+  userAgent: { type: String, trim: true, default: null },
+  metadata: { type: mongoose.Schema.Types.Mixed, default: {} },
+  timestamp: { type: Date, default: Date.now }
+}, { timestamps: true });
+```
+
+### Index
+- `timestamp: -1` — tri chronologique des logs récents
+- `level: 1` — filtrage rapide par niveau
+- `action: 1` — filtrage par code d'action
+- `userId: 1` — recherche des logs d'un utilisateur spécifique
+
+### Utilitaire `createLog`
+
+L'utilitaire `src/utils/logger.js` expose `createLog()` pour faciliter la création de logs depuis les contrôleurs :
+
+```javascript
+const { createLog } = require('../utils/logger');
+
+await createLog({
+  level: 'info',          // 'info' | 'warning' | 'error'
+  action: 'LOGIN',        // Code d'action
+  message: 'Texte lisible',
+  req,                    // Requête Express (extrait IP, user-agent)
+  user: req.user,         // Optionnel - objet User Mongoose
+  userName: 'Nom override',// Optionnel - si pas de user
+  metadata: { examId: 1 } // Données contextuelles libres
+});
+```
+
+**Caractéristiques** :
+- Extrait automatiquement l'IP (`x-forwarded-for`, `x-real-ip`, fallback)
+- Extrait le user-agent depuis les headers
+- N'interrompt jamais le flux applicatif (try/catch interne)
+- Supporte le mode système (sans utilisateur) avec `user: 'System'`
+
 ## Bonnes pratiques
 
 1. **Validation**: Toujours valider les données au niveau du modèle
@@ -351,3 +422,4 @@ const exam = await Exam.findById(id).select('title filiere matiere year');
 4. **Population**: Populer seulement les champs nécessaires
 5. **Hooks**: Utiliser les hooks pour la logique métier automatique
 6. **Relations**: Définir clairement les relations entre les modèles
+7. **Logs**: Utiliser `createLog()` pour tracer les évènements importants (auth, modif, suppression)

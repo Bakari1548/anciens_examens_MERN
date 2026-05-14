@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
-import { X, Upload, FileText, Calendar, BookOpen, Save, Loader2 } from 'lucide-react';
+import { X, Upload, FileText, Calendar, BookOpen, Save, Loader2, Eye, Download } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 import { toast } from 'sonner';
 import { getAllUfrs, getFilieresByUfr, getNiveauxByFiliere } from '@/services/ufr.api';
 
-export default function AddExam({ onClose, onAddExam }) {
+export default function EditExam({ exam, onClose, onUpdate }) {
   const { isDark } = useTheme();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -29,6 +29,23 @@ export default function AddExam({ onClose, onAddExam }) {
   const [loadingNiveaux, setLoadingNiveaux] = useState(false);
 
   const typeExamenOptions = ['Examen Final', 'Session de Rattrapage', 'Devoir', 'TD/TP'];
+
+  // Initialiser le formulaire avec les données de l'examen
+  useEffect(() => {
+    if (exam) {
+      setFormData({
+        ufr: exam.ufr || '',
+        filiere: exam.filiere || '',
+        niveau: exam.niveau || '',
+        semestre: exam.semestre || '',
+        anneeExamen: exam.anneeExamen || '',
+        typeExamen: exam.typeExamen || '',
+        matiere: exam.matiere || '',
+        description: exam.description || '',
+        files: exam.files || []
+      });
+    }
+  }, [exam]);
 
   // Charger les UFR au montage
   useEffect(() => {
@@ -55,10 +72,6 @@ export default function AddExam({ onClose, onAddExam }) {
           setLoadingFilieres(true);
           const response = await getFilieresByUfr(formData.ufr);
           setFiliereOptions(response.data || []);
-          // Réinitialiser les champs dépendants
-          setFormData(prev => ({ ...prev, filiere: '', niveau: '', semestre: '' }));
-          setNiveauOptions([]);
-          setSemestreOptions([]);
         } catch (error) {
           toast.error('Erreur lors du chargement des filières');
           console.error(error);
@@ -83,7 +96,7 @@ export default function AddExam({ onClose, onAddExam }) {
           setLoadingNiveaux(true);
           const response = await getNiveauxByFiliere(formData.ufr, formData.filiere);
           setNiveauOptions(response.data || []);
-          // Réinitialiser les champs dépendants
+          // Réinitialiser le semestre
           setFormData(prev => ({ ...prev, niveau: '', semestre: '' }));
           setSemestreOptions([]);
         } catch (error) {
@@ -166,28 +179,20 @@ export default function AddExam({ onClose, onAddExam }) {
     }));
   };
 
+  const removeExistingFile = (fileIndex) => {
+    setFormData(prev => ({
+      ...prev,
+      files: prev.files.filter((_, i) => i !== fileIndex)
+    }));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!formData.ufr || !formData.filiere || !formData.niveau || !formData.semestre || 
-       !formData.typeExamen || !formData.matiere || formData.files.length === 0) {
-      toast.error('Veuillez remplir tous les champs avec (*), y compris au moins un fichier');
+       !formData.typeExamen || !formData.matiere) {
+      toast.error('Veuillez remplir tous les champs obligatoires (*)');
       return;
-    }
-
-    // Validation des fichiers
-    const allowedTypes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
-    const maxSize = 10 * 1024 * 1024; // 10MB
-    
-    for (const file of formData.files) {
-      if (!allowedTypes.includes(file.type)) {
-        toast.error(`Type de fichier non supporté : ${file.name}. Veuillez utiliser PDF, JPG, PNG ou GIF`);
-        return;
-      }
-      if (file.size > maxSize) {
-        toast.error(`Le fichier ${file.name} est trop volumineux. Taille maximale : 10MB`);
-        return;
-      }
     }
 
     setLoading(true);
@@ -203,17 +208,18 @@ export default function AddExam({ onClose, onAddExam }) {
       formDataToSend.append('matiere', formData.matiere);
       formDataToSend.append('description', formData.description);
       
-      // Ajouter tous les fichiers
-      formData.files.forEach((file) => {
+      // Ajouter les nouveaux fichiers
+      const newFiles = formData.files.filter(file => file instanceof File);
+      newFiles.forEach((file) => {
         formDataToSend.append('files', file);
       });
 
-      await onAddExam(formDataToSend);
-      toast.success('Examen créé avec succès');
+      await onUpdate(exam.slug, formDataToSend);
+      toast.success('Examen modifié avec succès');
       onClose();
     } catch (error) {
-      console.error('Erreur lors de la création de l\'examen:', error);
-      toast.error(error.message || 'Erreur lors de la création de l\'examen');
+      console.error('Erreur lors de la modification de l\'examen:', error);
+      toast.error(error.message || 'Erreur lors de la modification de l\'examen');
     } finally {
       setLoading(false);
     }
@@ -229,8 +235,8 @@ export default function AddExam({ onClose, onAddExam }) {
               <FileText className="text-blue-600 dark:text-blue-400" size={24} />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white">Ajouter un examen</h2>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Remplissez les informations de l'examen</p>
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white">Modifier l'examen</h2>
+              <p className="text-sm text-gray-500 dark:text-gray-400">{exam._id}</p>
             </div>
           </div>
           <button
@@ -415,66 +421,128 @@ export default function AddExam({ onClose, onAddExam }) {
 
           {/* Section Fichiers */}
           <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Fichiers de l'examen *</h3>
-            <div 
-              className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 dark:border-gray-600 border-dashed rounded-lg hover:border-purple-500 dark:hover:border-purple-400 transition-colors"
-              onDragOver={handleDragOver}
-              onDrop={handleDrop}
-            >
-              <div className="space-y-1 text-center">
-                <Upload className="mx-auto h-12 w-12 text-gray-400" />
-                <div className="flex text-sm text-gray-600 dark:text-gray-400">
-                  <label
-                    htmlFor="file-upload"
-                    className="relative cursor-pointer bg-white dark:bg-gray-700 rounded-md font-medium text-purple-600 dark:text-purple-400 hover:text-purple-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-purple-500"
-                  >
-                    <span>Télécharger plusieurs fichiers</span>
-                    <input
-                      id="file-upload"
-                      name="file-upload"
-                      type="file"
-                      multiple
-                      accept=".pdf,.jpg,.jpeg,.png,.gif"
-                      onChange={handleFileChange}
-                      className="sr-only"
-                    />
-                  </label>
-                  <p className="pl-1">ou glisser-déposer</p>
-                </div>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
-                  PDF, JPG, PNG, GIF (max 10MB par fichier, max 5 fichiers)
-                </p>
-              </div>
-            </div>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Fichiers de l'examen</h3>
             
-            {/* Affichage des fichiers sélectionnés */}
-            {formData.files.length > 0 && (
-              <div className="mt-4 space-y-2">
-                <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                  {formData.files.length} fichier(s) sélectionné(s) :
+            {/* Fichiers existants */}
+            {exam.files && exam.files.length > 0 && (
+              <div className="mb-4">
+                <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                  Fichiers actuels ({exam.files.length})
                 </p>
-                {formData.files.map((file, index) => (
-                  <div key={index} className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
-                    <div className="flex items-center">
-                      <FileText className="w-4 h-4 mr-2 text-green-600 dark:text-green-400" />
-                      <div>
-                        <p className="text-sm text-green-800 dark:text-green-200 font-medium truncate max-w-xs">{file.name}</p>
-                        <p className="text-xs text-green-600 dark:text-green-400">
-                          Taille : {(file.size / 1024 / 1024).toFixed(2)} MB
-                        </p>
+                <div className="space-y-2">
+                  {exam.files.map((file, index) => (
+                    <div key={index} className="flex items-center justify-between p-3 bg-white dark:bg-gray-600 rounded-lg border border-gray-200 dark:border-gray-700">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <FileText className="w-4 h-4 mr-2 text-green-600 dark:text-green-400" />
+                          <div>
+                            <p className="text-sm text-gray-900 dark:text-white font-medium truncate">
+                              {file.originalName || `Fichier ${index + 1}`}
+                            </p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400">
+                              {(file.size / 1024 / 1024).toFixed(2)} MB • {file.mimeType?.split('/')[1]?.toUpperCase() || 'FILE'}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <a
+                          href={file.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                          title={`Voir ${file.originalName || `Fichier ${index + 1}`}`}
+                        >
+                          <Eye size={16} />
+                        </a>
+                        <a
+                          href={file.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="p-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                          title={`Télécharger ${file.originalName || `Fichier ${index + 1}`}`}
+                        >
+                          <Download size={16} />
+                        </a>
+                        <button
+                          type="button"
+                          onClick={() => removeExistingFile(index)}
+                          className="p-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                          title={`Supprimer ${file.originalName || `Fichier ${index + 1}`}`}
+                        >
+                          <X size={16} />
+                        </button>
                       </div>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => removeFile(index)}
-                      className="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 transition-colors"
-                    >
-                      <X size={16} />
-                    </button>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
             )}
+
+            {/* Ajout de nouveaux fichiers */}
+            <div className="mt-4">
+              <div 
+                className="flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 dark:border-gray-600 border-dashed rounded-lg hover:border-purple-500 dark:hover:border-purple-400 transition-colors"
+                onDragOver={handleDragOver}
+                onDrop={handleDrop}
+              >
+                <div className="space-y-1 text-center">
+                  <Upload className="mx-auto h-12 w-12 text-gray-400" />
+                  <div className="flex text-sm text-gray-600 dark:text-gray-400">
+                    <label
+                      htmlFor="file-upload-edit"
+                      className="relative cursor-pointer bg-white dark:bg-gray-700 rounded-md font-medium text-purple-600 dark:text-purple-400 hover:text-purple-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-purple-500"
+                    >
+                      <span>Ajouter des fichiers</span>
+                      <input
+                        id="file-upload-edit"
+                        name="file-upload-edit"
+                        type="file"
+                        multiple
+                        accept=".pdf,.jpg,.jpeg,.png,.gif"
+                        onChange={handleFileChange}
+                        className="sr-only"
+                      />
+                    </label>
+                    <p className="pl-1">ou glisser-déposer</p>
+                  </div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    PDF, JPG, PNG, GIF (max 10MB par fichier, max 5 fichiers)
+                  </p>
+                </div>
+              </div>
+
+              {/* Affichage des fichiers sélectionnés */}
+              {formData.files.length > 0 && (
+                <div className="mt-4 space-y-2">
+                  <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Nouveaux fichiers ({formData.files.length})
+                  </p>
+                  {formData.files.map((file, index) => (
+                    <div key={index} className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <FileText className="w-4 h-4 mr-2 text-green-600 dark:text-green-400" />
+                          <div>
+                            <p className="text-sm text-green-800 dark:text-green-200 font-medium truncate max-w-xs">{file.name}</p>
+                            <p className="text-xs text-green-600 dark:text-green-400">
+                              Taille : {(file.size / 1024 / 1024).toFixed(2)} MB
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => removeFile(index)}
+                        className="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 transition-colors"
+                      >
+                        <X size={16} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Footer */}
@@ -499,7 +567,7 @@ export default function AddExam({ onClose, onAddExam }) {
               ) : (
                 <>
                   <Save size={18} />
-                  Enregistrer
+                  Enregistrer les modifications
                 </>
               )}
             </button>

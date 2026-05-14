@@ -1,12 +1,18 @@
 import { useAdmin } from '../context/AdminContext';
 
 export function useAdminExams() {
-  const { exams, fetchExams, approveExam, rejectExam, deleteExam, addExam, loading, addNotification } = useAdmin();
+  const { exams, fetchExams, approveExam: originalApproveExam, rejectExam, deleteExam, addExam, updateExam, loading, addNotification, api } = useAdmin();
+  
+  const approveExam = async (examId) => {
+    await api.post(`/admin/exams/${examId}/approve`);
+    fetchExams();
+  };
+
   
   const bulkApprove = async (examIds) => {
     try {
       for (const examId of examIds) {
-        await approveExam(examId);
+        await originalApproveExam(examId);
       }
       addNotification({
         type: 'success',
@@ -44,6 +50,7 @@ export function useAdminExams() {
     rejectExam,
     deleteExam,
     addExam,
+    updateExam,
     bulkApprove,
     bulkReject,
     loading

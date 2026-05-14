@@ -4,11 +4,12 @@ import { useAdminExams } from '../../hooks/useAdmin.exams';
 import { useTheme } from '../../context/ThemeContext';
 import DetailExam from './DetailExam';
 import AddExam from './AddExam';
+import EditExam from './EditExam';
 import { getAllUfrs, getFilieresByUfr, getNiveauxByFiliere } from '../../../exam/services/exam.api';
 
 export default function ExamManagement() {
   const { isDark } = useTheme();
-  const { exams, fetchExams, approveExam, rejectExam, deleteExam, addExam, bulkApprove, bulkReject, loading } = useAdminExams();
+  const { exams, fetchExams, approveExam, rejectExam, deleteExam, addExam, updateExam, bulkApprove, bulkReject, loading } = useAdminExams();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
   const [filterUFR, setFilterUFR] = useState('');
@@ -399,10 +400,9 @@ export default function ExamManagement() {
           >
             <option value="">Tous les types</option>
             <option value="Examen Final">Examen Final</option>
-            <option value="Contrôle Continu">Contrôle Continu</option>
             <option value="Session de Rattrapage">Session de Rattrapage</option>
             <option value="Devoir">Devoir</option>
-            <option value="TP">TP</option>
+            <option value="TD/TP">TD/TP</option>
           </select>
           <input
             type="text"
@@ -548,6 +548,17 @@ export default function ExamManagement() {
                             >
                               <Eye size={16} />
                               Voir les détails
+                            </button>
+
+                            <button
+                              onClick={() => {
+                                setShowExamModal({ ...exam, isEditMode: true });
+                                setShowActionMenu(null);
+                              }}
+                              className="flex items-center gap-2 w-full px-4 py-2 text-sm text-blue-600 dark:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-700"
+                            >
+                              <FileText size={16} />
+                              Modifier
                             </button>
                             
                               
@@ -697,9 +708,12 @@ export default function ExamManagement() {
         </div>
       )}
 
-      {/* Modal de détail de l'examen */}
+      {/* Modal de détail/édition de l'examen */}
       {showExamModal && (
-        <DetailExam exam={showExamModal} onClose={() => setShowExamModal(null)} />
+        <DetailExam 
+          exam={showExamModal} 
+          onClose={() => setShowExamModal(null)} 
+        />
       )}
 
       {/* Modal d'ajout d'examen */}
@@ -707,6 +721,15 @@ export default function ExamManagement() {
         <AddExam
           onClose={() => setShowAddModal(false)}
           onAddExam={addExam}
+        />
+      )}
+
+      {/* Modal d'édition d'examen */}
+      {showExamModal?.isEditMode && (
+        <EditExam
+          exam={showExamModal}
+          onClose={() => setShowExamModal(null)}
+          onUpdate={(examSlug, formData) => updateExam(examSlug, formData)}
         />
       )}
     </div>

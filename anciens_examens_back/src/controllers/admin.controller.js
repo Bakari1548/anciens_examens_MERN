@@ -2,6 +2,7 @@ const User = require('../models/User');
 const Exam = require('../models/Exam');
 const Report = require('../models/Report');
 const sendEmail = require('../utils/sendEmail');
+const { createLog } = require('../utils/logger');
 require('dotenv').config();
 
 // @desc    Obtenir les statistiques du dashboard
@@ -144,6 +145,7 @@ const resolveReport = async (req, res) => {
             });
         }
 
+        await createLog({ level: 'info', action: 'REPORT_RESOLVED', message: `Signalement ${id} résolu`, req, user: req.user, metadata: { reportId: id, resolution } });
         res.json({
             message: 'Signalement résolu avec succès',
             report
@@ -181,6 +183,7 @@ const banUser = async (req, res) => {
             });
         }
 
+        await createLog({ level: 'warning', action: 'USER_BANNED', message: `Utilisateur ${user.email} banni. Raison: ${reason}`, req, user: req.user, metadata: { targetUserId: id, duration, reason } });
         res.json({
             message: 'Utilisateur banni avec succès',
             user
@@ -217,6 +220,7 @@ const unbanUser = async (req, res) => {
             });
         }
 
+        await createLog({ level: 'info', action: 'USER_UNBANNED', message: `Utilisateur ${user.email} débanni`, req, user: req.user, metadata: { targetUserId: id } });
         res.json({
             message: 'Utilisateur débanni avec succès',
             user
@@ -252,6 +256,7 @@ const approveExam = async (req, res) => {
             });
         }
 
+        await createLog({ level: 'info', action: 'EXAM_APPROVED', message: `Examen approuvé: ${exam.title}`, req, user: req.user, metadata: { examId: exam._id, slug: exam.slug } });
         res.json({
             message: 'Examen approuvé avec succès',
             exam
@@ -289,6 +294,7 @@ const rejectExam = async (req, res) => {
             });
         }
 
+        await createLog({ level: 'warning', action: 'EXAM_REJECTED', message: `Examen rejeté: ${exam.title}. Raison: ${reason}`, req, user: req.user, metadata: { examId: exam._id, slug: exam.slug, reason } });
         res.json({
             message: 'Examen rejeté avec succès',
             exam
@@ -483,7 +489,7 @@ const getBackups = async (req, res) => {
             {
                 _id: '2',
                 filename: 'backup_2024-01-14T10:30:00.000Z.zip',
-                size: 68000000,
+                size: 65000000,
                 createdAt: new Date('2024-01-14T10:30:00.000Z'),
                 status: 'completed'
             }

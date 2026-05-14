@@ -27,10 +27,9 @@ const SEMESTRE_OPTIONS = [
 const TYPE_EXAMEN_OPTIONS = [
     { value: '', label: 'Tous les types' },
     { value: 'Examen Final', label: 'Examen Final' },
-    { value: 'Contrôle Continu', label: 'Contrôle Continu' },
     { value: 'Session de Rattrapage', label: 'Session de Rattrapage' },
     { value: 'Devoir', label: 'Devoir' },
-    { value: 'TP', label: 'TP' },
+    { value: 'TD/TP', label: 'TD/TP' },
 ];
 
 const SORT_OPTIONS = [

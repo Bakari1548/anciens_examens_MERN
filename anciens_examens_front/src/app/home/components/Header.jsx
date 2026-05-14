@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import logoAnciensExamens from '@/assets/logo_anciens_examens.png';
-import { FileText, LogIn, User, UserPlus, LogOut, Menu, X, AlertTriangle } from 'lucide-react';
+import { FileText, LogIn, User, UserPlus, LogOut, Menu, X, AlertTriangle, Sun, Moon } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { tokenStorage } from '@/utils/tokenStorage';
 import { logout as authLogout } from '@/app/auth/services/auth.api';
+import { useTheme } from '@/app/admin/context/ThemeContext';
 
 export default function Header() {
+  const { isDark, toggleTheme } = useTheme();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [user, setUser] = useState(null);
@@ -91,10 +93,19 @@ export default function Header() {
 
         {/* Partie droite - Menu mobile et utilisateur */}
         <div className="flex items-center gap-2">
+          {/* Bouton thème */}
+          <button
+            onClick={toggleTheme}
+            className="p-2 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 transition-colors"
+            title={isDark ? 'Mode clair' : 'Mode sombre'}
+          >
+            {isDark ? <Sun className='text-white' size={20} /> : <Moon  className='text-gray-800' size={20} />}
+          </button>
+
           {/* Menu hamburger mobile */}
           <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="md:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors"
+              className="md:hidden p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 transition-colors"
           >
               {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
           </button>

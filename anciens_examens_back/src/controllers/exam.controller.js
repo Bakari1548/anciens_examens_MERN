@@ -1,6 +1,7 @@
 const Exam = require('../models/Exam');
 const User = require('../models/User');
 const { cloudinary } = require('../config/cloudinary');
+const { createLog } = require('../utils/logger');
 
 // Fonction pour générer un slug unique avec caractères aléatoires
 const generateUniqueSlug = async (baseSlug) => {
@@ -256,6 +257,7 @@ const postExam = async (req, res) => {
             { new: true }
         );
 
+        await createLog({ level: 'info', action: 'EXAM_UPLOAD', message: `Upload examen: ${exam.title}`, req, user: req.user, metadata: { examId: exam._id, slug: exam.slug, filesCount: files.length } });
         res.status(201).json({
             message: 'Examen créé avec succès',
             exam: {
@@ -265,6 +267,7 @@ const postExam = async (req, res) => {
         });
     } catch (error) {
         console.error('Erreur lors de la création de l\'examen:', error);
+        await createLog({ level: 'error', action: 'EXAM_UPLOAD_FAILED', message: `Échec de l'upload d'examen: ${error.message}`, req, user: req.user });
         res.status(500).json({
             message: 'Erreur serveur lors du partage de l\'examen',
             error: process.env.NODE_ENV === 'development' ? error.message : 'Erreur interne'
@@ -284,17 +287,50 @@ const updateExam = async (req, res) => {
                 message: 'Examen non trouvé'
             });
         };
+
+        // Préparer les données de mise à jour
+        const updateData = {
+            ufr: req.body.ufr || exam.ufr,
+            filiere: req.body.filiere || exam.filiere,
+            niveau: req.body.niveau || exam.niveau,
+            semestre: req.body.semestre || exam.semestre,
+            anneeExamen: req.body.anneeExamen || exam.anneeExamen,
+            typeExamen: req.body.typeExamen || exam.typeExamen,
+            matiere: req.body.matiere || exam.matiere,
+            description: req.body.description || exam.description
+        };
+
+        // Gérer les fichiers
+        let files = exam.files || [];
         
-        const updatedExam = await Exam.findByIdAndUpdate(exam._id, req.body, {
+        // Si de nouveaux fichiers sont uploadés
+        if (req.files && req.files.length > 0) {
+            const newFiles = req.files.map(file => ({
+                url: file.secure_url,
+                publicId: file.public_id,
+                originalName: file.originalname,
+                size: file.size,
+                mimeType: file.mimetype
+            }));
+            
+            // Fusionner les fichiers existants avec les nouveaux
+            files = [...files, ...newFiles];
+        }
+
+        updateData.files = files;
+
+        const updatedExam = await Exam.findByIdAndUpdate(exam._id, updateData, {
             new: true,
             runValidators: true
         });
         
+        await createLog({ level: 'info', action: 'EXAM_UPDATED', message: `Examen mis à jour: ${updatedExam.title}`, req, user: req.user, metadata: { examId: updatedExam._id, slug: updatedExam.slug } });
         res.status(200).json({
             message: 'Examen mis à jour avec succès',
-            updatedExam
+            exam: updatedExam
         });
     } catch (error) {
+        await createLog({ level: 'error', action: 'SYSTEM_ERROR', message: `Erreur lors de la mise à jour de l'examen: ${error.message}`, req, user: req.user });
         res.status(500).json({
             message: 'Erreur serveur',
             error: error.message
@@ -366,6 +402,7 @@ const deleteExam = async (req, res) => {
         
         console.log(`Examen supprimé: ${exam.title} (${exam.slug})`);
         
+        await createLog({ level: 'warning', action: 'EXAM_DELETED', message: `Examen supprimé: ${exam.title}`, req, user: req.user, metadata: { examId: exam._id, slug: exam.slug } });
         res.status(200).json({
             message: 'Examen supprimé avec succès',
             examId: exam._id,
@@ -373,6 +410,7 @@ const deleteExam = async (req, res) => {
         });
     } catch (error) {
         console.error('Erreur lors de la suppression de l\'examen:', error);
+        await createLog({ level: 'error', action: 'SYSTEM_ERROR', message: `Erreur lors de la suppression de l'examen: ${error.message}`, req, user: req.user });
         res.status(500).json({
             message: 'Erreur serveur lors de la suppression',
             error: error.message

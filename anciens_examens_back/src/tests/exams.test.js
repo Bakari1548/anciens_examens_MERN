@@ -146,7 +146,7 @@ describe('Exam Controller Tests', () => {
           filiere: 'Physique',
           niveau: 'L1',
           semestre: 'S1',
-          typeExamen: 'Contrôle Continu',
+          typeExamen: 'TD/TP',
           matiere: 'Mécanique',
           anneeExamen: '2023-2024',
           author: {
@@ -347,7 +347,7 @@ describe('Exam Controller Tests', () => {
           filiere: 'Informatique',
           niveau: 'M2',
           semestre: 'S10',
-          typeExamen: 'TP',
+          typeExamen: 'TD/TP',
           matiere: 'Test',
           anneeExamen: '2024-2025',
           author: {

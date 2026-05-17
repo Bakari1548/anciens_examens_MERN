@@ -1,6 +1,7 @@
 const User = require('../models/User');
 const Exam = require('../models/Exam');
 const Report = require('../models/Report');
+const Notification = require('../models/Notification');
 const sendEmail = require('../utils/sendEmail');
 const { createLog } = require('../utils/logger');
 require('dotenv').config();
@@ -256,6 +257,21 @@ const approveExam = async (req, res) => {
             });
         }
 
+
+        // Envoyer une notification à l'auteur de l'examen
+        if (exam.author) {
+            await Notification.create({
+                recipient: exam.author._id || exam.author,
+                type: 'success',
+                title: 'Examen approuvé',
+                message: `Votre examen "${exam.title}" a été approuvé.`,
+                metadata: {
+                    examId: exam._id,
+                    slug: exam.slug,
+                },
+                read: false
+            });
+        }
         await createLog({ level: 'info', action: 'EXAM_APPROVED', message: `Examen approuvé: ${exam.title}`, req, user: req.user, metadata: { examId: exam._id, slug: exam.slug } });
         res.json({
             message: 'Examen approuvé avec succès',
@@ -291,6 +307,22 @@ const rejectExam = async (req, res) => {
         if (!exam) {
             return res.status(404).json({
                 message: 'Examen non trouvé'
+            });
+        }
+
+        // Envoyer une notification à l'auteur de l'examen
+        if (exam.author) {
+            await Notification.create({
+                recipient: exam.author._id || exam.author,
+                type: 'error',
+                title: 'Examen rejeté',
+                message: `Votre examen "${exam.title}" a été rejeté. Raison: ${reason}`,
+                metadata: {
+                    examId: exam._id,
+                    slug: exam.slug,
+                    reason: reason
+                },
+                read: false
             });
         }
 

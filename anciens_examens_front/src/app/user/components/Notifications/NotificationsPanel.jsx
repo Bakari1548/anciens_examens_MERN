@@ -1,20 +1,14 @@
-import { useState, useMemo, useEffect } from 'react';
-import { Bell, Check, Trash2, Filter, Search, Clock, User, FileText, MessageSquare, AlertTriangle, CheckCircle, XCircle } from 'lucide-react';
-import { useTheme } from '../../context/ThemeContext';
-import { useAdminNotifications } from '../../hooks/useAdmin.notifications';
-import { useAdmin } from '../../context/AdminContext';
+import { useState, useMemo } from 'react';
+import { Bell, Check, Trash2, Search, Clock, User, FileText, MessageSquare, AlertTriangle, CheckCircle, XCircle } from 'lucide-react';
+// import { useTheme } from '../../admin/context/ThemeContext';
+import { useNotifications } from '../../hooks/useNotifications';
 import { notificationsApi } from '../../services/notifications.api';
 
 export default function NotificationsPanel() {
-  const { isDark } = useTheme();
-  const { notifications, clearAllNotifications, removeNotification } = useAdminNotifications();
-  const { fetchNotifications } = useAdmin();
+  // const { isDark } = useTheme();
+  const { notifications, markAllAsRead, deleteNotification, fetchNotifications } = useNotifications();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('');
-
-  useEffect(() => {
-    fetchNotifications();
-  }, [fetchNotifications]);
 
   const getTypeIcon = (type) => {
     const icons = {
@@ -29,35 +23,9 @@ export default function NotificationsPanel() {
     return icons[type] || Bell;
   };
 
-  const getTypeGradient = (type) => {
-    const gradients = {
-      user: 'from-blue-500 to-cyan-500',
-      exam: 'from-emerald-500 to-teal-500',
-      report: 'from-rose-500 to-pink-500',
-      system: 'from-purple-500 to-violet-500',
-      comment: 'from-amber-500 to-orange-500',
-      success: 'from-green-500 to-emerald-500',
-      error: 'from-red-500 to-rose-500'
-    };
-    return gradients[type] || gradients.system;
-  };
-
-  const getTypeBg = (type) => {
-    const bgs = {
-      user: 'bg-blue-50 dark:bg-blue-900/20',
-      exam: 'bg-emerald-50 dark:bg-emerald-900/20',
-      report: 'bg-rose-50 dark:bg-rose-900/20',
-      system: 'bg-purple-50 dark:bg-purple-900/20',
-      comment: 'bg-amber-50 dark:bg-amber-900/20',
-      success: 'bg-green-50 dark:bg-green-900/20',
-      error: 'bg-red-50 dark:bg-red-900/20'
-    };
-    return bgs[type] || bgs.system;
-  };
-
   const formatTime = (timestamp) => {
     const now = new Date();
-    const time = new Date(timestamp || notification.createdAt || Date.now());
+    const time = new Date(timestamp);
     const diff = now - time;
     const minutes = Math.floor(diff / 60000);
     const hours = Math.floor(diff / 3600000);
@@ -91,7 +59,7 @@ export default function NotificationsPanel() {
   const handleDelete = async (notificationId) => {
     try {
       await notificationsApi.deleteNotification(notificationId);
-      removeNotification(notificationId);
+      deleteNotification(notificationId);
     } catch (error) {
       console.error('Erreur lors de la suppression:', error);
     }
@@ -109,7 +77,7 @@ export default function NotificationsPanel() {
   const handleClearAll = async () => {
     try {
       await notificationsApi.clearAllNotifications();
-      clearAllNotifications();
+      await fetchNotifications();
     } catch (error) {
       console.error('Erreur lors de la suppression:', error);
     }
@@ -117,10 +85,10 @@ export default function NotificationsPanel() {
 
   return (
     <div className="space-y-6">
-      {/* Header moderne */}
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Notifications</h1>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Mes notifications</h1>
           <p className="text-gray-500 dark:text-gray-400 mt-1">
             {notifications.filter(n => !n.read).length} notification{notifications.filter(n => !n.read).length > 1 ? 's' : ''} non lue{notifications.filter(n => !n.read).length > 1 ? 's' : ''}
           </p>
@@ -161,11 +129,8 @@ export default function NotificationsPanel() {
           className="px-4 py-2.5 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm cursor-pointer"
         >
           <option value="">Tous les types</option>
-          <option value="user">Utilisateurs</option>
           <option value="exam">Examens</option>
-          <option value="report">Signalements</option>
           <option value="system">Système</option>
-          <option value="comment">Commentaires</option>
           <option value="success">Succès</option>
           <option value="error">Erreurs</option>
         </select>
@@ -183,7 +148,7 @@ export default function NotificationsPanel() {
         ) : (
           filteredNotifications.map((notification) => {
             const Icon = getTypeIcon(notification.type);
-            const timestamp = notification.timestamp || notification.createdAt || notification.createdAt;
+            const timestamp = notification.timestamp || notification.createdAt;
             return (
               <div
                 key={notification.id || notification._id}

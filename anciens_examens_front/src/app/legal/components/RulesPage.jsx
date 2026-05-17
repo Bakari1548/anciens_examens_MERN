@@ -252,7 +252,7 @@ export default function RulesPage() {
                 Pour toute question concernant les présentes conditions ou pour signaler un problème, l'utilisateur peut contacter le support :
               </p>
               <ul className="list-disc list-inside space-y-2 text-gray-600 ml-6">
-                <li>Email : <a href="mailto:support@anciensexamensuidt.app" className="text-violet-600 hover:underline">support@anciensexamensuidt.app</a></li>
+                <li>Email : <a href="mailto:onboarding@anciensexamensuidt.app" className="text-violet-600 hover:underline">onboarding@anciensexamensuidt.app</a></li>
                 <li>Réponse sous 48h</li>
                 <li>Assistance technique disponible</li>
               </ul>

@@ -4,6 +4,7 @@ const bcrypt = require('bcryptjs');
 // const sendEmail = require('../utils/sendEmail');
 const { sendEmail } = require('../utils/sendEmail');
 const { createLog } = require('../utils/logger');
+const Notification = require('../models/Notification');
 require('dotenv').config();
 
 
@@ -71,14 +72,27 @@ const register = async (req, res) => {
             res.cookie('auth_token', token, {
                 httpOnly: true,
                 secure: isProduction,
-                sameSite: 'strict',
+                sameSite: isProduction ? 'strict' : 'lax',
                 maxAge: 7 * 24 * 60 * 60 * 1000, // 7 jours
                 path: '/'
+            });
+            
+            // Envoyer une notification de bienvenue
+            await Notification.create({
+                recipient: user._id,
+                type: 'success',
+                title: 'Bienvenue sur Anciens Examens !',
+                message: `Bonjour ${user.firstName} ! Bienvenue sur notre plateforme. Vous pouvez maintenant partager et consulter des examens.`,
+                metadata: {
+                    userId: user._id
+                },
+                read: false
             });
             
             await createLog({ level: 'info', action: 'REGISTER', message: `Nouvel utilisateur inscrit: ${user.firstName} ${user.lastName} (${user.email})`, req, user });
             res.status(201).json({
                 message: "Incription reussie !",
+                token,
                 user: {
                     firstName: user.firstName,
                     lastName: user.lastName,
@@ -157,7 +171,7 @@ const login = async (req, res) => {
         res.cookie('auth_token', token, {
             httpOnly: true,
             secure: isProduction,
-            sameSite: 'strict',
+            sameSite: isProduction ? 'strict' : 'lax',
             maxAge: 7 * 24 * 60 * 60 * 1000, // 7 jours
             path: '/'
         });
@@ -165,6 +179,7 @@ const login = async (req, res) => {
         await createLog({ level: 'info', action: 'LOGIN', message: `Connexion réussie: ${user.firstName} ${user.lastName}`, req, user });
         res.json({
            message: "Utilisateur connectee avec succès !",
+            token,
             user: {
                 firstName: user.firstName,
                 lastName: user.lastName,
@@ -240,7 +255,7 @@ const logout = async (req, res) => {
         res.clearCookie('auth_token', {
             httpOnly: true,
             secure: isProduction,
-            sameSite: 'strict',
+            sameSite: isProduction ? 'strict' : 'lax',
             path: '/'
         });
         
@@ -261,8 +276,15 @@ const logout = async (req, res) => {
 // @access  Private
 const changePassword = async (req, res) => {
     try {
-        const { oldPassword, newPassword } = req.body;
-        
+        const { oldPassword, currentPassword, newPassword } = req.body;
+        const previousPassword = oldPassword || currentPassword;
+
+        if (!previousPassword || !newPassword) {
+            return res.status(400).json({
+                message: 'Mot de passe actuel et nouveau mot de passe requis'
+            });
+        }
+
         const user = await User.findById(req.user._id);
         if (!user) {
             return res.status(401).json({
@@ -271,7 +293,7 @@ const changePassword = async (req, res) => {
         }
         
         // Verifier le mot de passe actuel
-        const isPasswordValid = await user.comparePassword(oldPassword);
+        const isPasswordValid = await user.comparePassword(previousPassword);
         if (!isPasswordValid) {
             return res.status(401).json({
                 message: 'Mot de passe incorrect'
@@ -281,6 +303,18 @@ const changePassword = async (req, res) => {
         // Mettre à jour le mot de passe
         user.password = newPassword;
         await user.save();
+        
+        // Envoyer une notification de changement de mot de passe
+        await Notification.create({
+            recipient: user._id,
+            type: 'system',
+            title: 'Mot de passe modifié',
+            message: 'Votre mot de passe a été modifié avec succès. Si vous n\'êtes pas à l\'origine de cette modification, veuillez contacter le support.',
+            metadata: {
+                userId: user._id
+            },
+            read: false
+        });
         
         await createLog({ level: 'info', action: 'PASSWORD_CHANGED', message: `Mot de passe modifié`, req, user });
         res.json({
@@ -325,7 +359,8 @@ const forgotPassword = async (req, res) => {
         const emailResult = await sendEmail(
             user.email,
             'Réinitialisation de mot de passe - Anciens Examens',
-            `Vous avez demandé à réinitialiser votre mot de passe. Cliquez sur le lien suivant pour réinitialiser votre mot de passe: ${resetLink}`,
+            // `Vous avez demandé à réinitialiser votre mot de passe. Cliquez sur le lien suivant pour réinitialiser votre mot de passe: ${resetLink}`,
+            // resetPasswordTemplate
             resetPasswordTemplate(resetLink, userName)
         );
 

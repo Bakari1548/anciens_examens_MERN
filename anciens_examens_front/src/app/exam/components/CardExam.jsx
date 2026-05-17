@@ -41,6 +41,7 @@ export default function CardExam({ exam }) {
                 <div className="flex flex-col justify-start items-start gap-2 mt-3">
                     <p className="text-md"><span className="font-semibold">Filière :</span> {exam.filiere}</p>
                     <p className="text-md"><span className="font-semibold">Niveau :</span> {exam.niveau}</p>
+                    <p className="text-md"><span className="font-semibold">SEM :</span> {exam.semestre}</p>
                     <p className="text-md"><span className="font-semibold">Matière :</span> {exam.matiere}</p>
                     {exam.anneeExamen ? (
                         <p className="text-md"><span className="font-semibold">Année :</span> {exam.anneeExamen}</p>

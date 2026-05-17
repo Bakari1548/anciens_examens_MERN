@@ -1,6 +1,7 @@
 // Token storage utilities
-// Le token JWT est maintenant géré par le backend via HTTP-only cookie
-// Ce fichier gère uniquement les données utilisateur non sensibles
+// Le token JWT est géré par le backend via HTTP-only cookie ET stocké
+// en sessionStorage en fallback pour l'envoyer via Authorization header
+// (utile en cas de cookie bloqué : cross-origin, mode privé, etc.)
 export const tokenStorage = {
   // Stocker les infos utilisateur (non sensibles) dans sessionStorage
   setUser: (user) => {
@@ -25,8 +26,31 @@ export const tokenStorage = {
     }
   },
 
+  // Stocker le token JWT (fallback si cookie HTTP-only non envoyé)
+  setToken: (token) => {
+    if (typeof sessionStorage !== 'undefined' && token) {
+      sessionStorage.setItem('auth_token', token);
+    }
+  },
+
+  // Récupérer le token JWT
+  getToken: () => {
+    if (typeof sessionStorage !== 'undefined') {
+      return sessionStorage.getItem('auth_token');
+    }
+    return null;
+  },
+
+  // Supprimer le token
+  removeToken: () => {
+    if (typeof sessionStorage !== 'undefined') {
+      sessionStorage.removeItem('auth_token');
+    }
+  },
+
   // Nettoyer tout
   clear: () => {
     tokenStorage.removeUser();
+    tokenStorage.removeToken();
   }
 };

@@ -9,7 +9,9 @@ export default function EditUser({ user, onClose, onSave }) {
     email: user?.email || '',
     role: user?.role || 'user',
     ufr: user?.ufr || '',
-    filiere: user?.filiere || ''
+    filiere: user?.filiere || '',
+    niveau: user?.niveau || '',
+    semestre: user?.semestre || ''
   });
 
   const handleChange = (e) => {
@@ -137,6 +139,42 @@ export default function EditUser({ user, onClose, onSave }) {
               <option value="M1">Master 1</option>
               <option value="M2">Master 2</option>
             </select>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4 mb-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Niveau
+              </label>
+              <select
+                name="niveau"
+                value={formData.niveau}
+                onChange={handleChange}
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">Sélectionnez</option>
+                <option value="L1">L1</option>
+                <option value="L2">L2</option>
+                <option value="L3">L3</option>
+                <option value="M1">M1</option>
+                <option value="M2">M2</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Semestre
+              </label>
+              <select
+                name="semestre"
+                value={formData.semestre}
+                onChange={handleChange}
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">Sélectionnez</option>
+                <option value="1">Semestre 1</option>
+                <option value="2">Semestre 2</option>
+              </select>
+            </div>
           </div>
 
           <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">

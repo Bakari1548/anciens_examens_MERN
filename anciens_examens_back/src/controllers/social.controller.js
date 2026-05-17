@@ -1,6 +1,7 @@
 const Exam = require('../models/Exam');
 const User = require('../models/User');
 const { createLog } = require('../utils/logger');
+const Notification = require('../models/Notification');
 
 // @desc    Ajouter un like à un examen
 // @route   POST /api/exams/:slug/like
@@ -110,6 +111,22 @@ const addComment = async (req, res) => {
         exam.comments.push(comment);
         exam.commentsCount = exam.comments.length;
         await exam.save();
+
+        // Envoyer une notification à l'auteur de l'examen si le commentaire n'est pas de lui-même
+        if (exam.author._id.toString() !== req.user._id.toString()) {
+            await Notification.create({
+                recipient: exam.author._id,
+                type: 'comment',
+                title: 'Nouveau commentaire',
+                message: `${req.user.firstName} ${req.user.lastName} a commenté sur votre examen "${exam.title}"`,
+                metadata: {
+                    examId: exam._id,
+                    slug: exam.slug,
+                    commentId: exam.comments[exam.comments.length - 1]._id
+                },
+                read: false
+            });
+        }
 
         // Récupérer le dernier commentaire ajouté
         const newComment = exam.comments[exam.comments.length - 1];

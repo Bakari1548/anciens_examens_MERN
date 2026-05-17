@@ -98,7 +98,7 @@ export default function FAQ() {
             Vous ne trouvez pas réponse à votre question ?
           </p>
           <a 
-            href="mailto:support@anciensexamensuidt.app" 
+            href="mailto:onboarding@anciensexamensuidt.app" 
             className="inline-flex items-center gap-2 sm:px-6 px-4 py-3 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors"
           >
             <HelpCircle className="w-5 h-5" />

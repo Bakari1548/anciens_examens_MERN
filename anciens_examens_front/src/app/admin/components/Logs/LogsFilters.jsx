@@ -1,4 +1,4 @@
-import { Search } from 'lucide-react';
+import { Search, Calendar } from 'lucide-react';
 import { LOG_ACTIONS, LOG_LEVELS } from './constants';
 
 export default function LogsFilters({
@@ -8,7 +8,9 @@ export default function LogsFilters({
   filterLevel,
   setFilterLevel,
   filterAction,
-  setFilterAction
+  setFilterAction,
+  filterDate,
+  setFilterDate
 }) {
   return (
     <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
@@ -59,6 +61,18 @@ export default function LogsFilters({
               ))}
             </optgroup>
           ))}
+        </select>
+
+        {/* Filtre date */}
+        <select
+          value={filterDate}
+          onChange={(e) => setFilterDate(e.target.value)}
+          className="px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          <option value="">Toutes les dates</option>
+          <option value="today">Aujourd'hui</option>
+          <option value="week">Cette semaine</option>
+          <option value="month">Ce mois-ci</option>
         </select>
       </div>
     </div>

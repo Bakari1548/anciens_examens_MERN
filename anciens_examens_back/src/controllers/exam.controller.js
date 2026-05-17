@@ -2,6 +2,7 @@ const Exam = require('../models/Exam');
 const User = require('../models/User');
 const { cloudinary } = require('../config/cloudinary');
 const { createLog } = require('../utils/logger');
+const Notification = require('../models/Notification');
 
 // Fonction pour générer un slug unique avec caractères aléatoires
 const generateUniqueSlug = async (baseSlug) => {
@@ -256,6 +257,41 @@ const postExam = async (req, res) => {
             { $push: { exams: exam._id } },
             { new: true }
         );
+
+        // Envoyer une notification à l'utilisateur que son examen a été partagé
+        await Notification.create({
+            recipient: req.user._id,
+            type: 'exam',
+            title: 'Examen partagé avec succès',
+            message: `Votre examen "${exam.title}" a été partagé et est en attente d'approbation.`,
+            metadata: {
+                examId: exam._id,
+                slug: exam.slug
+            },
+            read: false
+        });
+
+        // Envoyer une notification aux autres utilisateurs de la même filière
+        const usersInFiliere = await User.find({
+            _id: { $ne: req.user._id },
+            filiere: filiere,
+            status: 'active'
+        }).select('_id');
+
+        for (const user of usersInFiliere) {
+            await Notification.create({
+                recipient: user._id,
+                type: 'exam',
+                title: 'Nouvel examen disponible',
+                message: `Un nouvel examen "${exam.title}" est disponible dans votre filière ${filiere}.`,
+                metadata: {
+                    examId: exam._id,
+                    slug: exam.slug,
+                    filiere: filiere
+                },
+                read: false
+            });
+        }
 
         await createLog({ level: 'info', action: 'EXAM_UPLOAD', message: `Upload examen: ${exam.title}`, req, user: req.user, metadata: { examId: exam._id, slug: exam.slug, filesCount: files.length } });
         res.status(201).json({

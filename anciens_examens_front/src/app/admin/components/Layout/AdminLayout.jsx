@@ -188,21 +188,21 @@ export default function AdminLayout({ children }) {
             </button>
 
             {/* Logo et titre */}
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 sm:gap-4">
               <button 
                 className="cursor-pointer active:scale-95 hover:scale-105 transition-transform rounded-lg flex items-center justify-center"
                 onClick={() => navigate('/')}
               >
-                <img src={logoAnciensExamens} alt="Logo UIDT" className="w-12 h-12" />
+                <img src={logoAnciensExamens} alt="Logo UIDT" className="w-10 h-10 sm:w-12 sm:h-12" />
               </button>
-              <div>
+              <div className="hidden sm:block">
                 <h1 className="text-xl font-bold text-gray-900 dark:text-white">Admin Panel</h1>
                 <p className="text-xs text-gray-500 dark:text-gray-400">Panneau d'administration</p>
               </div>
             </div>
 
             {/* Actions header */}
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 sm:gap-4">
               {/* Bouton thème */}
               <button
                 onClick={toggleTheme}
@@ -226,14 +226,14 @@ export default function AdminLayout({ children }) {
               </div>
 
               {/* Profil utilisateur */}
-              <div className="flex items-center gap-3">
-                <div className="text-right">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="hidden sm:block text-right">
                   <div className="text-sm font-medium text-gray-900 dark:text-white">
                     {user?.firstName} {user?.lastName}
                   </div>
                   <div className="text-xs text-gray-500 dark:text-gray-400">Administrateur</div>
                 </div>
-                <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-semibold text-sm">
+                <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-semibold text-sm flex-shrink-0">
                   {user?.firstName?.charAt(0)}{user?.lastName?.charAt(0)}
                 </div>
                 <button

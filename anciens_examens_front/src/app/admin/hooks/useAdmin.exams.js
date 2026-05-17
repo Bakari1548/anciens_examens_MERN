@@ -1,14 +1,27 @@
 import { useAdmin } from '../context/AdminContext';
 
 export function useAdminExams() {
-  const { exams, fetchExams, approveExam: originalApproveExam, rejectExam, deleteExam, addExam, updateExam, loading, addNotification, api } = useAdmin();
-  
-  const approveExam = async (examId) => {
-    await api.post(`/admin/exams/${examId}/approve`);
-    fetchExams();
+  const { exams, fetchExams, approveExam: originalApproveExam, rejectExam, deleteExam, addExam, updateExam, loading, addNotification } = useAdmin();
+
+  const approveExam = async (examId, params = {}) => {
+    try {
+      console.log('Tentative d\'approbation examId:', examId);
+      await originalApproveExam(examId);
+      console.log('Approbation réussie');
+      addNotification({
+        type: 'success',
+        message: 'Examen approuvé avec succès'
+      });
+    } catch (error) {
+      console.error('Erreur lors de l\'approbation:', error);
+      addNotification({
+        type: 'error',
+        message: `Erreur lors de l'approbation: ${error.response?.data?.message || error.message}`
+      });
+    }
   };
 
-  
+
   const bulkApprove = async (examIds) => {
     try {
       for (const examId of examIds) {
@@ -25,7 +38,7 @@ export function useAdminExams() {
       });
     }
   };
-  
+
   const bulkReject = async (examIds, reason) => {
     try {
       for (const examId of examIds) {
@@ -42,7 +55,7 @@ export function useAdminExams() {
       });
     }
   };
-  
+
   return {
     exams,
     fetchExams,

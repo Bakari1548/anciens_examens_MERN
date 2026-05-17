@@ -1,4 +1,5 @@
 import api from '@/api/api';
+import { notificationsApi } from './notifications.api';
 
 export const settingsApi = {
   // Settings et configuration
@@ -12,16 +13,9 @@ export const settingsApi = {
     return response.data;
   },
 
-  // Notifications et communications
-  sendGlobalNotification: async (notification) => {
-    const response = await api.post('/notifications/global', notification);
-    return response.data;
-  },
-
-  sendNotificationToUsers: async (userIds, notification) => {
-    const response = await api.post('/notifications/targeted', { userIds, ...notification });
-    return response.data;
-  },
+  // Notifications et communications (délégué à notificationsApi)
+  sendGlobalNotification: notificationsApi.sendGlobalNotification,
+  sendNotificationToUsers: notificationsApi.sendTargetedNotification,
 
   getNotifications: async () => {
     const response = await api.get('/notifications');

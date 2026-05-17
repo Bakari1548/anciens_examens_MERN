@@ -5,6 +5,7 @@ import { examsApi } from '../services/exams.api';
 import { reportsApi } from '../services/reports.api';
 import { settingsApi } from '../services/settings.api';
 import { authApi } from '../services/auth.api';
+import { notificationsApi } from '../services/notifications.api';
 
 // État initial
 const initialState = {
@@ -36,6 +37,7 @@ const ADMIN_ACTIONS = {
   SET_REPORTS: 'SET_REPORTS',
   ADD_NOTIFICATION: 'ADD_NOTIFICATION',
   REMOVE_NOTIFICATION: 'REMOVE_NOTIFICATION',
+  SET_NOTIFICATIONS: 'SET_NOTIFICATIONS',
   UPDATE_USER: 'UPDATE_USER',
   DELETE_USER: 'DELETE_USER',
   ACTIVATE_USER: 'ACTIVATE_USER',
@@ -86,6 +88,12 @@ const adminReducer = (state, action) => {
         notifications: state.notifications.filter(n => n.id !== action.payload)
       };
     
+    case ADMIN_ACTIONS.SET_NOTIFICATIONS:
+      return {
+        ...state,
+        notifications: action.payload
+      };
+    
     case ADMIN_ACTIONS.UPDATE_USER:
       return {
         ...state,
@@ -133,19 +141,23 @@ const adminReducer = (state, action) => {
       };
     
     case ADMIN_ACTIONS.APPROVE_EXAM:
+      console.log('Reducer APPROVE_EXAM triggered for examId:', action.payload);
+      const updatedExams = state.exams.map(exam =>
+        exam._id === action.payload ? { ...exam, status: 'approved' } : exam
+      );
+      console.log('Updated exams:', updatedExams);
       return {
         ...state,
-        exams: state.exams.map(exam =>
-          exam._id === action.payload ? { ...exam, status: 'approved' } : exam
-        )
+        exams: updatedExams
       };
     
     case ADMIN_ACTIONS.REJECT_EXAM:
+      const rejectedExams = state.exams.map(exam =>
+        exam._id === action.payload ? { ...exam, status: 'rejected' } : exam
+      );
       return {
         ...state,
-        exams: state.exams.map(exam =>
-          exam._id === action.payload ? { ...exam, status: 'rejected' } : exam
-        )
+        exams: rejectedExams
       };
     
     case ADMIN_ACTIONS.DELETE_EXAM:
@@ -212,6 +224,17 @@ export function AdminProvider({ children }) {
     
     removeNotification: (id) => dispatch({ type: ADMIN_ACTIONS.REMOVE_NOTIFICATION, payload: id }),
     
+    fetchNotifications: async (params = {}) => {
+      try {
+        const response = await notificationsApi.getNotifications(params);
+        dispatch({ type: ADMIN_ACTIONS.SET_NOTIFICATIONS, payload: response.notifications });
+        return response;
+      } catch (error) {
+        actions.setError(error.message);
+        throw error;
+      }
+    },
+    
     // API Calls
     fetchStats: async () => {
       try {
@@ -265,13 +288,30 @@ export function AdminProvider({ children }) {
     updateUser: async (userId, userData) => {
       try {
         await usersApi.updateUser(userId, userData);
-        dispatch({ type: ADMIN_ACTIONS.UPDATE_USER, payload: { id: userId, data: userData } });
+        dispatch({ type: ADMIN_ACTIONS.UPDATE_USER, payload: { id: userId, ...userData } });
+        // Envoyer notification à l'utilisateur
+        await notificationsApi.sendNotification({
+          recipient: userId,
+          type: 'success',
+          title: 'Profil mis à jour',
+          message: 'Votre profil a été mis à jour par l\'administration'
+        });
+        // Envoyer notification à l'admin
+        await notificationsApi.sendNotification({
+          recipient: state.user._id,
+          type: 'success',
+          title: 'Utilisateur mis à jour',
+          message: 'Vous avez mis à jour un utilisateur'
+        });
         actions.addNotification({
           type: 'success',
           message: 'Utilisateur mis à jour avec succès'
         });
       } catch (error) {
-        actions.setError(error.message);
+        actions.addNotification({
+          type: 'error',
+          message: 'Erreur lors de la mise à jour'
+        });
       }
     },
     
@@ -279,12 +319,22 @@ export function AdminProvider({ children }) {
       try {
         await usersApi.deleteUser(userId);
         dispatch({ type: ADMIN_ACTIONS.DELETE_USER, payload: userId });
+        // Envoyer notification à l'admin
+        await notificationsApi.sendNotification({
+          recipient: state.user._id,
+          type: 'warning',
+          title: 'Utilisateur supprimé',
+          message: 'Vous avez supprimé un utilisateur'
+        });
         actions.addNotification({
           type: 'success',
           message: 'Utilisateur supprimé avec succès'
         });
       } catch (error) {
-        actions.setError(error.message);
+        actions.addNotification({
+          type: 'error',
+          message: 'Erreur lors de la suppression'
+        });
       }
     },
 
@@ -292,12 +342,29 @@ export function AdminProvider({ children }) {
       try {
         await usersApi.activateUser(userId);
         dispatch({ type: ADMIN_ACTIONS.ACTIVATE_USER, payload: userId });
+        // Envoyer notification à l'utilisateur
+        await notificationsApi.sendNotification({
+          recipient: userId,
+          type: 'success',
+          title: 'Compte activé',
+          message: 'Votre compte a été activé par l\'administration'
+        });
+        // Envoyer notification à l'admin
+        await notificationsApi.sendNotification({
+          recipient: state.user._id,
+          type: 'success',
+          title: 'Utilisateur activé',
+          message: 'Vous avez activé un utilisateur'
+        });
         actions.addNotification({
           type: 'success',
           message: 'Utilisateur activé avec succès'
         });
       } catch (error) {
-        actions.setError(error.message);
+        actions.addNotification({
+          type: 'error',
+          message: 'Erreur lors de l\'activation'
+        });
       }
     },
     
@@ -305,12 +372,29 @@ export function AdminProvider({ children }) {
       try {
         await usersApi.desactivateUser(userId);
         dispatch({ type: ADMIN_ACTIONS.DESACTIVATE_USER, payload: userId });
+        // Envoyer notification à l'utilisateur
+        await notificationsApi.sendNotification({
+          recipient: userId,
+          type: 'warning',
+          title: 'Compte désactivé',
+          message: 'Votre compte a été désactivé par l\'administration'
+        });
+        // Envoyer notification à l'admin
+        await notificationsApi.sendNotification({
+          recipient: state.user._id,
+          type: 'success',
+          title: 'Utilisateur désactivé',
+          message: 'Vous avez désactivé un utilisateur'
+        });
         actions.addNotification({
           type: 'success',
           message: 'Utilisateur désactivé avec succès'
         });
       } catch (error) {
-        actions.setError(error.message);
+        actions.addNotification({
+          type: 'error',
+          message: 'Erreur lors de la désactivation'
+        });
       }
     },
     
@@ -322,8 +406,25 @@ export function AdminProvider({ children }) {
           type: 'success',
           message: 'Utilisateur banni avec succès'
         });
+        // Envoyer notification à l'utilisateur banni
+        await notificationsApi.sendNotification({
+          recipient: userId,
+          type: 'warning',
+          title: 'Comte banni',
+          message: `Votre compte a été banni pour ${duration} jours. Raison: ${reason}`
+        });
+        // Envoyer notification à l'admin
+        await notificationsApi.sendNotification({
+          recipient: state.user._id,
+          type: 'success',
+          title: 'Utilisateur banni',
+          message: `Vous avez banni l'utilisateur pour ${duration} jours`
+        });
       } catch (error) {
-        actions.setError(error.message);
+        actions.addNotification({
+          type: 'error',
+          message: 'Erreur lors du bannissement'
+        });
       }
     },
     
@@ -331,12 +432,25 @@ export function AdminProvider({ children }) {
       try {
         await usersApi.unbanUser(userId);
         dispatch({ type: ADMIN_ACTIONS.UNBAN_USER, payload: userId });
-        actions.addNotification({
+        // Envoyer notification à l'utilisateur débanni
+        await notificationsApi.sendNotification({
+          recipient: userId,
           type: 'success',
-          message: 'Utilisateur débanni avec succès'
+          title: 'Comte réactivé',
+          message: 'Votre compte a été réactivé avec succès'
+        });
+        // Envoyer notification à l'admin
+        await notificationsApi.sendNotification({
+          recipient: state.user._id,
+          type: 'success',
+          title: 'Utilisateur réactivé',
+          message: 'Vous avez réactivé le compte de l\'utilisateur'
         });
       } catch (error) {
-        actions.setError(error.message);
+        actions.addNotification({
+          type: 'error',
+          message: 'Erreur lors du débannissement'
+        });
       }
     },
     
@@ -344,38 +458,54 @@ export function AdminProvider({ children }) {
       try {
         await examsApi.approveExam(examId);
         dispatch({ type: ADMIN_ACTIONS.APPROVE_EXAM, payload: examId });
-        actions.addNotification({
+        await actions.fetchExams();
+        // Envoyer notification globale pour l'examen approuvé
+        await notificationsApi.sendGlobalNotification({
           type: 'success',
-          message: 'Examen approuvé avec succès'
+          title: 'Nouvel examen disponible',
+          message: 'Un nouvel examen a été approuvé et est maintenant disponible'
+        });
+        // Envoyer notification à l'admin
+        await notificationsApi.sendNotification({
+          recipient: state.user._id,
+          type: 'success',
+          title: 'Examen approuvé',
+          message: 'Vous avez approuvé un examen'
         });
       } catch (error) {
-        actions.setError(error.message);
+        actions.addNotification({
+          type: 'error',
+          message: 'Erreur lors de l\'approbation'
+        });
       }
     },
     
-    rejectExam: async (examId) => {
+    rejectExam: async (examId, reason) => {
       try {
-        await examsApi.rejectExam(examId);
+        console.log('Tentative de rejet examId:', examId, 'reason:', reason);
+        await examsApi.rejectExam(examId, reason);
+        await actions.fetchExams();
         dispatch({ type: ADMIN_ACTIONS.REJECT_EXAM, payload: examId });
-        actions.addNotification({
+        // Envoyer notification pour l'examen rejeté
+        await notificationsApi.sendGlobalNotification({
+          type: 'error',
+          title: 'Examen rejeté',
+          message: 'Un examen a été rejeté par l\'administration'
+        });
+        // Envoyer notification à l'admin
+        await notificationsApi.sendNotification({
+          recipient: state.user._id,
           type: 'success',
-          message: 'Examen rejeté avec succès'
+          title: 'Examen rejeté',
+          message: 'Vous avez rejeté un examen'
         });
       } catch (error) {
-        actions.setError(error.message);
-      }
-    },
-    
-    deleteExam: async (examId) => {
-      try {
-        await examsApi.deleteExam(examId);
-        dispatch({ type: ADMIN_ACTIONS.DELETE_EXAM, payload: examId });
-        actions.addNotification({
-          type: 'success',
-          message: 'Examen supprimé avec succès'
+        console.error('Erreur lors du rejet:', error);
+       await notificationsApi.sendNotification({
+          recipient: state.user._id,
+          type: 'error',
+          message: `Erreur lors du rejet: ${error.response?.data?.message || error.message}`
         });
-      } catch (error) {
-        actions.setError(error.message);
       }
     },
 
@@ -384,9 +514,18 @@ export function AdminProvider({ children }) {
         actions.setLoading(true);
         const response = await examsApi.createExam(formData);
         dispatch({ type: ADMIN_ACTIONS.ADD_EXAM, payload: response.exam });
-        actions.addNotification({
+        // Envoyer notification globale pour le nouvel examen
+        await notificationsApi.sendGlobalNotification({
           type: 'success',
-          message: 'Examen créé avec succès'
+          title: 'Nouvel examen ajouté',
+          message: 'Un nouvel examen a été ajouté par l\'administration'
+        });
+        // Envoyer notification à l'admin
+        await notificationsApi.sendNotification({
+          recipient: state.user._id,
+          type: 'success',
+          title: 'Examen créé',
+          message: 'Vous avez créé un nouvel examen'
         });
         return response.exam;
       } catch (error) {
@@ -402,9 +541,18 @@ export function AdminProvider({ children }) {
         actions.setLoading(true);
         const response = await examsApi.updateExam(examSlug, formData);
         dispatch({ type: ADMIN_ACTIONS.UPDATE_EXAM, payload: response.data || response });
-        actions.addNotification({
+        // Envoyer notification globale pour l'examen mis à jour
+        await notificationsApi.sendGlobalNotification({
           type: 'success',
-          message: 'Examen mis à jour avec succès'
+          title: 'Examen mis à jour',
+          message: 'Un examen a été mis à jour par l\'administration'
+        });
+        // Envoyer notification à l'admin
+        await notificationsApi.sendNotification({
+          recipient: state.user._id,
+          type: 'success',
+          title: 'Examen mis à jour',
+          message: 'Vous avez mis à jour un examen'
         });
         // Rafraîchir la liste des examens pour s'assurer que les données sont à jour
         await actions.fetchExams();
@@ -425,8 +573,18 @@ export function AdminProvider({ children }) {
           type: 'success',
           message: 'Signalement résolu avec succès'
         });
+        // Envoyer notification à l'admin
+        await notificationsApi.sendNotification({
+          recipient: state.user._id,
+          type: 'success',
+          title: 'Signalement résolu',
+          message: 'Vous avez résolu un signalement'
+        });
       } catch (error) {
-        actions.setError(error.message);
+        actions.addNotification({
+          type: 'error',
+          message: 'Erreur lors de la résolution du signalement'
+        });
       }
     },
 

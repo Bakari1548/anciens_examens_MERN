@@ -8,6 +8,7 @@ const examRoutes = require('./src/routes/exam.route');
 const adminRoutes = require('./src/routes/admin.route');
 const ufrRoutes = require('./src/routes/ufr.route');
 const logRoutes = require('./src/routes/log.route');
+const notificationRoutes = require('./src/routes/notification.route');
 
 require('dotenv').config();
 
@@ -53,6 +54,7 @@ app.use('/api/exams', examRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/ufrs', ufrRoutes);
 app.use('/api/logs', logRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 
 app.use((req, res, next) => {

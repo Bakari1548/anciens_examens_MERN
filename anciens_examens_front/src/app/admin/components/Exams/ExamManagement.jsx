@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { Search, Filter, Download, Eye, CheckCircle, XCircle, Trash2, MoreVertical, ChevronLeft, ChevronRight, FileText, Calendar, User, Clock, Plus, Building2, GraduationCap } from 'lucide-react';
 import { useAdminExams } from '../../hooks/useAdmin.exams';
 import { useTheme } from '../../context/ThemeContext';
@@ -105,7 +105,7 @@ export default function ExamManagement() {
       typeExamen: filterTypeExamen,
       matiere: filterMatiere
     });
-  }, [currentPage, searchTerm, filterStatus, filterUFR, filterFiliere, filterNiveau, filterSemestre, filterTypeExamen, filterMatiere]);
+  }, []);
 
   const handleSelectExam = (examId) => {
     setSelectedExams(prev => 
@@ -125,10 +125,34 @@ export default function ExamManagement() {
 
   const handleApprove = async (examId) => {
     await approveExam(examId);
+    await fetchExams({
+      page: currentPage,
+      limit: 25,
+      search: searchTerm,
+      status: filterStatus,
+      ufr: filterUFR,
+      filiere: filterFiliere,
+      niveau: filterNiveau,
+      semestre: filterSemestre,
+      typeExamen: filterTypeExamen,
+      matiere: filterMatiere
+    });
   };
 
   const handleReject = async (examId, reason) => {
     await rejectExam(examId, reason);
+    fetchExams({
+      page: currentPage,
+      limit: 25,
+      search: searchTerm,
+      status: filterStatus,
+      ufr: filterUFR,
+      filiere: filterFiliere,
+      niveau: filterNiveau,
+      semestre: filterSemestre,
+      typeExamen: filterTypeExamen,
+      matiere: filterMatiere
+    });
     setShowRejectModal(null);
   };
 
@@ -139,6 +163,18 @@ export default function ExamManagement() {
   const confirmDelete = async () => {
     if (showDeleteModal) {
       await deleteExam(showDeleteModal);
+      fetchExams({
+        page: currentPage,
+        limit: 25,
+        search: searchTerm,
+        status: filterStatus,
+        ufr: filterUFR,
+        filiere: filterFiliere,
+        niveau: filterNiveau,
+        semestre: filterSemestre,
+        typeExamen: filterTypeExamen,
+        matiere: filterMatiere
+      });
       setShowDeleteModal(null);
       setShowActionMenu(null);
     }
@@ -146,11 +182,35 @@ export default function ExamManagement() {
 
   const handleBulkApprove = async () => {
     await bulkApprove(selectedExams);
+    fetchExams({
+      page: currentPage,
+      limit: 25,
+      search: searchTerm,
+      status: filterStatus,
+      ufr: filterUFR,
+      filiere: filterFiliere,
+      niveau: filterNiveau,
+      semestre: filterSemestre,
+      typeExamen: filterTypeExamen,
+      matiere: filterMatiere
+    });
     setSelectedExams([]);
   };
 
   const handleBulkReject = async (reason) => {
     await bulkReject(selectedExams, reason);
+    fetchExams({
+      page: currentPage,
+      limit: 25,
+      search: searchTerm,
+      status: filterStatus,
+      ufr: filterUFR,
+      filiere: filterFiliere,
+      niveau: filterNiveau,
+      semestre: filterSemestre,
+      typeExamen: filterTypeExamen,
+      matiere: filterMatiere
+    });
     setSelectedExams([]);
     setShowRejectModal(null);
   };
@@ -537,7 +597,7 @@ export default function ExamManagement() {
                       </button>
                       
                       {showActionMenu === exam._id && (
-                        <div className="absolute z-20 right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700">
+                        <div className="absolute z-50 right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700">
                           <div className="py-1">
                             <button
                               onClick={() => {
@@ -560,35 +620,35 @@ export default function ExamManagement() {
                               <FileText size={16} />
                               Modifier
                             </button>
-                            
-                              
-                                {(exam.status === 'rejected' || exam.status === 'pending' ) && 
-                                <button
-                                  onClick={() => {
-                                    handleApprove(exam._id);
-                                    setShowActionMenu(null);
-                                  }}
-                                  className="flex items-center gap-2 w-full px-4 py-2 text-sm text-green-600 dark:text-green-400 hover:bg-gray-100 dark:hover:bg-gray-700"
-                                >
-                                  <CheckCircle size={16} />
-                                  Approuver
-                                </button>
-                                }
-                                {exam.status === 'pending' && (
-                                <button
-                                  onClick={() => {
-                                    setShowRejectModal(exam);
-                                    setShowActionMenu(null);
-                                  }}
-                                  className="flex items-center gap-2 w-full px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700"
-                                >
-                                  <XCircle size={16} />
-                                  Rejeter
-                                </button>
-                                )}
+
+                            {(exam.status === 'rejected' || exam.status === 'pending') && (
+                              <button
+                                onClick={async () => {
+                                  await handleApprove(exam._id);
+                                  setShowActionMenu(null);
+                                }}
+                                className="flex items-center gap-2 w-full px-4 py-2 text-sm text-green-600 dark:text-green-400 hover:bg-gray-100 dark:hover:bg-gray-700"
+                              >
+                                <CheckCircle size={16} />
+                                Approuver
+                              </button>
+                            )}
+                            {exam.status === 'pending' && (
+                              <button
+                                onClick={() => {
+                                  setShowRejectModal(exam);
+                                  setShowActionMenu(null);
+                                }}
+                                className="flex items-center gap-2 w-full px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700"
+                              >
+                                <XCircle size={16} />
+                                Rejeter
+                              </button>
+                            )}
                             <button
                               onClick={() => {
                                 handleDelete(exam.slug);
+                                setShowActionMenu(null);
                               }}
                               className="flex items-center gap-2 w-full px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700"
                             >

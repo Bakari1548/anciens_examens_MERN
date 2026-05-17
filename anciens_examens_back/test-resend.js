@@ -6,7 +6,7 @@ async function test() {
     console.log('RESEND_API_KEY:', process.env.RESEND_API_KEY ? '***défini***' : '***NON DÉFINI***');
     
     const result = await sendEmail(
-        'bkrsagna03@gmail.com', // Mettez votre email ici
+        'onboarding@anciensexamensuidt.app', // Mettez votre email ici
         'Test Resend - Anciens Examens',
         '<p>Ceci est un <strong>test</strong> depuis mon backend Node.js avec Resend.</p>',
         'Ceci est un test depuis mon backend Node.js avec Resend.'

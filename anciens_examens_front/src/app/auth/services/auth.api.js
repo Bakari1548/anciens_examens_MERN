@@ -6,10 +6,12 @@ export const login = async (email, password) => {
     try {
         const response = await api.post('/users/login', { email, password });
         
-        // Le token est maintenant géré par le backend via HTTP-only cookie
-        // Stocker uniquement les infos utilisateur
+        // Le token est géré par le backend via HTTP-only cookie + stocké en
+        // sessionStorage en fallback (Authorization header)
+        if (response.data.token) {
+            tokenStorage.setToken(response.data.token);
+        }
         if (response.data.user) {
-            // console.log('Login response user data:', response.data.user);
             tokenStorage.setUser(response.data.user);
             // Émettre l'événement pour mettre à jour le Header
             window.dispatchEvent(new Event('user-auth-change'));
@@ -26,10 +28,12 @@ export const register = async (firstName, lastName, email, password, ufr, filier
     try {
         const response = await api.post('/users/register', { firstName, lastName, email, password, ufr, filiere });
         
-        // Le token est maintenant géré par le backend via HTTP-only cookie
-        // Stocker uniquement les infos utilisateur
+        // Le token est géré par le backend via HTTP-only cookie + stocké en
+        // sessionStorage en fallback (Authorization header)
+        if (response.data.token) {
+            tokenStorage.setToken(response.data.token);
+        }
         if (response.data.user) {
-            // console.log('Register response user data:', response.data.user);
             tokenStorage.setUser(response.data.user);
             // Émettre l'événement pour mettre à jour le Header
             window.dispatchEvent(new Event('user-auth-change'));

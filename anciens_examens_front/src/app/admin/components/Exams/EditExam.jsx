@@ -97,8 +97,8 @@ export default function EditExam({ exam, onClose, onUpdate }) {
           const response = await getNiveauxByFiliere(formData.ufr, formData.filiere);
           setNiveauOptions(response.data || []);
           // Réinitialiser le semestre
-          setFormData(prev => ({ ...prev, niveau: '', semestre: '' }));
-          setSemestreOptions([]);
+          // setFormData(prev => ({ ...prev, niveau: '', semestre: '' }));
+          // setSemestreOptions([]);
         } catch (error) {
           toast.error('Erreur lors du chargement des niveaux');
           console.error(error);
@@ -121,7 +121,7 @@ export default function EditExam({ exam, onClose, onUpdate }) {
       if (niveau) {
         setSemestreOptions(niveau.semestres.map(s => ({ value: s, label: s })));
         // Réinitialiser le semestre
-        setFormData(prev => ({ ...prev, semestre: '' }));
+        // setFormData(prev => ({ ...prev, semestre: '' }));
       }
     } else {
       setSemestreOptions([]);

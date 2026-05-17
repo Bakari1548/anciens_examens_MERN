@@ -9,8 +9,6 @@ const {
     unbanUser,
     approveExam,
     rejectExam,
-    sendGlobalNotification,
-    sendNotificationToUsers,
     getAuditLogs,
     getSystemLogs,
     createBackup,
@@ -41,11 +39,6 @@ router.post('/users/:id/unban', authMiddleware, adminMiddleware, unbanUser);
 // Gestion examens (admin)
 router.patch('/exams/:id/approve', authMiddleware, adminMiddleware, approveExam);
 router.patch('/exams/:id/reject', authMiddleware, adminMiddleware, rejectExam);
-
-// Notifications
-router.post('/notifications/global', authMiddleware, adminMiddleware, sendGlobalNotification);
-router.post('/notifications/targeted', authMiddleware, adminMiddleware, sendNotificationToUsers);
-router.get('/notifications', authMiddleware, adminMiddleware, getSettings);
 
 // Système et maintenance
 router.get('/audit-logs', authMiddleware, adminMiddleware, getAuditLogs);

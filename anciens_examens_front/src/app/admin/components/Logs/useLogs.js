@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { logsApi } from '../../services/logs.api';
 
 /**
@@ -8,8 +8,9 @@ export default function useLogs() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterLevel, setFilterLevel] = useState('');
   const [filterAction, setFilterAction] = useState('');
+  const [filterDate, setFilterDate] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
-  const [logs, setLogs] = useState([]);
+  const [allLogs, setAllLogs] = useState([]);
   const [stats, setStats] = useState({ total: 0, info: 0, warning: 0, error: 0 });
   const [loading, setLoading] = useState(true);
   const [pagination, setPagination] = useState({ current: 1, pages: 1, total: 0 });
@@ -18,13 +19,13 @@ export default function useLogs() {
     try {
       setLoading(true);
       const response = await logsApi.getLogs({
-        page: currentPage,
-        limit: 20,
+        page: 1,
+        limit: 1000,
         level: filterLevel,
         action: filterAction,
         search: searchTerm
       });
-      setLogs(response.logs);
+      setAllLogs(response.logs);
       setPagination(response.pagination);
     } catch (error) {
       console.error('Error fetching logs:', error);
@@ -32,7 +33,7 @@ export default function useLogs() {
       setLoading(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentPage, filterLevel, filterAction]);
+  }, [filterLevel, filterAction, searchTerm]);
 
   const fetchStats = useCallback(async () => {
     try {
@@ -64,20 +65,59 @@ export default function useLogs() {
     }
   };
 
+  const filteredLogs = useMemo(() => {
+    const now = new Date();
+    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const startOfWeek = new Date(now);
+    startOfWeek.setDate(now.getDate() - now.getDay());
+    startOfWeek.setHours(0, 0, 0, 0);
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    return allLogs.filter(log => {
+      const logDate = new Date(log.createdAt || log.timestamp);
+      
+      if (!filterDate) return true;
+      
+      switch (filterDate) {
+        case 'today':
+          return logDate >= startOfDay;
+        case 'week':
+          return logDate >= startOfWeek;
+        case 'month':
+          return logDate >= startOfMonth;
+        default:
+          return true;
+      }
+    });
+  }, [allLogs, filterDate]);
+
+  const paginatedLogs = useMemo(() => {
+    const startIndex = (currentPage - 1) * 20;
+    const endIndex = startIndex + 20;
+    return filteredLogs.slice(startIndex, endIndex);
+  }, [filteredLogs, currentPage]);
+
   return {
     // states
-    logs,
+    logs: paginatedLogs,
     stats,
     loading,
-    pagination,
+    pagination: {
+      ...pagination,
+      current: currentPage,
+      pages: Math.ceil(filteredLogs.length / 20),
+      total: filteredLogs.length
+    },
     searchTerm,
     filterLevel,
     filterAction,
+    filterDate,
     currentPage,
     // setters
     setSearchTerm,
     setFilterLevel,
     setFilterAction,
+    setFilterDate,
     setCurrentPage,
     // actions
     handleSearch,

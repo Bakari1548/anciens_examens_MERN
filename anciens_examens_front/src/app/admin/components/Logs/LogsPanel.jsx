@@ -15,10 +15,12 @@ export default function LogsPanel() {
     searchTerm,
     filterLevel,
     filterAction,
+    filterDate,
     currentPage,
     setSearchTerm,
     setFilterLevel,
     setFilterAction,
+    setFilterDate,
     setCurrentPage,
     handleSearch,
     handleExport
@@ -40,6 +42,8 @@ export default function LogsPanel() {
         setFilterLevel={setFilterLevel}
         filterAction={filterAction}
         setFilterAction={setFilterAction}
+        filterDate={filterDate}
+        setFilterDate={setFilterDate}
       />
 
       <LogsTable

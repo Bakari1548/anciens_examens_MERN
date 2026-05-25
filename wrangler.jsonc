@@ -1,0 +1,14 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "anciens-examens",
+  "compatibility_date": "2026-05-25",
+  "observability": {
+    "enabled": true
+  },
+  "assets": {
+    "directory": "anciens_examens_front"
+  },
+  "compatibility_flags": [
+    "nodejs_compat"
+  ]
+}

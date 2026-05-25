@@ -65,6 +65,19 @@ export default function useLogs() {
     }
   };
 
+  const handleCleanup = async (days = 30) => {
+    try {
+      const result = await logsApi.deleteOldLogs(days);
+      // Recharger les logs et stats après le nettoyage
+      await fetchLogs();
+      await fetchStats();
+      return result;
+    } catch (error) {
+      console.error('Error cleaning up logs:', error);
+      throw error;
+    }
+  };
+
   const filteredLogs = useMemo(() => {
     const now = new Date();
     const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -121,6 +134,7 @@ export default function useLogs() {
     setCurrentPage,
     // actions
     handleSearch,
-    handleExport
+    handleExport,
+    handleCleanup
   };
 }

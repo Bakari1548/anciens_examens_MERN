@@ -52,6 +52,11 @@ const userSchema = new mongoose.Schema({
     ref: 'Exam',
     required: true,
   }],
+  favorites: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Exam',
+    default: []
+  }],
   role: {
     type: String,
     enum: ['user', 'admin', 'moderator'],

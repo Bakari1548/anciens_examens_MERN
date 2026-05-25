@@ -62,7 +62,7 @@ export default function UserExams({ userExams }) {
                    exam.status === 'rejected' ? 'Rejeté' : 'En attente'}
                 </span>
                 <button
-                  onClick={() => navigate(`/examen/${exam.slug}`)}
+                  onClick={() => navigate(`/examens/${exam.slug}`)}
                   className="flex items-center gap-2 px-3 py-1.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm"
                 >
                   <Eye size={16} />

@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const path = require('path');
+const cron = require('node-cron');
 const connectDB = require('./src/config/db');
 const userRoutes = require('./src/routes/user.route');
 const examRoutes = require('./src/routes/exam.route');
@@ -9,6 +10,8 @@ const adminRoutes = require('./src/routes/admin.route');
 const ufrRoutes = require('./src/routes/ufr.route');
 const logRoutes = require('./src/routes/log.route');
 const notificationRoutes = require('./src/routes/notification.route');
+const Notification = require('./src/models/Notification');
+const User = require('./src/models/User');
 
 require('dotenv').config();
 
@@ -74,8 +77,58 @@ app.use((req, res, next) => {
 // Ne démarrer le serveur que si ce fichier n'est pas importé par les tests
 if (require.main === module) {
   connectDB();
+  
+  // Nettoyage automatique des notifications de plus de 2 semaines
+  // S'exécute tous les jours à minuit (00:00)
+  const cleanupNotifications = async () => {
+    try {
+      const twoWeeksAgo = new Date();
+      twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
+      
+      const result = await Notification.deleteMany({
+        createdAt: { $lt: twoWeeksAgo }
+      });
+      
+      console.log(`[Cleanup] ${result.deletedCount} notifications supprimées (plus de 2 semaines)`);
+
+      // Notifier les administrateurs du nettoyage
+      if (result.deletedCount > 0) {
+        const admins = await User.find({ role: 'admin' });
+        
+        for (const admin of admins) {
+          await Notification.create({
+            recipient: admin._id,
+            type: 'system',
+            title: 'Nettoyage des notifications',
+            message: `${result.deletedCount} notifications de plus de 2 semaines ont été supprimées automatiquement`,
+            metadata: {
+              deletedCount: result.deletedCount,
+              cleanupDate: new Date(),
+              type: 'notification_cleanup'
+            },
+            read: false
+          });
+        }
+        
+        console.log(`[Cleanup] Notification envoyée à ${admins.length} administrateur(s)`);
+      }
+    } catch (error) {
+      console.error('[Cleanup] Erreur lors du nettoyage des notifications:', error);
+    }
+  };
+
+  // Exécuter le nettoyage immédiatement au démarrage
+  cleanupNotifications();
+  
+  // Planifier le nettoyage quotidien à minuit
+  cron.schedule('0 0 * * *', () => {
+    console.log('[Cron] Exécution du nettoyage des notifications');
+    cleanupNotifications();
+  });
+
   app.listen(port, () => {
     console.log(`Serveur démarré sur le port ${port}`);
+    console.log(`[Cron] Nettoyage automatique des notifications planifié: tous les jours à minuit`);
   });
 }
 

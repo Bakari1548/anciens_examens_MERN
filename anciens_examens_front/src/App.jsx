@@ -15,6 +15,7 @@ import DetailExamPage from './pages/DetailExam'
 import ExamsPage from './pages/Exams'
 import ProfilePage from './pages/Profile'
 import AccountAppealPage from './pages/AccountAppeal'
+import FavoritesPage from './pages/Favorites'
 import AdminProtectedRoute from './components/AdminProtectedRoute'
 import AdminDashboardPage from './pages/AdminDashboard'
 import AdminUsersPage from './pages/AdminUsers'
@@ -45,8 +46,9 @@ function AppContent() {
         <Route path="/mot-de-passe-modifie" element={<ResetPasswordCompletePage />} />
         <Route path="/mot-de-passe-modifie/:token" element={<ResetPasswordWithTokenPage />} />
         <Route path="/partager-examen" element={<PostExamPage />} />
-        <Route path="/examen/:slug" element={<DetailExamPage />} />
+        <Route path="/examens/:slug" element={<DetailExamPage />} />
         <Route path="/examens" element={<ExamsPage />} />
+        <Route path="/examens/favoris" element={<FavoritesPage />} />
         <Route path="/profil" element={<ProfilePage />} />
         <Route path="/demande" element={<AccountAppealPage />} />
         <Route path="/regles" element={<RulesPage />} />

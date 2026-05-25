@@ -1,13 +1,78 @@
 import logoFile from '@/assets/file_exam.png';
-import { Download, Eye } from 'lucide-react';
+import { Download, Eye, Heart } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { tokenStorage } from '../../../utils/tokenStorage';
 import { toast } from 'sonner';
+import { useState, useEffect } from 'react';
+import { getFavoriteStatus, addToFavorites, removeFromFavorites } from '../services/exam.api';
 
 export default function CardExam({ exam }) {
 
     const navigate = useNavigate();
     const isUserLoggedIn = !!tokenStorage.getUser();
+    const [isFavorite, setIsFavorite] = useState(false);
+    const [loadingFavorite, setLoadingFavorite] = useState(false);
+
+    useEffect(() => {
+        const checkFavoriteStatus = async () => {
+            if (isUserLoggedIn) {
+                try {
+                    const response = await getFavoriteStatus(exam.slug);
+                    setIsFavorite(response.isFavorite);
+                } catch (error) {
+                    console.error('Erreur lors de la vérification du statut favori:', error);
+                }
+            }
+        };
+        checkFavoriteStatus();
+    }, [exam.slug, isUserLoggedIn]);
+
+    const handleToggleFavorite = async (e) => {
+        e.stopPropagation();
+        if (!isUserLoggedIn) {
+            toast.error('Vous devez être connecté pour ajouter aux favoris');
+            return;
+        }
+        
+        setLoadingFavorite(true);
+        try {
+            if (isFavorite) {
+                await removeFromFavorites(exam.slug);
+                toast.success('Retiré des favoris');
+            } else {
+                await addToFavorites(exam.slug);
+                toast.success('Ajouté aux favoris');
+            }
+            
+            // Rafraîchir le statut après l'action
+            try {
+                const response = await getFavoriteStatus(exam.slug);
+                setIsFavorite(response.isFavorite);
+            } catch (refreshError) {
+                console.error('Erreur lors du rafraîchissement du statut:', refreshError);
+            }
+        } catch (error) {
+            console.error('Erreur lors de la gestion des favoris:', error);
+            console.error('Détails de l\'erreur:', error.response?.data || error.message);
+            
+            // Même en cas d'erreur, essayer de rafraîchir le statut
+            try {
+                const response = await getFavoriteStatus(exam.slug);
+                setIsFavorite(response.isFavorite);
+            } catch (refreshError) {
+                console.error('Erreur lors du rafraîchissement du statut après erreur:', refreshError);
+            }
+            
+            // Si l'erreur est 401 ou 403, c'est un problème d'authentification
+            if (error.response?.status === 401 || error.response?.status === 403) {
+                toast.error('Erreur d\'authentification. Veuillez vous reconnecter.');
+            } else {
+                toast.error('Erreur lors de la gestion des favoris');
+            }
+        } finally {
+            setLoadingFavorite(false);
+        }
+    };
 
     const handleDownload = () => {
         if (!isUserLoggedIn) {
@@ -23,15 +88,26 @@ export default function CardExam({ exam }) {
     const handleReadExam = () => {
         if (!isUserLoggedIn) {
             // Stocker la destination et rediriger vers login
-            localStorage.setItem('redirectAfterLogin', `/examen/${exam.slug}`);
+            localStorage.setItem('redirectAfterLogin', `/examens/${exam.slug}`);
             navigate('/connexion');
             return;
         }
-        navigate(`/examen/${exam.slug}`);
+        navigate(`/examens/${exam.slug}`);
     };
 
     return (
-        <div className="bg-white w-full shadow flex sm:flex-row flex-col sm:justify-start justify-center items-center border border-gray-200 rounded-lg py-3 px-4 gap-4">
+        <div className="bg-white w-full shadow flex sm:flex-row flex-col sm:justify-start justify-center items-center border border-gray-200 rounded-lg py-3 px-4 gap-4 relative">
+            <button
+                onClick={handleToggleFavorite}
+                disabled={loadingFavorite}
+                className="absolute top-2 right-2 p-2 rounded-full hover:bg-gray-100 transition-colors disabled:opacity-50"
+                title={isFavorite ? 'Retirer des favoris' : 'Ajouter aux favoris'}
+            >
+                <Heart 
+                    size={20} 
+                    className={isFavorite ? 'fill-red-500 text-red-500' : 'text-gray-400'} 
+                />
+            </button>
             <img 
                 className="sm:w-52 opacity-70 w-60 sm:mx-0 mx-auto" 
                 src={logoFile} 

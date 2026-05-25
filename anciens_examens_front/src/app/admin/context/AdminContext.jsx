@@ -16,9 +16,14 @@ const initialState = {
     totalUsers: 0,
     totalExams: 0,
     totalDownloads: 0,
+    totalViews: 0,
     activeUsers: 0,
     pendingExams: 0,
-    reports: 0
+    reports: 0,
+    storage: {
+      database: { usedBytes: 0, totalBytes: 0 },
+      cloudinary: { usedBytes: 0, totalBytes: 0 }
+    }
   },
   users: [],
   exams: [],
@@ -559,6 +564,35 @@ export function AdminProvider({ children }) {
         return response.data || response;
       } catch (error) {
         actions.setError(error.message);
+        throw error;
+      } finally {
+        actions.setLoading(false);
+      }
+    },
+
+    deleteExam: async (examSlug) => {
+      try {
+        actions.setLoading(true);
+        const response = await examsApi.deleteExam(examSlug);
+        // Remove exam from state
+        dispatch({ type: ADMIN_ACTIONS.DELETE_EXAM, payload: response.examId });
+        // Envoyer notification à l'admin
+        await notificationsApi.sendNotification({
+          recipient: state.user._id,
+          type: 'warning',
+          title: 'Examen supprimé',
+          message: 'Vous avez supprimé un examen'
+        });
+        actions.addNotification({
+          type: 'success',
+          message: 'Examen supprimé avec succès (fichiers Cloudinary également supprimés)'
+        });
+        return response;
+      } catch (error) {
+        actions.addNotification({
+          type: 'error',
+          message: `Erreur lors de la suppression: ${error.response?.data?.message || error.message}`
+        });
         throw error;
       } finally {
         actions.setLoading(false);

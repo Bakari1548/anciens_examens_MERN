@@ -1,5 +1,22 @@
 const Log = require('../models/Log');
 
+// Durées de rétention par niveau (en millisecondes)
+const RETENTION_BY_LEVEL = {
+  info: 7 * 24 * 60 * 60 * 1000,     // 7 jours
+  warning: 30 * 24 * 60 * 60 * 1000, // 30 jours
+  error: 90 * 24 * 60 * 60 * 1000    // 90 jours
+};
+
+// Limites de taille
+const MAX_METADATA_SIZE = 1024;      // 1 KB
+const MAX_USER_AGENT_LENGTH = 200;
+const MAX_MESSAGE_LENGTH = 500;
+
+// Actions de routine à ne PAS persister en base (console seulement)
+const SKIP_DB_ACTIONS = new Set([
+  // Ajoutez ici les actions trop verbeuses si besoin
+]);
+
 /**
  * Extrait l'adresse IP de la requête
  */
@@ -16,6 +33,25 @@ const getClientIp = (req) => {
 };
 
 /**
+ * Tronque les metadata si elles dépassent la taille maximale
+ */
+const truncateMetadata = (metadata) => {
+  try {
+    const serialized = JSON.stringify(metadata);
+    if (serialized.length <= MAX_METADATA_SIZE) {
+      return metadata;
+    }
+    return {
+      _truncated: true,
+      _originalSize: serialized.length,
+      preview: serialized.substring(0, MAX_METADATA_SIZE - 100)
+    };
+  } catch {
+    return { _error: 'metadata non sérialisable' };
+  }
+};
+
+/**
  * Crée une entrée de log
  * @param {Object} options - Options du log
  * @param {string} options.level - 'info' | 'warning' | 'error'
@@ -28,6 +64,12 @@ const getClientIp = (req) => {
  */
 const createLog = async ({ level = 'info', action, message, req, user, userName, metadata = {} } = {}) => {
   try {
+    // Skip DB persistence pour certaines actions verbeuses (console seulement)
+    if (SKIP_DB_ACTIONS.has(action)) {
+      console.log(`[${level.toUpperCase()}] ${action}: ${message}`);
+      return;
+    }
+
     let displayName = userName || 'System';
     let userId = null;
 
@@ -37,17 +79,28 @@ const createLog = async ({ level = 'info', action, message, req, user, userName,
     }
 
     const ip = getClientIp(req);
-    const userAgent = req?.headers?.['user-agent'] || null;
+    const userAgent = req?.headers?.['user-agent']
+      ? String(req.headers['user-agent']).substring(0, MAX_USER_AGENT_LENGTH)
+      : null;
+
+    // Calculer la date d'expiration selon le niveau
+    const retentionMs = RETENTION_BY_LEVEL[level] || RETENTION_BY_LEVEL.info;
+    const expiresAt = new Date(Date.now() + retentionMs);
+
+    // Tronquer message et metadata pour borner la taille
+    const truncatedMessage = String(message || '').substring(0, MAX_MESSAGE_LENGTH);
+    const truncatedMetadata = truncateMetadata(metadata);
 
     await Log.create({
       level,
       action,
       user: displayName,
       userId,
-      message,
+      message: truncatedMessage,
       ip,
       userAgent,
-      metadata
+      metadata: truncatedMetadata,
+      expiresAt
     });
   } catch (error) {
     // On évite de casser le flux applicatif si le log échoue

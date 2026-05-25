@@ -127,10 +127,11 @@ describe('Logs Tests', () => {
   describe('GET /api/logs', () => {
     beforeEach(async () => {
       // Créer quelques logs de test
+      const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 jours
       await Log.create([
-        { level: 'info', action: 'LOGIN', message: 'Connexion test', user: 'John Doe' },
-        { level: 'warning', action: 'FAILED_LOGIN', message: 'Échec connexion', user: 'Unknown' },
-        { level: 'error', action: 'SYSTEM_ERROR', message: 'Erreur système', user: 'System' }
+        { level: 'info', action: 'LOGIN', message: 'Connexion test', user: 'John Doe', expiresAt },
+        { level: 'warning', action: 'FAILED_LOGIN', message: 'Échec connexion', user: 'Unknown', expiresAt },
+        { level: 'error', action: 'SYSTEM_ERROR', message: 'Erreur système', user: 'System', expiresAt }
       ]);
     });
 
@@ -180,11 +181,12 @@ describe('Logs Tests', () => {
 
   describe('GET /api/logs/stats', () => {
     beforeEach(async () => {
+      const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 jours
       await Log.create([
-        { level: 'info', action: 'A', message: 'msg1' },
-        { level: 'info', action: 'B', message: 'msg2' },
-        { level: 'warning', action: 'C', message: 'msg3' },
-        { level: 'error', action: 'D', message: 'msg4' }
+        { level: 'info', action: 'A', message: 'msg1', expiresAt },
+        { level: 'info', action: 'B', message: 'msg2', expiresAt },
+        { level: 'warning', action: 'C', message: 'msg3', expiresAt },
+        { level: 'error', action: 'D', message: 'msg4', expiresAt }
       ]);
     });
 
@@ -204,7 +206,8 @@ describe('Logs Tests', () => {
 
   describe('GET /api/logs/export', () => {
     it('devrait exporter les logs en CSV', async () => {
-      await Log.create({ level: 'info', action: 'EXPORT_TEST', message: 'Test export' });
+      const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 jours
+      await Log.create({ level: 'info', action: 'EXPORT_TEST', message: 'Test export', expiresAt });
 
       const res = await request(app)
         .get('/api/logs/export')
@@ -222,18 +225,22 @@ describe('Logs Tests', () => {
       // Créer un log ancien (60 jours)
       const oldDate = new Date();
       oldDate.setDate(oldDate.getDate() - 60);
+      const oldExpiresAt = new Date(oldDate.getTime() + 24 * 60 * 60 * 1000); // expiresAt basé sur oldDate
       await Log.create({
         level: 'info',
         action: 'OLD_LOG',
         message: 'Vieux log',
-        timestamp: oldDate
+        timestamp: oldDate,
+        expiresAt: oldExpiresAt
       });
 
       // Créer un log récent
+      const recentExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 jours
       await Log.create({
         level: 'info',
         action: 'NEW_LOG',
-        message: 'Nouveau log'
+        message: 'Nouveau log',
+        expiresAt: recentExpiresAt
       });
 
       const res = await request(app)

@@ -4,6 +4,8 @@ const Report = require('../models/Report');
 const Notification = require('../models/Notification');
 const sendEmail = require('../utils/sendEmail');
 const { createLog } = require('../utils/logger');
+const mongoose = require('mongoose');
+const { cloudinary } = require('../config/cloudinary');
 require('dotenv').config();
 
 // @desc    Obtenir les statistiques du dashboard
@@ -17,16 +19,82 @@ const getStats = async (req, res) => {
         const pendingExams = await Exam.countDocuments({ status: 'pending' });
         const reports = await Report.countDocuments({ status: 'pending' });
         
-        // Simuler les téléchargements
-        const totalDownloads = Math.floor(Math.random() * 1000) + 500;
+        // Calculer les téléchargements réels depuis les examens
+        const downloadsResult = await Exam.aggregate([
+            {
+                $group: {
+                    _id: null,
+                    totalDownloads: { $sum: '$downloadsCount' }
+                }
+            }
+        ]);
+        const totalDownloads = downloadsResult[0]?.totalDownloads || 0;
+
+        // Calculer les vues réelles depuis les examens
+        const viewsResult = await Exam.aggregate([
+            {
+                $group: {
+                    _id: null,
+                    totalViews: { $sum: '$viewsCount' }
+                }
+            }
+        ]);
+        const totalViews = viewsResult[0]?.totalViews || 0;
+
+        // === Stockage MongoDB ===
+        let dbStorage = { usedBytes: 0, totalBytes: 0 };
+        try {
+            const dbStats = await mongoose.connection.db.stats();
+            const usedBytes = (dbStats.dataSize || 0) + (dbStats.indexSize || 0);
+            // Limite configurable via env (défaut: 512 MB = Atlas M0 free tier)
+            const totalBytes = (parseFloat(process.env.DB_STORAGE_LIMIT_MB) || 512) * 1024 * 1024;
+            dbStorage = { usedBytes, totalBytes };
+        } catch (e) {
+            console.error('[Stats] Erreur db.stats():', e.message);
+        }
+
+        // === Stockage Cloudinary ===
+        let cloudinaryStorage = { usedBytes: 0, totalBytes: 0 };
+        try {
+            const usage = await cloudinary.api.usage();
+            cloudinaryStorage = {
+                usedBytes: usage?.storage?.usage || 0,
+                totalBytes: usage?.storage?.limit || 0
+            };
+        } catch (e) {
+            // Fallback : agréger les tailles de fichiers depuis la base si l'API échoue
+            console.warn('[Stats] Cloudinary API unavailable, using DB aggregation as fallback');
+            try {
+                const cloudinaryFallback = await Exam.aggregate([
+                    { $unwind: { path: '$files', preserveNullAndEmptyArrays: false } },
+                    {
+                        $group: {
+                            _id: null,
+                            usedBytes: { $sum: '$files.size' }
+                        }
+                    }
+                ]);
+                cloudinaryStorage = {
+                    usedBytes: cloudinaryFallback[0]?.usedBytes || 0,
+                    totalBytes: (parseFloat(process.env.CLOUDINARY_STORAGE_LIMIT_GB) || 25) * 1024 * 1024 * 1024
+                };
+            } catch (fallbackErr) {
+                console.error('[Stats] Fallback aggregation also failed:', fallbackErr.message);
+            }
+        }
 
         res.json({
             totalUsers,
             totalExams,
             totalDownloads,
+            totalViews,
             activeUsers,
             pendingExams,
-            reports
+            reports,
+            storage: {
+                database: dbStorage,
+                cloudinary: cloudinaryStorage
+            }
         });
     } catch (error) {
         res.status(500).json({

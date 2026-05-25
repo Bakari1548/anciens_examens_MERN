@@ -44,6 +44,10 @@ const logSchema = new mongoose.Schema({
   timestamp: {
     type: Date,
     default: Date.now
+  },
+  expiresAt: {
+    type: Date,
+    required: true
   }
 }, {
   timestamps: true
@@ -54,5 +58,8 @@ logSchema.index({ timestamp: -1 });
 logSchema.index({ level: 1 });
 logSchema.index({ action: 1 });
 logSchema.index({ userId: 1 });
+
+// TTL Index - MongoDB supprime automatiquement les logs après leur expiresAt
+logSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 
 module.exports = mongoose.model('Log', logSchema);

@@ -178,3 +178,76 @@ export const deleteComment = async (slug, commentId) => {
         throw error;
     }
 };
+
+// =================== FAVORIS ===================
+
+// Récupérer les favoris de l'utilisateur
+export const getFavorites = async (params = {}) => {
+    try {
+        const queryParams = new URLSearchParams();
+        if (params.page) queryParams.append('page', params.page);
+        if (params.limit) queryParams.append('limit', params.limit);
+        
+        const queryString = queryParams.toString();
+        const url = queryString ? `/exams/favorites?${queryString}` : '/exams/favorites';
+        
+        const response = await api.get(url);
+        return response.data;
+    } catch (error) {
+        throw error;
+    }
+};
+
+// Ajouter un examen aux favoris
+export const addToFavorites = async (slug) => {
+    try {
+        const response = await api.post(`/exams/${slug}/favorite`);
+        return response.data;
+    } catch (error) {
+        throw error;
+    }
+};
+
+// Retirer un examen des favoris
+export const removeFromFavorites = async (slug) => {
+    try {
+        const response = await api.delete(`/exams/${slug}/favorite`);
+        return response.data;
+    } catch (error) {
+        throw error;
+    }
+};
+
+// Vérifier si un examen est dans les favoris
+export const getFavoriteStatus = async (slug) => {
+    try {
+        const response = await api.get(`/exams/${slug}/favorite/status`);
+        return response.data;
+    } catch (error) {
+        throw error;
+    }
+};
+
+// =================== STATISTIQUES ===================
+
+// Enregistrer une vue d'examen
+export const incrementExamView = async (slug) => {
+    try {
+        const response = await api.post(`/exams/${slug}/view`);
+        return response.data;
+    } catch (error) {
+        // Silencieux en cas d'erreur pour ne pas bloquer l'expérience utilisateur
+        console.error('Erreur lors de l\'enregistrement de la vue:', error);
+    }
+};
+
+// Enregistrer un téléchargement d'examen
+export const incrementExamDownload = async (slug) => {
+    try {
+        const response = await api.post(`/exams/${slug}/download`);
+        return response.data;
+    } catch (error) {
+        // Silencieux en cas d'erreur pour ne pas bloquer l'expérience utilisateur
+        console.error('Erreur lors de l\'enregistrement du téléchargement:', error);
+    }
+};

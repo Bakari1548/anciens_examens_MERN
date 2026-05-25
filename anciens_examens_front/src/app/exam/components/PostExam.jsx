@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { Upload, X, FileText, Calendar, BookOpen, Save, Loader2 } from 'lucide-react';
-// import { useTheme } from '../../../context/ThemeContext';
 import { postNewExam } from '../services/exam.api';
 import { getAllUfrs, getFilieresByUfr, getNiveauxByFiliere } from '../../../services/ufr.api';
 import { useNavigate } from 'react-router-dom';
 import logoAnciensExamens from '@/assets/logo_anciens_examens.png';
+import { useTheme } from '../../admin/context/ThemeContext';
 
 export default function PostExam() {
+    const { isDark } = useTheme();
     const [formData, setFormData] = useState({
         ufr: '',
         filiere: '',
@@ -311,9 +312,9 @@ export default function PostExam() {
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-12 px-0 sm:px-6 lg:px-8">
+        <div className={`min-h-screen py-12 px-0 sm:px-6 lg:px-8 ${isDark ? 'bg-gray-900' : 'bg-gradient-to-br from-blue-50 to-indigo-100'}`}>
             <div className="max-w-4xl mx-auto">
-                <div className="bg-white rounded-2xl shadow-2xl overflow-hidden">
+                <div className={`rounded-2xl shadow-2xl overflow-hidden ${isDark ? 'bg-gray-800' : 'bg-white'}`}>
                     {/* Formulaire pleine largeur */}
                     <div className="sm:p-8 p-3 lg:p-12">
                             <div className="mb-8 text-center">
@@ -321,10 +322,10 @@ export default function PostExam() {
                                     {/* <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-8 h-8 text-white">
                                         <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
                                     </svg> */}
-                                    <img src={logoAnciensExamens} alt="" />
+                                    <img src={logoAnciensExamens} alt="Partager dans Anciens Examens" />
                                 </div>
-                                <h1 className="text-3xl font-bold text-gray-900 mb-2">Partager un examen</h1>
-                                <p className="text-gray-600 max-w-md mx-auto">
+                                <h1 className={`text-3xl font-bold mb-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>Partager un examen</h1>
+                                <p className={`max-w-md mx-auto ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
                                     Contribuez à la communauté en partageant vos anciens examens. 
                                     Lisez les champs obligatoires avant de soumettre.
                                 </p>
@@ -332,8 +333,8 @@ export default function PostExam() {
                             
                             <form onSubmit={handleSubmit} encType="multipart/form-data" className="space-y-8">
                                 {/* Section Fichier - Prioritaire */}
-                                <div className="bg-gradient-to-r from-purple-50 to-indigo-50 border-2 border-purple-200 rounded-xl sm:p-8 px-4 py-8 shadow-lg">
-                                    <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center">
+                                <div className={`border-2 rounded-xl sm:p-8 px-4 py-8 shadow-lg ${isDark ? 'bg-gradient-to-r from-purple-900/30 to-indigo-900/30 border-purple-700' : 'bg-gradient-to-r from-purple-50 to-indigo-50 border-purple-200'}`}>
+                                    <h3 className={`text-xl font-bold mb-6 flex items-center ${isDark ? 'text-white' : 'text-gray-900'}`}>
                                         <div className="bg-purple-600 text-white p-2 rounded-lg mr-3">
                                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6">
                                                 <path strokeLinecap="round" strokeLinejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
@@ -341,7 +342,7 @@ export default function PostExam() {
                                         </div>
                                         Télécharger votre examen *
                                     </h3>
-                                    <div className="bg-white rounded-lg p-6 border border-purple-200">
+                                    <div className={`rounded-lg p-6 border ${isDark ? 'bg-gray-700 border-purple-700' : 'bg-white border-purple-200'}`}>
                                         <div 
                                             className="text-center mb-4"
                                             onDragOver={handleDragOver}
@@ -352,8 +353,8 @@ export default function PostExam() {
                                                     <path strokeLinecap="round" strokeLinejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                                                 </svg>
                                             </div>
-                                            <p className="text-gray-700 font-medium mb-2">Glissez-déposez vos fichiers ici</p>
-                                            <p className="text-sm text-gray-500">ou cliquez pour sélectionner plusieurs fichiers</p>
+                                            <p className={`font-medium mb-2 ${isDark ? 'text-gray-200' : 'text-gray-700'}`}>Glissez-déposez vos fichiers ici</p>
+                                            <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>ou cliquez pour sélectionner plusieurs fichiers</p>
                                         </div>
                                         <input 
                                             type="file" 
@@ -361,25 +362,25 @@ export default function PostExam() {
                                             onChange={handleChange}
                                             accept=".pdf,.jpg,.jpeg,.png,.gif"
                                             multiple
-                                            className="w-full px-4 py-6 border-2 border-dashed border-purple-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-purple-50 file:text-purple-700 file:cursor-pointer hover:file:bg-purple-100 text-center cursor-pointer"
+                                            className={`w-full px-4 py-6 border-2 border-dashed rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:cursor-pointer text-center cursor-pointer ${isDark ? 'border-purple-600 file:bg-purple-900 file:text-purple-300 hover:file:bg-purple-800' : 'border-purple-300 file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100'}`}
                                             required
                                         />
                                         
                                         {/* Affichage des fichiers sélectionnés */}
                                         {formData.files.length > 0 && (
                                             <div className="mt-4 space-y-2">
-                                                <p className="text-sm font-medium text-gray-700 mb-2">
+                                                <p className={`text-sm font-medium mb-2 ${isDark ? 'text-gray-200' : 'text-gray-700'}`}>
                                                     {formData.files.length} fichier(s) sélectionné(s) :
                                                 </p>
                                                 {formData.files.map((file, index) => (
-                                                    <div key={index} className="relative flex items-center overflow-hidden justify-between p-3 bg-green-50 border border-green-200 rounded-lg">
+                                                    <div key={index} className={`relative flex items-center overflow-hidden justify-between p-3 border rounded-lg ${isDark ? 'bg-green-900/30 border-green-700' : 'bg-green-50 border-green-200'}`}>
                                                         <div className="flex items-center">
                                                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4 mr-2 text-green-600">
                                                                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                                                             </svg>
                                                             <div>
-                                                                <p className="text-sm text-green-800 font-medium truncate">{file.name}</p>
-                                                                <p className="text-xs text-green-600">
+                                                                <p className={`text-sm font-medium truncate ${isDark ? 'text-green-200' : 'text-green-800'}`}>{file.name}</p>
+                                                                <p className={`text-xs ${isDark ? 'text-green-400' : 'text-green-600'}`}>
                                                                     Taille : {(file.size / 1024 / 1024).toFixed(2)} MB
                                                                 </p>
                                                             </div>
@@ -387,7 +388,7 @@ export default function PostExam() {
                                                         <button
                                                             type="button"
                                                             onClick={() => removeFile(index)}
-                                                            className="absolute right-2 bg-red-500/20 rounded-sm border border-red-300 text-red-500 hover:text-red-700 transition-colors"
+                                                            className={`absolute right-2 rounded-sm border transition-colors ${isDark ? 'bg-red-500/20 border-red-700 text-red-400 hover:text-red-300' : 'bg-red-500/20 border-red-300 text-red-500 hover:text-red-700'}`}
                                                         >
                                                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
                                                                 <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -398,8 +399,8 @@ export default function PostExam() {
                                             </div>
                                         )}
                                         
-                                        <div className="mt-4 bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-                                            <p className="text-xs text-yellow-800 flex items-center">
+                                        <div className={`mt-4 rounded-lg p-3 border ${isDark ? 'bg-yellow-900/30 border-yellow-700' : 'bg-yellow-50 border-yellow-200'}`}>
+                                            <p className={`text-xs flex items-center ${isDark ? 'text-yellow-200' : 'text-yellow-800'}`}>
                                                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4 mr-1">
                                                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
                                                 </svg>
@@ -410,8 +411,8 @@ export default function PostExam() {
                                 </div>
 
                                 {/* Section Informations académiques */}
-                                <div className="bg-gray-50 rounded-xl p-6">
-                                    <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                                <div className={`rounded-xl p-6 ${isDark ? 'bg-gray-700/50' : 'bg-gray-50'}`}>
+                                    <h3 className={`text-lg font-semibold mb-4 flex items-center ${isDark ? 'text-white' : 'text-gray-900'}`}>
                                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5 mr-2 text-blue-600">
                                             <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                                         </svg>
@@ -419,7 +420,7 @@ export default function PostExam() {
                                     </h3>
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                         <div>
-                                            <label htmlFor="ufr" className="block text-sm font-medium text-gray-700 mb-2">
+                                            <label htmlFor="ufr" className={`block text-sm font-medium mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
                                                 UFR *
                                             </label>
                                             <select 
@@ -427,7 +428,7 @@ export default function PostExam() {
                                                 value={formData.ufr}
                                                 onChange={handleChange}
                                                 disabled={loadingUfrs}
-                                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors disabled:bg-gray-100 disabled:cursor-not-allowed"
+                                                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors disabled:cursor-not-allowed ${isDark ? 'border-gray-600 bg-gray-800 text-white disabled:bg-gray-800' : 'border-gray-300 disabled:bg-gray-100'}`}
                                             >
                                                 <option value="">
                                                     {loadingUfrs ? 'Chargement...' : 'Sélectionnez une UFR'}
@@ -439,12 +440,12 @@ export default function PostExam() {
                                                 ))}
                                             </select>
                                             {loadingUfrs && (
-                                                <div className="mt-1 text-xs text-gray-500">Chargement des UFR...</div>
+                                                <div className={`mt-1 text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>Chargement des UFR...</div>
                                             )}
                                         </div>
 
                                         <div>
-                                            <label htmlFor="filiere" className="block text-sm font-medium text-gray-700 mb-2">
+                                            <label htmlFor="filiere" className={`block text-sm font-medium mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
                                                 Filière *
                                             </label>
                                             <select 
@@ -452,7 +453,7 @@ export default function PostExam() {
                                                 value={formData.filiere}
                                                 onChange={handleChange}
                                                 disabled={!formData.ufr || loadingFilieres}
-                                                className={`w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors disabled:bg-gray-100 disabled:cursor-not-allowed ${!formData.ufr || loadingFilieres ? 'opacity-50' : ''}`}
+                                                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors disabled:cursor-not-allowed ${!formData.ufr || loadingFilieres ? 'opacity-50' : ''} ${isDark ? 'border-gray-600 bg-gray-800 text-white disabled:bg-gray-800' : 'border-gray-300 disabled:bg-gray-100'}`}
                                             >
                                                 <option value="">
                                                     {!formData.ufr ? 'Sélectionnez d\'abord une UFR' : 
@@ -465,15 +466,15 @@ export default function PostExam() {
                                                 ))}
                                             </select>
                                             {loadingFilieres && (
-                                                <div className="mt-1 text-xs text-gray-500">Chargement des filières...</div>
+                                                <div className={`mt-1 text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>Chargement des filières...</div>
                                             )}
                                             {!formData.ufr && (
-                                                <div className="mt-1 text-xs text-gray-400">Veuillez d'abord sélectionner une UFR</div>
+                                                <div className={`mt-1 text-xs ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>Veuillez d'abord sélectionner une UFR</div>
                                             )}
                                         </div>
 
                                         <div>
-                                            <label htmlFor="niveau" className="block text-sm font-medium text-gray-700 mb-2">
+                                            <label htmlFor="niveau" className={`block text-sm font-medium mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
                                                 Niveau *
                                             </label>
                                             <select 
@@ -481,7 +482,7 @@ export default function PostExam() {
                                                 value={formData.niveau}
                                                 onChange={handleChange}
                                                 disabled={!formData.filiere || loadingNiveaux}
-                                                className={`w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors disabled:bg-gray-100 disabled:cursor-not-allowed ${!formData.filiere || loadingNiveaux ? 'opacity-50' : ''}`}
+                                                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors disabled:cursor-not-allowed ${!formData.filiere || loadingNiveaux ? 'opacity-50' : ''} ${isDark ? 'border-gray-600 bg-gray-800 text-white disabled:bg-gray-800' : 'border-gray-300 disabled:bg-gray-100'}`}
                                             >
                                                 <option value="">
                                                     {!formData.filiere ? 'Sélectionnez d\'abord une filière' : 
@@ -510,7 +511,7 @@ export default function PostExam() {
                                                 value={formData.semestre}
                                                 onChange={handleChange}
                                                 disabled={!formData.niveau}
-                                                className={`w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors disabled:bg-gray-100 disabled:cursor-not-allowed ${!formData.niveau ? 'opacity-50' : ''}`}
+                                                className={`w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors disabled:bg-gray-100 disabled:cursor-not-allowed ${!formData.niveau ? 'opacity-50' : ''} ${isDark ? 'border-gray-600 bg-gray-800 text-white disabled:bg-gray-800' : 'border-gray-300 disabled:bg-gray-100'}`}
                                             >
                                                 <option value="">
                                                     {!formData.niveau ? 'Sélectionnez d\'abord un niveau' : 'Sélectionnez un semestre'}
@@ -522,15 +523,15 @@ export default function PostExam() {
                                                 ))}
                                             </select>
                                             {!formData.niveau && (
-                                                <div className="mt-1 text-xs text-gray-400">Veuillez d'abord sélectionner un niveau</div>
+                                                <div className={`mt-1 text-xs ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>Veuillez d'abord sélectionner un niveau</div>
                                             )}
                                         </div>
                                     </div>
                                 </div>
 
                                 {/* Section Détails de l'examen */}
-                                <div className="bg-blue-50 rounded-xl p-6">
-                                    <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                                <div className={`rounded-xl p-6 ${isDark ? 'bg-blue-900/30' : 'bg-blue-50'}`}>
+                                    <h3 className={`text-lg font-semibold mb-4 flex items-center ${isDark ? 'text-white' : 'text-gray-900'}`}>
                                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5 mr-2 text-blue-600">
                                             <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                         </svg>
@@ -538,7 +539,7 @@ export default function PostExam() {
                                     </h3>
                                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                                         <div>
-                                            <label htmlFor="anneeExamen" className="block text-sm font-medium text-gray-700 mb-2">
+                                            <label htmlFor="anneeExamen" className={`block text-sm font-medium mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
                                                 Année de l'examen
                                             </label>
                                             <input 
@@ -546,21 +547,21 @@ export default function PostExam() {
                                                 name="anneeExamen" 
                                                 value={formData.anneeExamen}
                                                 onChange={handleChange}
-                                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors" 
+                                                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${isDark ? 'border-gray-600 bg-gray-700 text-white' : 'border-gray-300'}`}
                                                 placeholder="Ex: 2024"
                                                 maxLength={4}
                                             />
                                         </div>
 
                                         <div>
-                                            <label htmlFor="typeExamen" className="block text-sm font-medium text-gray-700 mb-2">
+                                            <label htmlFor="typeExamen" className={`block text-sm font-medium mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
                                                 Type d'examen *
                                             </label>
                                             <select 
                                                 name="typeExamen" 
                                                 value={formData.typeExamen}
                                                 onChange={handleChange}
-                                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                                                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${isDark ? 'border-gray-600 bg-gray-700 text-white' : 'border-gray-300'}`}
                                             >
                                                 <option value="">Sélectionnez un type</option>
                                                 <option value="Examen Final">Examen Final</option>
@@ -571,7 +572,7 @@ export default function PostExam() {
                                         </div>
 
                                         <div>
-                                            <label htmlFor="matiere" className="block text-sm font-medium text-gray-700 mb-2">
+                                            <label htmlFor="matiere" className={`block text-sm font-medium mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
                                                 Matière *
                                             </label>
                                             <input
@@ -579,7 +580,7 @@ export default function PostExam() {
                                                 name="matiere"
                                                 value={formData.matiere}
                                                 onChange={handleChange}
-                                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                                                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${isDark ? 'border-gray-600 bg-gray-700 text-white' : 'border-gray-300'}`}
                                                 placeholder="Ex: Mathématiques"
                                             />
                                         </div>
@@ -587,8 +588,8 @@ export default function PostExam() {
                                 </div>
 
                                 {/* Section Description */}
-                                <div className="bg-green-50 rounded-xl p-6">
-                                    <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                                <div className={`rounded-xl p-6 ${isDark ? 'bg-green-900/30' : 'bg-green-50'}`}>
+                                    <h3 className={`text-lg font-semibold mb-4 flex items-center ${isDark ? 'text-white' : 'text-gray-900'}`}>
                                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5 mr-2 text-green-600">
                                             <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                                         </svg>
@@ -598,7 +599,7 @@ export default function PostExam() {
                                         name="description"
                                         value={formData.description}
                                         onChange={handleChange}
-                                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors resize-none"
+                                        className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors resize-none ${isDark ? 'border-gray-600 bg-gray-700 text-white' : 'border-gray-300'}`}
                                         rows={4}
                                         placeholder="Ajoutez une description pour aider les autres étudiants à savoir le contenu de l'examen..."
                                     />
@@ -609,7 +610,7 @@ export default function PostExam() {
                                     <button 
                                         type="submit" 
                                         disabled={loading}
-                                        className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold py-4 px-6 rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3 text-lg"
+                                        className={`w-full text-white font-semibold py-4 px-6 rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3 text-lg ${isDark ? 'bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600' : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700'}`}
                                     >
                                         {loading ? (
                                             <>

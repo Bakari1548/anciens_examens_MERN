@@ -23,14 +23,15 @@ export default function LogsPanel() {
     setFilterDate,
     setCurrentPage,
     handleSearch,
-    handleExport
+    handleExport,
+    handleCleanup
   } = useLogs();
 
   const [selectedLog, setSelectedLog] = useState(null);
 
   return (
     <div className="space-y-6">
-      <LogsHeader onExport={handleExport} />
+      <LogsHeader onExport={handleExport} onCleanup={handleCleanup} />
 
       <LogsStats stats={stats} />
 

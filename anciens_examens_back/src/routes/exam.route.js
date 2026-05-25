@@ -19,6 +19,14 @@ const {
     getComments,
     getLikeStatus
 } = require('../controllers/social.controller');
+const {
+    addToFavorites,
+    removeFromFavorites,
+    getFavorites,
+    getFavoriteStatus,
+    incrementExamView,
+    incrementExamDownload
+} = require('../controllers/exam.controller');
 
 // Wrapper qui capture proprement les erreurs Multer/Cloudinary
 // (sinon elles "tuent" la connexion ce qui apparaît comme ERR_NETWORK côté client)
@@ -64,10 +72,16 @@ const uploadExamFiles = (req, res, next) => {
 
 router.get('/', getAllExams);
 router.get('/user', authMiddleware, getUserExams);
+router.get('/favorites', authMiddleware, getFavorites);
 router.get('/:slug', getExamBySlug);
 router.post('/', authMiddleware, uploadExamFiles, postExam);
 router.put('/:slug', authMiddleware, uploadExamFiles, updateExam);
 router.delete('/:slug', authMiddleware, adminMiddleware, deleteExam);
+
+// Routes pour les favoris
+router.post('/:slug/favorite', authMiddleware, addToFavorites);
+router.delete('/:slug/favorite', authMiddleware, removeFromFavorites);
+router.get('/:slug/favorite/status', authMiddleware, getFavoriteStatus);
 
 // Routes pour les likes
 router.get('/:slug/like/status', authMiddleware, getLikeStatus);
@@ -78,6 +92,10 @@ router.delete('/:slug/like', authMiddleware, unlikeExam);
 router.get('/:slug/comments', getComments);
 router.post('/:slug/comments', authMiddleware, addComment);
 router.delete('/:slug/comments/:commentId', authMiddleware, deleteComment);
+
+// Routes pour le suivi des vues et téléchargements
+router.post('/:slug/view', authMiddleware, incrementExamView);
+router.post('/:slug/download', authMiddleware, incrementExamDownload);
 
 
 module.exports = router;

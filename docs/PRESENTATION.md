@@ -47,6 +47,7 @@ Faciliter la réussite des étudiants en leur donnant accès aux ressources d'ex
 - Visualisez les tendances d'utilisation
 - Exportez les données pour analyse
 - Prenez des décisions basées sur des données réelles
+- Surveillez l'utilisation du stockage de la base de données et des fichiers
 
 ---
 

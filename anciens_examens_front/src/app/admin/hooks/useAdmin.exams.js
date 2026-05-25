@@ -1,7 +1,7 @@
 import { useAdmin } from '../context/AdminContext';
 
 export function useAdminExams() {
-  const { exams, fetchExams, approveExam: originalApproveExam, rejectExam, deleteExam, addExam, updateExam, loading, addNotification } = useAdmin();
+  const { exams, fetchExams, approveExam: originalApproveExam, rejectExam, deleteExam, addExam, updateExam, loading, addNotification, stats } = useAdmin();
 
   const approveExam = async (examId, params = {}) => {
     try {
@@ -66,6 +66,7 @@ export function useAdminExams() {
     updateExam,
     bulkApprove,
     bulkReject,
-    loading
+    loading,
+    stats
   };
 }

@@ -1,10 +1,12 @@
-import { FileText, Calendar, User, Download, Clock, CheckCircle, XCircle, Eye, X, Edit, Maximize2 } from 'lucide-react';
+import { FileText, Calendar, User, Download, Clock, CheckCircle, XCircle, Eye, X, Edit, Maximize2, ExternalLink } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 import EditExam from './EditExam';
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 export default function DetailExam({ exam, onClose }) {
   const { isDark } = useTheme();
+  const navigate = useNavigate();
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDocumentModal, setShowDocumentModal] = useState(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -250,6 +252,13 @@ export default function DetailExam({ exam, onClose }) {
 
         {/* Footer */}
         <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-200 dark:border-gray-700">
+          <button
+            onClick={() => navigate(`/examens/${exam.slug}`)}
+            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2"
+          >
+            <ExternalLink size={16} />
+            Voir l'examen
+          </button>
           <button
             onClick={onClose}
             className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-white rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"

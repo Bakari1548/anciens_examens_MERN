@@ -42,7 +42,7 @@ const getAllExams = async (req, res) => {
         const filters = {};
         if (req.query.filiere) filters.filiere = req.query.filiere;
         if (req.query.ufr) filters.ufr = req.query.ufr;
-        if (req.query.matiere) filters.matiere = req.query.matiere;
+        if (req.query.matiere) filters.matiere = { $regex: req.query.matiere, $options: 'i' };
         if (req.query.niveau) filters.niveau = req.query.niveau;
         if (req.query.semestre) filters.semestre = req.query.semestre;
         if (req.query.anneeExamen) filters.anneeExamen = req.query.anneeExamen;
@@ -454,11 +454,225 @@ const deleteExam = async (req, res) => {
     }
 }
 
+// @desc    Ajouter un examen aux favoris
+// @route   POST /api/exams/:slug/favorite
+// @access  Private
+const addToFavorites = async (req, res) => {
+    try {
+        const exam = await Exam.findOne({ slug: req.params.slug });
+        if (!exam) {
+            return res.status(404).json({ message: 'Examen non trouvé' });
+        }
+
+        const user = await User.findById(req.user._id);
+        if (!user.favorites.includes(exam._id)) {
+            user.favorites.push(exam._id);
+            await user.save();
+
+            // Créer une notification
+            await Notification.create({
+                recipient: user._id,
+                type: 'success',
+                title: 'Favori ajouté',
+                message: `Vous avez ajouté "${exam.title}" à vos favoris`,
+                metadata: {
+                    examId: exam._id,
+                    examTitle: exam.title,
+                    examSlug: exam.slug
+                },
+                read: false
+            });
+
+            await createLog({ 
+                level: 'info', 
+                action: 'FAVORITE_ADDED', 
+                message: `Examen ajouté aux favoris: ${exam.title}`, 
+                req, 
+                user: req.user, 
+                metadata: { examId: exam._id, slug: exam.slug } 
+            });
+        }
+
+        res.status(200).json({ message: 'Examen ajouté aux favoris' });
+    } catch (error) {
+        await createLog({ 
+            level: 'error', 
+            action: 'SYSTEM_ERROR', 
+            message: `Erreur lors de l'ajout aux favoris: ${error.message}`, 
+            req, 
+            user: req.user 
+        });
+        res.status(500).json({ message: 'Erreur serveur', error: error.message });
+    }
+};
+
+// @desc    Retirer un examen des favoris
+// @route   DELETE /api/exams/:slug/favorite
+// @access  Private
+const removeFromFavorites = async (req, res) => {
+    try {
+        const exam = await Exam.findOne({ slug: req.params.slug });
+        if (!exam) {
+            return res.status(404).json({ message: 'Examen non trouvé' });
+        }
+
+        const user = await User.findById(req.user._id);
+        user.favorites = user.favorites.filter(fav => !fav.equals(exam._id));
+        await user.save();
+
+        // Créer une notification
+        await Notification.create({
+            recipient: user._id,
+            type: 'success',
+            title: 'Favori retiré',
+            message: `Vous avez retiré "${exam.title}" de vos favoris`,
+            metadata: {
+                examId: exam._id,
+                examTitle: exam.title,
+                examSlug: exam.slug
+            },
+            read: false
+        });
+
+        await createLog({ 
+            level: 'info', 
+            action: 'FAVORITE_REMOVED', 
+            message: `Examen retiré des favoris: ${exam.title}`, 
+            req, 
+            user: req.user, 
+            metadata: { examId: exam._id, slug: exam.slug } 
+        });
+
+        res.status(200).json({ message: 'Examen retiré des favoris' });
+    } catch (error) {
+        await createLog({ 
+            level: 'error', 
+            action: 'SYSTEM_ERROR', 
+            message: `Erreur lors du retrait des favoris: ${error.message}`, 
+            req, 
+            user: req.user 
+        });
+        res.status(500).json({ message: 'Erreur serveur', error: error.message });
+    }
+};
+
+// @desc    Récupérer les favoris de l'utilisateur
+// @route   GET /api/exams/favorites
+// @access  Private
+const getFavorites = async (req, res) => {
+    try {
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 12;
+        const skip = (page - 1) * limit;
+
+        const user = await User.findById(req.user._id).populate({
+            path: 'favorites',
+            options: { skip, limit, sort: { createdAt: -1 } }
+        });
+
+        const total = user.favorites.length;
+        const totalPages = Math.ceil(total / limit);
+
+        res.status(200).json({
+            exams: user.favorites,
+            pagination: {
+                currentPage: page,
+                totalPages,
+                total,
+                limit
+            }
+        });
+    } catch (error) {
+        await createLog({ 
+            level: 'error', 
+            action: 'SYSTEM_ERROR', 
+            message: `Erreur lors de la récupération des favoris: ${error.message}`, 
+            req, 
+            user: req.user 
+        });
+        res.status(500).json({ message: 'Erreur serveur', error: error.message });
+    }
+};
+
+// @desc    Vérifier si un examen est dans les favoris
+// @route   GET /api/exams/:slug/favorite/status
+// @access  Private
+const getFavoriteStatus = async (req, res) => {
+    try {
+        const exam = await Exam.findOne({ slug: req.params.slug });
+        if (!exam) {
+            return res.status(404).json({ message: 'Examen non trouvé' });
+        }
+
+        const user = await User.findById(req.user._id);
+        const isFavorite = user.favorites.includes(exam._id);
+
+        res.status(200).json({ isFavorite });
+    } catch (error) {
+        await createLog({ 
+            level: 'error', 
+            action: 'SYSTEM_ERROR', 
+            message: `Erreur lors de la vérification du statut favori: ${error.message}`, 
+            req, 
+            user: req.user 
+        });
+        res.status(500).json({ message: 'Erreur serveur', error: error.message });
+    }
+};
+
+// @desc    Incrémenter les vues d'un examen
+// @route   POST /api/exams/:slug/view
+// @access  Private
+const incrementExamView = async (req, res) => {
+    try {
+        const exam = await Exam.findOne({ slug: req.params.slug });
+        if (!exam) {
+            return res.status(404).json({ message: 'Examen non trouvé' });
+        }
+
+        const userId = req.user._id;
+        await exam.incrementView(userId);
+
+        res.status(200).json({ message: 'Vue enregistrée', viewsCount: exam.viewsCount });
+    } catch (error) {
+        console.error('Erreur lors de l\'enregistrement de la vue:', error);
+        // Silencieux en cas d'erreur pour ne pas bloquer l'expérience utilisateur
+        res.status(200).json({ message: 'Vue enregistrée' });
+    }
+};
+
+// @desc    Incrémenter les téléchargements d'un examen
+// @route   POST /api/exams/:slug/download
+// @access  Private
+const incrementExamDownload = async (req, res) => {
+    try {
+        const exam = await Exam.findOne({ slug: req.params.slug });
+        if (!exam) {
+            return res.status(404).json({ message: 'Examen non trouvé' });
+        }
+
+        await exam.incrementDownload();
+
+        res.status(200).json({ message: 'Téléchargement enregistré', downloadsCount: exam.downloadsCount });
+    } catch (error) {
+        console.error('Erreur lors de l\'enregistrement du téléchargement:', error);
+        // Silencieux en cas d'erreur pour ne pas bloquer l'expérience utilisateur
+        res.status(200).json({ message: 'Téléchargement enregistré' });
+    }
+};
+
+
 module.exports = {
     getAllExams,
     getExamBySlug,
     getUserExams,
     postExam,
     updateExam,
-    deleteExam
+    deleteExam,
+    addToFavorites,
+    removeFromFavorites,
+    getFavorites,
+    getFavoriteStatus,
+    incrementExamView,
+    incrementExamDownload
 };

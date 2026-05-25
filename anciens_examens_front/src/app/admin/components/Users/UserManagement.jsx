@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
-import { Search, Filter, Download, MoreVertical, ChevronLeft, ChevronRight, Eye, Edit2, Ban, Shield } from 'lucide-react';
+import { Search, Filter, Download, MoreVertical, ChevronLeft, ChevronRight, Eye, Edit2, Ban, Shield, Calendar, Building2, GraduationCap, User, RotateCcw } from 'lucide-react';
 import { useAdminUsers } from '../../hooks/useAdmin.users';
 import { useTheme } from '../../context/ThemeContext';
 import DetailUser from './DetailUser';
 import EditUser from './EditUser';
+import { getAllUfrs, getFilieresByUfr } from '../../../exam/services/exam.api';
 
 export default function UserManagement() {
   const { isDark } = useTheme();
@@ -16,11 +17,16 @@ export default function UserManagement() {
     banUser, 
     unbanUser, 
     loading,
-    addNotification 
+    addNotification,
+    stats
   } = useAdminUsers();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterRole, setFilterRole] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
+  const [filterUFR, setFilterUFR] = useState('');
+  const [filterFiliere, setFilterFiliere] = useState('');
+  const [filterDateFrom, setFilterDateFrom] = useState('');
+  const [filterDateTo, setFilterDateTo] = useState('');
   const [selectedUsers, setSelectedUsers] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
@@ -29,6 +35,49 @@ export default function UserManagement() {
   const [showDetailModal, setShowDetailModal] = useState(null);
   const [showEditModal, setShowEditModal] = useState(null);
   const [showActionMenu, setShowActionMenu] = useState(null);
+  
+  // Données académiques dynamiques
+  const [ufrs, setUfrs] = useState([]);
+  const [filieres, setFilieres] = useState([]);
+  const [loadingUfrs, setLoadingUfrs] = useState(false);
+  const [loadingFilieres, setLoadingFilieres] = useState(false);
+
+  // Charger les UFRs au montage
+  useEffect(() => {
+    const loadUfrs = async () => {
+      try {
+        setLoadingUfrs(true);
+        const response = await getAllUfrs();
+        setUfrs([{ value: '', label: 'Toutes les UFR' }, ...response.data.map(ufr => ({ value: ufr.name, label: ufr.name }))]);
+      } catch (error) {
+        console.error('Erreur lors du chargement des UFRs:', error);
+      } finally {
+        setLoadingUfrs(false);
+      }
+    };
+    loadUfrs();
+  }, []);
+
+  // Charger les filières quand l'UFR change
+  useEffect(() => {
+    const loadFilieres = async () => {
+      if (!filterUFR) {
+        setFilieres([{ value: '', label: 'Toutes les filières' }]);
+        return;
+      }
+      try {
+        setLoadingFilieres(true);
+        const response = await getFilieresByUfr(filterUFR);
+        setFilieres([{ value: '', label: 'Toutes les filières' }, ...response.data.map(f => ({ value: f.name, label: f.name }))]);
+      } catch (error) {
+        console.error('Erreur lors du chargement des filières:', error);
+        setFilieres([{ value: '', label: 'Toutes les filières' }]);
+      } finally {
+        setLoadingFilieres(false);
+      }
+    };
+    loadFilieres();
+  }, [filterUFR]);
 
   useEffect(() => {
     fetchUsers({
@@ -36,9 +85,13 @@ export default function UserManagement() {
       limit: pageSize,
       search: searchTerm,
       role: filterRole,
-      status: filterStatus
+      status: filterStatus,
+      ufr: filterUFR,
+      filiere: filterFiliere,
+      dateFrom: filterDateFrom,
+      dateTo: filterDateTo
     });
-  }, [currentPage, pageSize, searchTerm, filterRole, filterStatus]);
+  }, [currentPage, pageSize, searchTerm, filterRole, filterStatus, filterUFR, filterFiliere, filterDateFrom, filterDateTo]);
 
   // Réinitialiser la page quand la taille change
   useEffect(() => {
@@ -152,16 +205,29 @@ export default function UserManagement() {
     await updateUser(userId, { role: newRole });
   };
 
+  const handleResetFilters = () => {
+    setSearchTerm('');
+    setFilterRole('');
+    setFilterStatus('');
+    setFilterUFR('');
+    setFilterFiliere('');
+    setFilterDateFrom('');
+    setFilterDateTo('');
+    setCurrentPage(1);
+  };
+
 
   const filteredUsers = users.filter(user => {
     const matchesSearch = user.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
                           user.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
                           user.email.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesRole = !filterRole || user.role === filterRole;
-    const matchesStatus = !filterStatus || (filterStatus === 'active') || 
-                         (filterStatus === 'inactive') ||
-                         (filterStatus === 'banned');
-    return matchesSearch && matchesRole && matchesStatus;
+    const matchesStatus = !filterStatus || user.status === filterStatus;
+    const matchesUFR = !filterUFR || user.ufr === filterUFR;
+    const matchesFiliere = !filterFiliere || user.filiere === filterFiliere;
+    const matchesDateFrom = !filterDateFrom || new Date(user.createdAt) >= new Date(filterDateFrom);
+    const matchesDateTo = !filterDateTo || new Date(user.createdAt) <= new Date(filterDateTo);
+    return matchesSearch && matchesRole && matchesStatus && matchesUFR && matchesFiliere && matchesDateFrom && matchesDateTo;
   });
 
   const getStatusBadge = (user) => {
@@ -224,9 +290,67 @@ export default function UserManagement() {
         </div>
       </div>
 
+      {/* Statistics Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total utilisateurs</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats?.totalUsers || users.length}</p>
+            </div>
+            <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
+              <User size={24} className="text-blue-600 dark:text-blue-400" />
+            </div>
+          </div>
+        </div>
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Actifs</p>
+              <p className="text-2xl font-bold text-green-600 dark:text-green-400">{users.filter(u => u.status === 'active').length}</p>
+            </div>
+            <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
+              <Shield className="text-green-600 dark:text-green-400" size={24} />
+            </div>
+          </div>
+        </div>
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Inactifs</p>
+              <p className="text-2xl font-bold text-gray-600 dark:text-gray-400">{users.filter(u => u.status === 'inactive').length}</p>
+            </div>
+            <div className="w-12 h-12 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center">
+              <User className="text-gray-600 dark:text-gray-400" size={24} />
+            </div>
+          </div>
+        </div>
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Bannis</p>
+              <p className="text-2xl font-bold text-red-600 dark:text-red-400">{users.filter(u => u.status === 'banned').length}</p>
+            </div>
+            <div className="w-12 h-12 bg-red-100 dark:bg-red-900/30 rounded-lg flex items-center justify-center">
+              <Ban className="text-red-600 dark:text-red-400" size={24} />
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Filtres et recherche */}
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-        <div className="flex flex-col lg:flex-row gap-4">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Filtres</h3>
+          <button
+            onClick={handleResetFilters}
+            className="px-3 py-1.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors flex items-center gap-2 text-sm"
+          >
+            <RotateCcw size={16} />
+            Réinitialiser
+          </button>
+        </div>
+        <div className="grid md:grid-cols-4 sm:grid-cols-2 grid-cols-1 gap-4">
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" size={20} />
             <input
@@ -257,6 +381,50 @@ export default function UserManagement() {
             <option value="inactive">Inactif</option>
             <option value="banned">Banni</option>
           </select>
+          <select
+            value={filterUFR}
+            onChange={(e) => setFilterUFR(e.target.value)}
+            disabled={loadingUfrs}
+            className="px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+          >
+            {ufrs.map(option => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+          <select
+            value={filterFiliere}
+            onChange={(e) => setFilterFiliere(e.target.value)}
+            disabled={loadingFilieres || !filterUFR}
+            className="px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+          >
+            {filieres.map(option => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+          <div className="relative">
+            <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" size={20} />
+            <input
+              type="date"
+              placeholder="Date de début"
+              value={filterDateFrom}
+              onChange={(e) => setFilterDateFrom(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div className="relative">
+            <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" size={20} />
+            <input
+              type="date"
+              placeholder="Date de fin"
+              value={filterDateTo}
+              onChange={(e) => setFilterDateTo(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
         </div>
       </div>
 
@@ -346,7 +514,7 @@ export default function UserManagement() {
                           {user.firstName} {user.lastName}
                         </div>
                         <div className="text-sm text-gray-500 dark:text-gray-400">
-                          {user.examCount || 0} examens partagés
+                          {user.exams?.length || 0} examens partagés
                         </div>
                       </div>
                     </div>

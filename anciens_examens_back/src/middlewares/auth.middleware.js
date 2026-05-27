@@ -53,4 +53,13 @@ const authMiddleware = async (req, res, next) => {
     }
 };
 
+const requireAdmin = (req, res) => {
+    if (!req.user || req.user.role !== 'admin') {
+        return res.status(403).json({ message: 'Accès réservé aux administrateurs' });
+    }
+};
+
 module.exports = authMiddleware;
+module.exports.authMiddleware = authMiddleware;
+module.exports.authenticateToken = authMiddleware;
+module.exports.requireAdmin = requireAdmin;

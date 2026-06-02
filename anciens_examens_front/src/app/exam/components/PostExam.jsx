@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
-import { Upload, X, FileText, Calendar, BookOpen, Save, Loader2 } from 'lucide-react';
+import { Upload, X, FileText, Calendar, BookOpen, Save, Loader2, Sparkles, AlertTriangle } from 'lucide-react';
 import { postNewExam } from '../services/exam.api';
+import { analyzeExamFile, checkDuplicate } from '../services/ai.api';
 import { getAllUfrs, getFilieresByUfr, getNiveauxByFiliere } from '../../../services/ufr.api';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import logoAnciensExamens from '@/assets/logo_anciens_examens.png';
 import { useTheme } from '../../admin/context/ThemeContext';
 
@@ -22,6 +23,13 @@ export default function PostExam() {
     });
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
+
+    // ===== IA =====
+    const [aiAnalyzing, setAiAnalyzing] = useState(false);
+    const [aiExtraction, setAiExtraction] = useState(null); // { exercises, globalSummary }
+    const [aiAnalyzed, setAiAnalyzed] = useState(false);
+    const [duplicateChecking, setDuplicateChecking] = useState(false);
+    const [duplicateModal, setDuplicateModal] = useState(null); // { matches }
     
     // États pour les options dynamiques
     const [ufrOptions, setUfrOptions] = useState([]);
@@ -129,6 +137,11 @@ export default function PostExam() {
                     toast.error(`Vous ne pouvez ajouter que 5 fichiers maximum. Actuel : ${currentFiles.length}, Tentative : ${newFiles.length}`);
                     return prev;
                 }
+
+                // Déclencher l'analyse IA automatique sur le premier fichier (uniquement si pas encore analysé)
+                if (!aiAnalyzed && currentFiles.length === 0 && newFiles[0]) {
+                    runAIAnalysis(newFiles[0]);
+                }
                 
                 return {
                     ...prev,
@@ -161,6 +174,11 @@ export default function PostExam() {
                 toast.error(`Vous ne pouvez ajouter que 5 fichiers maximum. Actuel : ${currentFiles.length}`);
                 return prev;
             }
+
+            // Déclencher l'analyse IA automatique sur le premier fichier
+            if (!aiAnalyzed && currentFiles.length === 0 && droppedFiles[0]) {
+                runAIAnalysis(droppedFiles[0]);
+            }
             
             return {
                 ...prev,
@@ -174,6 +192,86 @@ export default function PostExam() {
             ...prev,
             files: prev.files.filter((_, i) => i !== index)
         }));
+        // Réinitialiser l'état IA si on retire tous les fichiers
+        if (formData.files.length <= 1) {
+            setAiAnalyzed(false);
+            setAiExtraction(null);
+        }
+    };
+
+    // ===== Analyse IA automatique du premier fichier =====
+    const runAIAnalysis = async (file) => {
+        if (!file) return;
+        try {
+            setAiAnalyzing(true);
+            const allowed = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
+            if (!allowed.includes(file.type)) return;
+
+            toast.info('🤖 Analyse du document avec l\'IA...');
+            const result = await analyzeExamFile(file);
+
+            if (result?.metadata) {
+                const m = result.metadata;
+                // Pré-remplir uniquement les champs vides pour ne pas écraser une saisie utilisateur
+                setFormData(prev => ({
+                    ...prev,
+                    ufr: prev.ufr || m.ufr || '',
+                    filiere: prev.filiere || m.filiere || '',
+                    niveau: prev.niveau || m.niveau || '',
+                    semestre: prev.semestre || m.semestre || '',
+                    anneeExamen: prev.anneeExamen || m.anneeExamen || '',
+                    typeExamen: prev.typeExamen || m.typeExamen || '',
+                    matiere: prev.matiere || m.matiere || '',
+                    description: prev.description || m.description || ''
+                }));
+            }
+
+            if (result?.aiExtraction) {
+                setAiExtraction(result.aiExtraction);
+                setAiAnalyzed(true);
+
+                // Détection de doublons en arrière-plan
+                if (result.aiExtraction.exercises?.length > 0) {
+                    runDuplicateCheck(result.metadata, result.aiExtraction);
+                }
+            }
+
+            toast.success(`✨ Analyse IA terminée (${result?.aiExtraction?.exercises?.length || 0} exercices détectés)`);
+        } catch (error) {
+            console.error('Erreur analyse IA:', error);
+            const msg = error?.response?.data?.message;
+            if (error?.response?.status === 503) {
+                // Silencieux si l'IA n'est pas configurée
+                console.warn('IA non configurée côté serveur');
+            } else {
+                toast.warning(msg || 'L\'analyse IA a échoué — remplissez le formulaire manuellement');
+            }
+        } finally {
+            setAiAnalyzing(false);
+        }
+    };
+
+    // ===== Vérification de doublons =====
+    const runDuplicateCheck = async (metadata, extraction) => {
+        try {
+            setDuplicateChecking(true);
+            const payload = {
+                ufr: metadata?.ufr || formData.ufr,
+                filiere: metadata?.filiere || formData.filiere,
+                matiere: metadata?.matiere || formData.matiere,
+                aiExtraction: extraction
+            };
+            if (!payload.matiere) return; // sans matière, le filtre est trop large
+
+            const result = await checkDuplicate(payload);
+            if (result?.isDuplicate && result.matches?.length > 0) {
+                setDuplicateModal({ matches: result.matches });
+            }
+        } catch (error) {
+            console.warn('Vérification doublon échouée:', error?.message);
+        } finally {
+            setDuplicateChecking(false);
+        }
     };
 
     const handleSubmit = async (e) => {
@@ -223,6 +321,11 @@ export default function PostExam() {
             formData.files.forEach((file) => {
                 examData.append('files', file);
             });
+
+            // Joindre l'extraction IA pour le cache BDD (évite un appel IA redondant côté serveur)
+            if (aiExtraction && Array.isArray(aiExtraction.exercises) && aiExtraction.exercises.length > 0) {
+                examData.append('aiExtraction', JSON.stringify(aiExtraction));
+            }
 
             // Debug: Log des données envoyées
             console.log('Données FormData envoyées:');
@@ -366,6 +469,34 @@ export default function PostExam() {
                                             required
                                         />
                                         
+                                        {/* Badge statut IA */}
+                                        {(aiAnalyzing || aiAnalyzed) && (
+                                            <div className={`mt-4 rounded-lg p-3 border flex items-center gap-2 ${
+                                                aiAnalyzing
+                                                    ? (isDark ? 'bg-purple-900/30 border-purple-700 text-purple-200' : 'bg-purple-50 border-purple-200 text-purple-800')
+                                                    : (isDark ? 'bg-green-900/30 border-green-700 text-green-200' : 'bg-green-50 border-green-200 text-green-800')
+                                            }`}>
+                                                {aiAnalyzing ? (
+                                                    <>
+                                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                                        <span className="text-sm font-medium">Analyse IA en cours… cela peut prendre quelques secondes</span>
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <Sparkles className="w-4 h-4" />
+                                                        <span className="text-sm font-medium">
+                                                            Champs pré-remplis par l'IA{aiExtraction?.exercises?.length ? ` • ${aiExtraction.exercises.length} exercices détectés` : ''}
+                                                        </span>
+                                                        {duplicateChecking && (
+                                                            <span className="ml-2 inline-flex items-center gap-1 text-xs opacity-80">
+                                                                <Loader2 className="w-3 h-3 animate-spin" /> vérification doublons…
+                                                            </span>
+                                                        )}
+                                                    </>
+                                                )}
+                                            </div>
+                                        )}
+
                                         {/* Affichage des fichiers sélectionnés */}
                                         {formData.files.length > 0 && (
                                             <div className="mt-4 space-y-2">
@@ -634,6 +765,109 @@ export default function PostExam() {
                     </div>
                 </div>
             </div>
+
+            {/* Modal de détection de doublons */}
+            {duplicateModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={() => setDuplicateModal(null)}>
+                    <div
+                        className={`max-w-2xl w-full rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col ${isDark ? 'bg-gray-800 text-white' : 'bg-white'}`}
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className={`p-6 border-b flex items-start gap-3 ${isDark ? 'border-gray-700 bg-amber-900/20' : 'border-gray-200 bg-amber-50'}`}>
+                            <AlertTriangle className="text-amber-500 flex-shrink-0 mt-1" size={28} />
+                            <div className="flex-1">
+                                <h2 className={`text-xl font-bold mb-1 ${isDark ? 'text-amber-200' : 'text-amber-900'}`}>
+                                    Examen{duplicateModal.matches.length > 1 ? 's' : ''} similaire{duplicateModal.matches.length > 1 ? 's' : ''} détecté{duplicateModal.matches.length > 1 ? 's' : ''}
+                                </h2>
+                                <p className={`text-sm ${isDark ? 'text-amber-300/80' : 'text-amber-800/80'}`}>
+                                    L'IA a comparé les exercices de votre examen avec ceux déjà partagés. Veuillez vérifier avant de continuer.
+                                </p>
+                            </div>
+                            <button onClick={() => setDuplicateModal(null)} className={`p-1 rounded-lg ${isDark ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}>
+                                <X size={20} />
+                            </button>
+                        </div>
+
+                        <div className="overflow-y-auto p-6 space-y-4 flex-1">
+                            {duplicateModal.matches.map((m) => {
+                                const pct = Math.round((m.globalSimilarity || 0) * 100);
+                                const verdictColor =
+                                    m.verdict === 'exact'
+                                        ? 'bg-red-100 text-red-700 border-red-300'
+                                        : 'bg-amber-100 text-amber-700 border-amber-300';
+                                const verdictLabel = m.verdict === 'exact' ? 'Identique' : 'Partiellement similaire';
+                                return (
+                                    <div key={m.examId} className={`border rounded-xl p-4 ${isDark ? 'border-gray-700 bg-gray-700/40' : 'border-gray-200 bg-gray-50'}`}>
+                                        <div className="flex items-start justify-between mb-2">
+                                            <div className="flex-1">
+                                                <h3 className={`font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>{m.title}</h3>
+                                                <p className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                                                    {m.ufr} • {m.filiere} • {m.matiere} {m.anneeExamen ? `• ${m.anneeExamen}` : ''}
+                                                </p>
+                                            </div>
+                                            <span className={`px-2 py-1 rounded-full text-xs font-semibold border ${verdictColor}`}>
+                                                {verdictLabel} • {pct}%
+                                            </span>
+                                        </div>
+
+                                        {m.matchedExercises && m.matchedExercises.length > 0 && (
+                                            <div className="mt-3 space-y-1">
+                                                <p className={`text-xs font-medium ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
+                                                    Exercices correspondants :
+                                                </p>
+                                                <ul className="text-sm space-y-1">
+                                                    {m.matchedExercises.slice(0, 5).map((ex, i) => (
+                                                        <li key={i} className={`flex items-center gap-2 ${isDark ? 'text-gray-200' : 'text-gray-700'}`}>
+                                                            <span className="text-green-500">✓</span>
+                                                            <span><strong>{ex.newExNumber}</strong> ≈ {ex.existingExNumber}</span>
+                                                            <span className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                                                                ({Math.round((ex.similarity || 0) * 100)}%)
+                                                            </span>
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            </div>
+                                        )}
+
+                                        <div className="mt-3">
+                                            <Link
+                                                to={`/examen/${m.slug}`}
+                                                target="_blank"
+                                                className={`text-sm font-medium underline ${isDark ? 'text-blue-400' : 'text-blue-600'}`}
+                                            >
+                                                Voir cet examen →
+                                            </Link>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+
+                        <div className={`p-4 border-t flex gap-3 justify-end ${isDark ? 'border-gray-700 bg-gray-800' : 'border-gray-200 bg-gray-50'}`}>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setDuplicateModal(null);
+                                    // Vider les fichiers pour annuler le partage
+                                    setFormData(prev => ({ ...prev, files: [] }));
+                                    setAiAnalyzed(false);
+                                    setAiExtraction(null);
+                                }}
+                                className={`px-4 py-2 rounded-lg font-medium ${isDark ? 'bg-gray-700 text-gray-200 hover:bg-gray-600' : 'bg-gray-200 text-gray-800 hover:bg-gray-300'}`}
+                            >
+                                Annuler le partage
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setDuplicateModal(null)}
+                                className="px-4 py-2 rounded-lg font-medium bg-amber-500 text-white hover:bg-amber-600"
+                            >
+                                Partager quand même
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

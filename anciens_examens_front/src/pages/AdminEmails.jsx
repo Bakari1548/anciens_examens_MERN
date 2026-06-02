@@ -1,12 +1,12 @@
 import AdminLayout from '../app/admin/components/Layout/AdminLayout';
-import AppealsManagement from '../app/admin/components/AppealsManagement';
+import EmailManagement from '../app/admin/components/EmailManagement';
 import { AdminProvider } from '../app/admin/context/AdminContext';
 
-export default function AdminAppealsPage() {
+export default function AdminEmailsPage() {
   return (
     <AdminProvider>
       <AdminLayout>
-        <AppealsManagement />
+        <EmailManagement />
       </AdminLayout>
     </AdminProvider>
   );

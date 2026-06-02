@@ -32,6 +32,7 @@ services:
       CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET}
       RESEND_API_KEY: ${RESEND_API_KEY}
       EMAIL_FROM: ${EMAIL_FROM}
+      REDIS_URL: redis://redis:6379
     ports:
       - "5000:5000"
     env_file:
@@ -41,8 +42,6 @@ services:
     volumes:
       # Bind mount du code source pour hot reload
       - ./anciens_examens_back:/app
-      # Volume anonyme pour préserver node_modules du conteneur
-      - /app/node_modules
 
   # ==================== FRONTEND React + Vite (DEV avec HMR) ====================
   frontend:
@@ -59,34 +58,34 @@ services:
       - "3000:3000"
     depends_on:
       - backend
+      - redis
     networks:
       - anciens_examens_network
     volumes:
       - ./anciens_examens_front:/app
-      - /app/node_modules
 
-  # ==================== Redis (cache, optionnel) ====================
-  # redis:
-  #   image: redis:7-alpine
-  #   container_name: anciens_examens_redis_dev
-  #   restart: unless-stopped
-  #   ports:
-  #     - "6379:6379"
-  #   volumes:
-  #     - redis_data:/data
-  #   networks:
-  #     - anciens_examens_network
-  #   command: redis-server --appendonly yes
-  #   healthcheck:
-  #     test: ["CMD", "redis-cli", "ping"]
-  #     interval: 30s
-  #     timeout: 10s
-  #     retries: 3
+  # ==================== Redis ====================
+  redis:
+    image: redis:7-alpine
+    container_name: anciens_examens_redis_dev
+    restart: unless-stopped
+    ports:
+      - "6380:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - anciens_examens_network
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
 # ==================== Volumes ====================
-# volumes:
-#   redis_data:
-#     driver: local
+volumes:
+  redis_data:
+    driver: local
 
 # ==================== Réseaux ====================
 networks:

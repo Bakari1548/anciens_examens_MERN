@@ -10,6 +10,7 @@ const adminRoutes = require('./src/routes/admin.route');
 const ufrRoutes = require('./src/routes/ufr.route');
 const logRoutes = require('./src/routes/log.route');
 const notificationRoutes = require('./src/routes/notification.route');
+const aiRoutes = require('./src/routes/ai.route');
 const Notification = require('./src/models/Notification');
 const User = require('./src/models/User');
 
@@ -58,6 +59,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/ufrs', ufrRoutes);
 app.use('/api/logs', logRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/ai', aiRoutes);
 
 
 app.use((req, res, next) => {

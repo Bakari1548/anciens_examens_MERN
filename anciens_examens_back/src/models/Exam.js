@@ -153,6 +153,18 @@ const examSchema = new mongoose.Schema({
     downloadsCount: {
         type: Number,
         default: 0
+    },
+    // Extraction IA (cache pour la détection de doublons)
+    aiExtraction: {
+        exercises: [{
+            number: { type: String, default: '' },
+            title: { type: String, default: '' },
+            statement: { type: String, default: '' },
+            keywords: [{ type: String }]
+        }],
+        globalSummary: { type: String, default: '' },
+        extractedAt: { type: Date },
+        model: { type: String, default: '' }
     }
 });
 

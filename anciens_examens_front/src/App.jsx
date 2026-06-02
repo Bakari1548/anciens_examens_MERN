@@ -26,6 +26,7 @@ import AdminNotificationsPage from './pages/AdminNotifications'
 import AdminSettingsPage from './pages/AdminSettings'
 import AdminLogsPage from './pages/AdminLogs'
 import AdminAppealsPage from './pages/AdminAppeals'
+import AdminEmailsPage from './pages/AdminEmails'
 import { ThemeProvider } from './app/admin/context/ThemeContext'
 import ResetPasswordWithTokenPage from './pages/ResetPasswordWithToken'
 import RulesPage from './app/legal/components/RulesPage'
@@ -69,6 +70,7 @@ function AppContent() {
               <Route path="settings" element={<AdminSettingsPage />} />
               <Route path="logs" element={<AdminLogsPage />} />
               <Route path="appeals" element={<AdminAppealsPage />} />
+              <Route path="emails" element={<AdminEmailsPage />} />
             </Routes>
           </AdminProtectedRoute>
         } />

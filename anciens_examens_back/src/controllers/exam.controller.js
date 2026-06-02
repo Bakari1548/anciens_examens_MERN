@@ -3,6 +3,7 @@ const User = require('../models/User');
 const { cloudinary } = require('../config/cloudinary');
 const { createLog } = require('../utils/logger');
 const Notification = require('../models/Notification');
+const gemini = require('../utils/geminiClient');
 
 // Fonction pour générer un slug unique avec caractères aléatoires
 const generateUniqueSlug = async (baseSlug) => {
@@ -236,6 +237,28 @@ const postExam = async (req, res) => {
         
         const slug = await generateUniqueSlug(baseSlug);
 
+        // Récupérer l'extraction IA depuis le body si déjà fournie par le frontend
+        // (évite un appel IA redondant si l'utilisateur a déjà déclenché l'analyse côté front)
+        let aiExtraction = null;
+        if (req.body.aiExtraction) {
+            try {
+                const parsed = typeof req.body.aiExtraction === 'string'
+                    ? JSON.parse(req.body.aiExtraction)
+                    : req.body.aiExtraction;
+                if (parsed && Array.isArray(parsed.exercises)) {
+                    aiExtraction = {
+                        exercises: parsed.exercises,
+                        globalSummary: parsed.globalSummary || '',
+                        extractedAt: new Date(),
+                        model: process.env.GEMINI_MODEL || 'gemini-2.0-flash'
+                    };
+                }
+            } catch (e) {
+                console.warn('[postExam] aiExtraction invalide, sera re-extraite:', e.message);
+            }
+        }
+
+        // Si pas d'extraction fournie et IA disponible, extraire en arrière-plan après création
         const exam = await Exam.create({
             title: formattedTitle,
             slug,
@@ -248,8 +271,34 @@ const postExam = async (req, res) => {
             matiere,
             description,
             author,
-            files // Tableau des fichiers
+            files,
+            ...(aiExtraction ? { aiExtraction } : {})
         });
+
+        // Si pas d'aiExtraction fournie par le front, déclencher en arrière-plan (fire-and-forget)
+        if (!aiExtraction && gemini.isAvailable() && files[0]) {
+            (async () => {
+                try {
+                    const result = await gemini.analyzeExam({
+                        url: files[0].url,
+                        mimeType: files[0].mimeType,
+                        context: {}
+                    });
+                    if (result?.aiExtraction) {
+                        await Exam.findByIdAndUpdate(exam._id, {
+                            aiExtraction: {
+                                exercises: result.aiExtraction.exercises || [],
+                                globalSummary: result.aiExtraction.globalSummary || '',
+                                extractedAt: new Date(),
+                                model: process.env.GEMINI_MODEL || 'gemini-2.0-flash'
+                            }
+                        });
+                    }
+                } catch (err) {
+                    console.warn('[postExam] Extraction IA en arrière-plan échouée:', err.message);
+                }
+            })();
+        }
 
         // Ajouter l'ID de l'examen au tableau exams de l'utilisateur
         await User.findByIdAndUpdate(

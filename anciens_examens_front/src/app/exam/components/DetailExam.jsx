@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import { getExamBySlug, getLikeStatus, likeExam, unlikeExam, getComments, addComment, deleteComment, getFavoriteStatus, addToFavorites, removeFromFavorites, incrementExamView, incrementExamDownload } from '../services/exam.api';
 import { toast } from 'sonner';
 import ExamViewer from './ExamViewer';
+import AIChatWidget from './AIChatWidget';
 import { tokenStorage } from '../../../utils/tokenStorage';
 
 export default function ExamDetail() {
@@ -368,7 +369,7 @@ export default function ExamDetail() {
                 >
                   <Heart size={24} fill={isFavorite ? 'currentColor' : 'none'} strokeWidth={2} />
                   <span className="text-lg font-medium text-gray-700">
-                    {isFavorite ? 'Favori' : 'Ajouter aux favoris'}
+                    Favori
                   </span>
                 </button>
                 <button
@@ -451,6 +452,9 @@ export default function ExamDetail() {
           </div>
         </div>
       </div>
+
+      {/* Widget chat IA flottant */}
+      <AIChatWidget exam={exam} />
     </div>
   );
 }

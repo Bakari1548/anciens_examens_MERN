@@ -6,7 +6,9 @@ const Log = require('../models/Log');
 require('dotenv').config();
 
 // Mock des dépendances externes
-jest.mock('../utils/sendEmail');
+jest.mock('../utils/sendEmail', () => ({
+  sendEmail: jest.fn().mockResolvedValue({ success: true, id: 'test-email-id' })
+}));
 
 // Mock du middleware d'authentification
 jest.mock('../middlewares/auth.middleware', () => {

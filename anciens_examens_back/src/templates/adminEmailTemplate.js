@@ -8,6 +8,7 @@
  * @param {string} params.buttonText - Texte du bouton (optionnel)
  * @param {string} params.buttonLink - Lien du bouton (optionnel)
  * @param {string} params.footerText - Texte personnalisé du footer (optionnel)
+ * @param {string} params.frontendUrl - URL du frontend (optionnel)
  * @returns {string} HTML de l'email
  */
 const adminEmailTemplate = ({
@@ -17,8 +18,10 @@ const adminEmailTemplate = ({
   userEmail = '',
   buttonText = null,
   buttonLink = null,
-  footerText = null
+  footerText = null,
+  frontendUrl = 'https://anciensexamensuidt.app'
 }) => {
+  const logoUrl = `${frontendUrl}/assets/logo_anciens_examens-DwXKLIhR.png`;
   const greeting = userName ? `Bonjour ${userName},` : 'Bonjour,';
   
   const buttonSection = buttonText && buttonLink ? `
@@ -75,7 +78,7 @@ const adminEmailTemplate = ({
     <div class="card">
       <div class="header">
         <div class="logo-container">
-          <img src="../../public/logo.png" alt="Anciens Examens" class="logo" onerror="this.style.display='none';" />
+          <img src="${logoUrl}" alt="Anciens Examens" class="logo" onerror="this.style.display='none';" />
         </div>
         <div class="title">Anciens Examens</div>
         <div class="subtitle">Université de Thiès - Panneau d'administration</div>

@@ -240,8 +240,8 @@ export default function PostExam() {
             
             // Rediriger vers la page de détails de l'examen
             setTimeout(() => {
-                navigate(`/examen/${response.exam.slug}`);
-            }, 1500);
+                navigate(`/examens/${response.exam.slug}`);
+            }, 1000);
             
         } catch (error) {
             console.error('Erreur détaillée:', error);

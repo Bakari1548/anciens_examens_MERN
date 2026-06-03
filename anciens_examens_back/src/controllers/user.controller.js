@@ -52,7 +52,7 @@ const register = async (req, res) => {
             });
         }
 
-        
+
         // Le mot de passe sera hashe dans models/User.js
         // Creation de l'utilisateur
         const user = await User.create({
@@ -66,7 +66,19 @@ const register = async (req, res) => {
 
         if (user) {
             const token = generateToken(user._id);
-            
+
+            // Importer le template d'email de bienvenue
+            const welcomeEmailTemplate = require('../templates/welcomeEmail');
+            const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+            const userName = user.firstName;
+
+            // Envoyer l'email de bienvenue (sans bloquer la réponse)
+            sendEmail(
+                user.email,
+                '🎓 Bienvenue sur Anciens Examens — Tu fais partie des premiers !',
+                welcomeEmailTemplate(userName, frontendUrl)
+            ).catch(err => console.error('[Register] Erreur email bienvenue:', err));
+
             // Définir le cookie HTTP-only
             const isProduction = process.env.NODE_ENV === 'production';
             res.cookie('auth_token', token, {
@@ -76,7 +88,7 @@ const register = async (req, res) => {
                 maxAge: 7 * 24 * 60 * 60 * 1000, // 7 jours
                 path: '/'
             });
-            
+
             // Envoyer une notification de bienvenue
             await Notification.create({
                 recipient: user._id,

@@ -541,7 +541,9 @@ export default function ExamManagement() {
           >
             <option value="">Tous les types</option>
             <option value="Examen Final">Examen Final</option>
+            <option value="Examen Partiel">Examen Partiel</option>
             <option value="Session de Rattrapage">Session de Rattrapage</option>
+            <option value="Contrôle Continu">Contrôle Continu</option>
             <option value="Devoir">Devoir</option>
             <option value="TD/TP">TD/TP</option>
           </select>

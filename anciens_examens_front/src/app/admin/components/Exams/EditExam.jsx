@@ -28,7 +28,7 @@ export default function EditExam({ exam, onClose, onUpdate }) {
   const [loadingFilieres, setLoadingFilieres] = useState(false);
   const [loadingNiveaux, setLoadingNiveaux] = useState(false);
 
-  const typeExamenOptions = ['Examen Final', 'Session de Rattrapage', 'Devoir', 'TD/TP'];
+  const typeExamenOptions = ['Examen Final', 'Examen Partiel', 'Session de Rattrapage', 'Contrôle Continu', 'Devoir', 'TD/TP'];
 
   // Initialiser le formulaire avec les données de l'examen
   useEffect(() => {

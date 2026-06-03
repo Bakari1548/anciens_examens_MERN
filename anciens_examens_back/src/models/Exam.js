@@ -67,7 +67,7 @@ const examSchema = new mongoose.Schema({
     typeExamen: {
         type: String,
         required: [true, 'le type d\'examen est requis'],
-        enum: ['Examen Final', 'Session de Rattrapage', 'Devoir', 'TD/TP'],
+        enum: ['Examen Final', 'Examen Partiel', 'Session de Rattrapage', 'Contrôle Continu', 'Devoir', 'TD/TP'],
         trim: true
     },
     matiere: {

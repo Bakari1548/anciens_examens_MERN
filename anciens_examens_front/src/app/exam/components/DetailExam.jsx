@@ -368,9 +368,7 @@ export default function ExamDetail() {
                   className="flex items-center gap-2 text-red-500 hover:text-red-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Heart size={24} fill={isFavorite ? 'currentColor' : 'none'} strokeWidth={2} />
-                  <span className="text-lg font-medium text-gray-700">
-                    Favori
-                  </span>
+                  <span className="text-lg font-medium text-gray-700">Favori</span>
                 </button>
                 <button
                   onClick={handleShare}

@@ -86,12 +86,12 @@ export default function CardExam({ exam }) {
     };
 
     const handleReadExam = () => {
-        if (!isUserLoggedIn) {
-            // Stocker la destination et rediriger vers login
-            localStorage.setItem('redirectAfterLogin', `/examens/${exam.slug}`);
-            navigate('/connexion');
-            return;
-        }
+        // if (!isUserLoggedIn) {
+        //     // Stocker la destination et rediriger vers login
+        //     localStorage.setItem('redirectAfterLogin', `/examens/${exam.slug}`);
+        //     navigate('/connexion');
+        //     return;
+        // }
         navigate(`/examens/${exam.slug}`);
     };
 

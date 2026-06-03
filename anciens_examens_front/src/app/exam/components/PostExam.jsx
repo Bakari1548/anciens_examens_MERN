@@ -343,8 +343,8 @@ export default function PostExam() {
             
             // Rediriger vers la page de détails de l'examen
             setTimeout(() => {
-                navigate(`/examen/${response.exam.slug}`);
-            }, 1500);
+                navigate(`/examens/${response.exam.slug}`);
+            }, 1000);
             
         } catch (error) {
             console.error('Erreur détaillée:', error);
@@ -696,7 +696,9 @@ export default function PostExam() {
                                             >
                                                 <option value="">Sélectionnez un type</option>
                                                 <option value="Examen Final">Examen Final</option>
+                                                <option value="Examen Partiel">Examen Partiel</option>
                                                 <option value="Session de Rattrapage">Session de Rattrapage</option>
+                                                <option value="Contrôle Continu">Contrôle Continu</option>
                                                 <option value="Devoir">Devoir</option>
                                                 <option value="TD/TP">TD/TP</option>
                                             </select>

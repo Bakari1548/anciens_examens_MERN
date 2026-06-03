@@ -27,7 +27,9 @@ const SEMESTRE_OPTIONS = [
 const TYPE_EXAMEN_OPTIONS = [
     { value: '', label: 'Tous les types' },
     { value: 'Examen Final', label: 'Examen Final' },
+    { value: 'Examen Partiel', label: 'Examen Partiel' },
     { value: 'Session de Rattrapage', label: 'Session de Rattrapage' },
+    { value: 'Contrôle Continu', label: 'Contrôle Continu' },
     { value: 'Devoir', label: 'Devoir' },
     { value: 'TD/TP', label: 'TD/TP' },
 ];

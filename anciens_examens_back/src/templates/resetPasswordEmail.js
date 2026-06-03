@@ -1,4 +1,9 @@
-const resetPasswordTemplate = (resetLink, userName = '') => {
+const resetPasswordTemplate = (
+  resetLink, 
+  userName = '', 
+  frontendUrl = 'https://anciensexamensuidt.app'
+) => {
+  const logoUrl = `${frontendUrl}/assets/logo_anciens_examens-DwXKLIhR.png`;
   return `<!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -42,7 +47,7 @@ const resetPasswordTemplate = (resetLink, userName = '') => {
     <div class="card">
       <div class="header">
         <div class="logo-container">
-          <img src="../../public/logo.png" alt="Anciens Examens" class="logo" onerror="this.style.display='none';" />
+          <img src="${logoUrl}" class="logo" onerror="this.style.display='none';" />
         </div>
         <div class="title">Anciens Examens</div>
         <div class="subtitle">Université de Thiès - Plateforme de partage d'examens</div>

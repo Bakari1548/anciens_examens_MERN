@@ -6,7 +6,9 @@ const bcrypt = require('bcryptjs');
 require('dotenv').config();
 
 // Mock des dépendances externes
-jest.mock('../utils/sendEmail');
+jest.mock('../utils/sendEmail', () => ({
+  sendEmail: jest.fn().mockResolvedValue({ success: true, id: 'test-email-id' })
+}));
 
 // Mock du middleware d'authentification
 jest.mock('../middlewares/auth.middleware', () => {
@@ -78,9 +80,13 @@ describe('User Controller Tests', () => {
 
       const response = await request(app)
         .post('/api/users/register')
-        .send(userData)
-        .expect(201);
+        .send(userData);
 
+      if (response.status !== 201) {
+        console.log('Error response:', response.body);
+      }
+
+      expect(response.status).toBe(201);
       expect(response.body.message).toBe('Incription reussie !');
       // Le token est dans les headers Cookie, pas dans le body
       expect(response.body.user).toBeDefined();

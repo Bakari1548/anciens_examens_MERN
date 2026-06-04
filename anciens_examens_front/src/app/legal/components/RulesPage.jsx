@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
 import FAQ from './FAQ';
+import { useTheme } from '../../admin/context/ThemeContext';
 
 export default function RulesPage() {
+  const { isDark } = useTheme();
   const [activeArticle, setActiveArticle] = useState('article1');
 
   const handleSmoothScroll = (e, articleId) => {
@@ -56,7 +58,7 @@ export default function RulesPage() {
             Plateforme des Anciens Examens - Université de Thiès
           </p>
           <p className="text-sm text-gray-500 mt-2">
-            Dernière mise à jour : Mai 2026
+            Dernière mise à jour : Juin 2026
           </p>
         </div>
       </header>
@@ -223,6 +225,22 @@ export default function RulesPage() {
               <p className="text-gray-600">
                 L'administration se réserve le droit de modérer ou de refuser toute contribution ne respectant pas les standards de qualité ou les présentes conditions.
               </p>
+
+              <h3 className="text-lg font-semibold text-gray-900 mb-3 mt-6">5.3 Utilisation de l'Intelligence Artificielle</h3>
+              <p className="text-gray-600 mb-4">
+                La plateforme intègre des fonctionnalités d'intelligence artificielle pour faciliter le partage d'examens. L'utilisation de ces outils est soumise aux règles suivantes :
+              </p>
+              <ul className="list-disc list-inside space-y-2 text-gray-600 ml-6 mb-4">
+                <li><span className="font-medium text-gray-800">Vérification obligatoire :</span> Les informations auto-complétées par l'IA (UFR, filière, matière, etc.) doivent être vérifiées et corrigées si nécessaire avant publication.</li>
+                <li><span className="font-medium text-gray-800">Responsabilité de l'utilisateur :</span> L'utilisateur reste entièrement responsable du contenu final publié, même si des suggestions IA ont été utilisées.</li>
+                <li><span className="font-medium text-gray-800">Utilisation éthique :</span> Le chatbot pédagogique est destiné à l'aide à la compréhension des exercices. Son utilisation pour tricher lors d'examens en cours est strictement interdite.</li>
+                <li><span className="font-medium text-gray-800">Détection de doublons :</span> Le système IA détecte automatiquement les doublons potentiels. L'utilisateur doit confirmer ou infirmer ces détections avant publication.</li>
+              </ul>
+              <div className={`border-l-4 p-4 mt-4 ${isDark ? 'bg-blue-900/30 border-blue-500' : 'bg-blue-50 border-blue-500'}`}>
+                <p className={`text-sm ${isDark ? 'text-blue-100' : 'text-blue-800'}`}>
+                  <span className="font-semibold">Note :</span> L'IA est un outil d'assistance et non de substitution. Votre vigilance et votre jugement restent essentiels pour garantir la qualité des contributions.
+                </p>
+              </div>
             </article>
 
             {/* Article 6 */}
@@ -253,7 +271,6 @@ export default function RulesPage() {
               </p>
               <ul className="list-disc list-inside space-y-2 text-gray-600 ml-6">
                 <li>Email : <a href="mailto:onboarding@anciensexamensuidt.app" className="text-violet-600 hover:underline">onboarding@anciensexamensuidt.app</a></li>
-                <li>Réponse sous 48h</li>
                 <li>Assistance technique disponible</li>
               </ul>
             </article>

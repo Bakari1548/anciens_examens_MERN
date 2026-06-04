@@ -6,7 +6,7 @@ const redis = require('../utils/redisClient');
 
 const NIVEAUX_VALID = ['L1','L2','L3','L4','M1','M2','D1','D2','D3','D4','D5','D6','PCEM1','PCEM2','DCEM1','DCEM2','DCEM3','DCEM4','LP','ING1','ING2','ING3','DUT1','DUT2'];
 const SEMESTRES_VALID = ['S1','S2','S3','S4','S5','S6','S7','S8','S9','S10','S11','S12'];
-const TYPES_EXAMEN = ['Examen Final', 'Session de Rattrapage', 'Devoir', 'TD/TP'];
+const TYPES_EXAMEN = ['Examen Final', 'Examen Partiel', 'Session de Rattrapage', 'Contrôle Continu', 'Devoir', 'TD/TP'];
 
 // Rate limiter en mémoire pour le chat (par utilisateur, par heure)
 const chatRateLimit = new Map();
@@ -15,13 +15,18 @@ const CHAT_LIMIT_PER_HOUR = 20;
 const getUfrContext = () => {
     const ufrs = Object.keys(ufrData);
     const filieres = [];
+    const ufrFiliereMap = {}; // Structure hiérarchique UFR -> Filières
+    
     for (const ufr of ufrs) {
         const f = Object.keys(ufrData[ufr]?.filieres || {});
         filieres.push(...f);
+        ufrFiliereMap[ufr] = f;
     }
+    
     return {
         ufrs,
         filieres: [...new Set(filieres)],
+        ufrFiliereMap, // Ajout de la structure hiérarchique
         niveaux: NIVEAUX_VALID,
         semestres: SEMESTRES_VALID,
         typesExamen: TYPES_EXAMEN

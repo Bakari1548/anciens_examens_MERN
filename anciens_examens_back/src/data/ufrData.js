@@ -100,13 +100,6 @@ const ufrData = {
           "M2"
         ]
       },
-      "DUT Génie Électrique et Informatique Industrielle": {
-        "code": "DUT-GEII",
-        "niveaux": [
-          "DUT1",
-          "DUT2"
-        ]
-      }
     }
   },
   "UFR Sciences de l'Ingénierie": {

@@ -5,6 +5,7 @@ import CTASection from "./CTASection";
 import StatsSection from "./StatsSection";
 import NewsletterSection from "./NewsletterSection";
 import TestimonialsSection from "./TestimonialsSection";
+import AISection from "./AISection";
 
 export default function Home() {
   return (
@@ -12,8 +13,9 @@ export default function Home() {
       <div className="w-full">
           <HeroSection />
           <StatsSection />
-          <CTASection />
           <Exams />
+          <CTASection />
+          <AISection />
           <TestimonialsSection />
           <NewsletterSection />
       </div>

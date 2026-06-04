@@ -19,7 +19,7 @@ const resetPasswordTemplate = (
     .header::before { content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px); background-size: 30px 30px; animation: float 20s linear infinite; }
     @keyframes float { 0% { transform: translate(0, 0) rotate(0deg); } 100% { transform: translate(-30px, -30px) rotate(360deg); } }
     .logo-container { position: relative; z-index: 1; width: 90px; height: 90px; margin: 0 auto 25px; background: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
-    .logo { width: 70px; height: 70px; border-radius: 50%; object-fit: contain; }
+    .logo { width: 70px; height: 70px; border-radius: 50%; object-fit: contain; display: flex; align-items: center; justify-content: center;  margin: auto; }
     .title { color: white; font-size: 32px; font-weight: 700; margin-bottom: 8px; position: relative; z-index: 1; letter-spacing: -0.5px; }
     .subtitle { color: rgba(255,255,255,0.95); font-size: 15px; position: relative; z-index: 1; }
     .content { padding: 45px 40px; }

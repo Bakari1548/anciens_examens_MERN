@@ -150,10 +150,14 @@ export default function AIChatWidget({ exam }) {
                 <button
                     onClick={() => setOpen(true)}
                     aria-label="Ouvrir l'assistant IA"
-                    className="fixed bottom-6 right-6 z-40 group flex items-center gap-2 bg-gradient-to-br from-purple-600 to-indigo-600 text-white rounded-full shadow-xl hover:shadow-2xl hover:scale-105 transition-all p-4"
+                    className="fixed bottom-6 right-6 z-40 bg-gradient-to-br from-blue-500 to-purple-600 text-white rounded-full shadow-xl hover:shadow-2xl transition-all p-4 animate-bounce"
+                    style={{ animationDuration: '2s' }}
                 >
-                    <Sparkles size={24} className="group-hover:rotate-12 transition-transform" />
-                    <span className="hidden sm:inline font-medium pr-2">Assistant IA</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1H2a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 0 1 2-2z"/>
+                        <circle cx="9" cy="13" r="1.5"/>
+                        <circle cx="15" cy="13" r="1.5"/>
+                    </svg>
                 </button>
             )}
 
@@ -161,9 +165,13 @@ export default function AIChatWidget({ exam }) {
             {open && (
                 <div className="fixed bottom-6 right-6 z-40 w-[calc(100vw-3rem)] sm:w-96 max-w-md h-[600px] max-h-[calc(100vh-3rem)] flex flex-col bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden">
                     {/* Header */}
-                    <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white">
+                    <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white">
                         <div className="flex items-center gap-2">
-                            <Sparkles size={20} />
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1H2a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 0 1 2-2z"/>
+                                <circle cx="9" cy="13" r="1.5"/>
+                                <circle cx="15" cy="13" r="1.5"/>
+                            </svg>
                             <div>
                                 <h3 className="font-semibold text-sm">Tuteur IA</h3>
                                 <p className="text-xs opacity-90 truncate">{exam.matiere}</p>

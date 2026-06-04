@@ -28,6 +28,7 @@ export default function PostExam() {
     const [aiAnalyzing, setAiAnalyzing] = useState(false);
     const [aiExtraction, setAiExtraction] = useState(null); // { exercises, globalSummary }
     const [aiAnalyzed, setAiAnalyzed] = useState(false);
+    const [manuallyEditedFields, setManuallyEditedFields] = useState(new Set()); // Set of field names edited by user
     const [duplicateChecking, setDuplicateChecking] = useState(false);
     const [duplicateModal, setDuplicateModal] = useState(null); // { matches }
     
@@ -153,6 +154,8 @@ export default function PostExam() {
                 ...prev,
                 [name]: value
             }));
+            // Marquer le champ comme modifié manuellement
+            setManuallyEditedFields(prev => new Set([...prev, name]));
         }
     };
 
@@ -196,7 +199,17 @@ export default function PostExam() {
         if (formData.files.length <= 1) {
             setAiAnalyzed(false);
             setAiExtraction(null);
+            setManuallyEditedFields(new Set());
         }
+    };
+
+    // ===== Helper pour les styles des champs remplis par l'IA =====
+    const getFieldClassName = (fieldName, fieldValue, baseClassName) => {
+        // Si l'IA a analysé, que le champ a une valeur, et que l'utilisateur ne l'a pas modifié manuellement
+        if (aiAnalyzed && fieldValue && !manuallyEditedFields.has(fieldName)) {
+            return `${baseClassName} ${isDark ? 'bg-blue-500/50 ring-2 ring-blue-500 text-blue-100' : 'bg-blue-50 ring-2 ring-blue-500 text-blue-900'}`;
+        }
+        return baseClassName;
     };
 
     // ===== Analyse IA automatique du premier fichier =====
@@ -554,12 +567,12 @@ export default function PostExam() {
                                             <label htmlFor="ufr" className={`block text-sm font-medium mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
                                                 UFR *
                                             </label>
-                                            <select 
-                                                name="ufr" 
+                                            <select
+                                                name="ufr"
                                                 value={formData.ufr}
                                                 onChange={handleChange}
                                                 disabled={loadingUfrs}
-                                                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors disabled:cursor-not-allowed ${isDark ? 'border-gray-600 bg-gray-800 text-white disabled:bg-gray-800' : 'border-gray-300 disabled:bg-gray-100'}`}
+                                                className={getFieldClassName('ufr', formData.ufr, `w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors disabled:cursor-not-allowed ${!loadingUfrs ? '' : ''} ${isDark ? 'border-gray-600 bg-gray-800 text-white disabled:bg-gray-800' : 'border-gray-300 disabled:bg-gray-100'}`)}
                                             >
                                                 <option value="">
                                                     {loadingUfrs ? 'Chargement...' : 'Sélectionnez une UFR'}
@@ -584,7 +597,7 @@ export default function PostExam() {
                                                 value={formData.filiere}
                                                 onChange={handleChange}
                                                 disabled={!formData.ufr || loadingFilieres}
-                                                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors disabled:cursor-not-allowed ${!formData.ufr || loadingFilieres ? 'opacity-50' : ''} ${isDark ? 'border-gray-600 bg-gray-800 text-white disabled:bg-gray-800' : 'border-gray-300 disabled:bg-gray-100'}`}
+                                                className={getFieldClassName('filiere', formData.filiere, `w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors disabled:cursor-not-allowed ${!formData.ufr || loadingFilieres ? 'opacity-50' : ''} ${isDark ? 'border-gray-600 bg-gray-800 text-white disabled:bg-gray-800' : 'border-gray-300 disabled:bg-gray-100'}`)}
                                             >
                                                 <option value="">
                                                     {!formData.ufr ? 'Sélectionnez d\'abord une UFR' : 
@@ -613,7 +626,7 @@ export default function PostExam() {
                                                 value={formData.niveau}
                                                 onChange={handleChange}
                                                 disabled={!formData.filiere || loadingNiveaux}
-                                                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors disabled:cursor-not-allowed ${!formData.filiere || loadingNiveaux ? 'opacity-50' : ''} ${isDark ? 'border-gray-600 bg-gray-800 text-white disabled:bg-gray-800' : 'border-gray-300 disabled:bg-gray-100'}`}
+                                                className={getFieldClassName('niveau', formData.niveau, `w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors disabled:cursor-not-allowed ${!formData.filiere || loadingNiveaux ? 'opacity-50' : ''} ${isDark ? 'border-gray-600 bg-gray-800 text-white disabled:bg-gray-800' : 'border-gray-300 disabled:bg-gray-100'}`)}
                                             >
                                                 <option value="">
                                                     {!formData.filiere ? 'Sélectionnez d\'abord une filière' : 
@@ -642,7 +655,7 @@ export default function PostExam() {
                                                 value={formData.semestre}
                                                 onChange={handleChange}
                                                 disabled={!formData.niveau}
-                                                className={`w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors disabled:bg-gray-100 disabled:cursor-not-allowed ${!formData.niveau ? 'opacity-50' : ''} ${isDark ? 'border-gray-600 bg-gray-800 text-white disabled:bg-gray-800' : 'border-gray-300 disabled:bg-gray-100'}`}
+                                                className={getFieldClassName('semestre', formData.semestre, `w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors disabled:bg-gray-100 disabled:cursor-not-allowed ${!formData.niveau ? 'opacity-50' : ''} ${isDark ? 'border-gray-600 bg-gray-800 text-white disabled:bg-gray-800' : 'border-gray-300 disabled:bg-gray-100'}`)}
                                             >
                                                 <option value="">
                                                     {!formData.niveau ? 'Sélectionnez d\'abord un niveau' : 'Sélectionnez un semestre'}
@@ -678,7 +691,7 @@ export default function PostExam() {
                                                 name="anneeExamen" 
                                                 value={formData.anneeExamen}
                                                 onChange={handleChange}
-                                                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${isDark ? 'border-gray-600 bg-gray-700 text-white' : 'border-gray-300'}`}
+                                                className={getFieldClassName('anneeExamen', formData.anneeExamen, `w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${isDark ? 'border-gray-600 bg-gray-700 text-white' : 'border-gray-300'}`)}
                                                 placeholder="Ex: 2024"
                                                 maxLength={4}
                                             />
@@ -692,7 +705,7 @@ export default function PostExam() {
                                                 name="typeExamen" 
                                                 value={formData.typeExamen}
                                                 onChange={handleChange}
-                                                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${isDark ? 'border-gray-600 bg-gray-700 text-white' : 'border-gray-300'}`}
+                                                className={getFieldClassName('typeExamen', formData.typeExamen, `w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${isDark ? 'border-gray-600 bg-gray-700 text-white' : 'border-gray-300'}`)}
                                             >
                                                 <option value="">Sélectionnez un type</option>
                                                 <option value="Examen Final">Examen Final</option>
@@ -713,7 +726,7 @@ export default function PostExam() {
                                                 name="matiere"
                                                 value={formData.matiere}
                                                 onChange={handleChange}
-                                                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${isDark ? 'border-gray-600 bg-gray-700 text-white' : 'border-gray-300'}`}
+                                                className={getFieldClassName('matiere', formData.matiere, `w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${isDark ? 'border-gray-600 bg-gray-700 text-white' : 'border-gray-300'}`)}
                                                 placeholder="Ex: Mathématiques"
                                             />
                                         </div>
@@ -732,9 +745,13 @@ export default function PostExam() {
                                         name="description"
                                         value={formData.description}
                                         onChange={handleChange}
-                                        className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors resize-none ${isDark ? 'border-gray-600 bg-gray-700 text-white' : 'border-gray-300'}`}
+                                        className={getFieldClassName(
+                                            'description',
+                                            formData.description,
+                                            `w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors resize-none ${isDark ? 'border-gray-600 bg-gray-700 text-white' : 'border-gray-300'}`
+                                        )}
                                         rows={4}
-                                        placeholder="Ajoutez une description pour aider les autres étudiants à savoir le contenu de l'examen..."
+                                        placeholder="Ajoutez une description pour aider les autres étudiants a savoir le contenu de l'examen..."
                                     />
                                 </div>
 

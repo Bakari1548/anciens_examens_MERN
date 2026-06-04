@@ -15,7 +15,7 @@ const memoryUpload = multer({
     }
 });
 
-const handleUpload = (req, res) => {
+const handleUpload = (req, res, next) => {
     memoryUpload.single('file')(req, res, (err) => {
         if (err) {
             if (err.code === 'LIMIT_FILE_SIZE') {
@@ -23,6 +23,7 @@ const handleUpload = (req, res) => {
             }
             return res.status(400).json({ message: err.message || 'Erreur upload' });
         }
+        next();
     });
 };
 

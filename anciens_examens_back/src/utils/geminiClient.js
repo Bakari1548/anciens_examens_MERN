@@ -139,9 +139,18 @@ const analyzeExam = async ({ buffer, mimeType, url, context = {} }) => {
 
     const niveauxValid = context.niveaux || ['L1','L2','L3','M1','M2','D1','D2','D3','PCEM1','PCEM2','DCEM1','DCEM2','DCEM3','DCEM4','LP','ING1','ING2','ING3','DUT1','DUT2'];
     const semestresValid = context.semestres || ['S1','S2','S3','S4','S5','S6','S7','S8','S9','S10','S11','S12'];
-    const typesExamen = context.typesExamen || ['Examen Final', 'Session de Rattrapage', 'Devoir', 'TD/TP'];
+    const typesExamen = context.typesExamen || ['Examen Final', 'Examen Partiel', 'Session de Rattrapage', 'Contrôle Continu', 'Devoir', 'TD/TP'];
     const ufrsList = (context.ufrs || []).slice(0, 30).join(' | ') || '(liste non fournie)';
     const filieresList = (context.filieres || []).slice(0, 100).join(' | ') || '(liste non fournie)';
+    
+    // Construire la structure hiérarchique UFR -> Filières
+    let ufrFiliereStructure = '';
+    if (context.ufrFiliereMap && Object.keys(context.ufrFiliereMap).length > 0) {
+        ufrFiliereStructure = '\n\nSTRUCTURE UFR -> FILIÈRES (IMPORTANT pour l\'association automatique):\n';
+        for (const [ufr, filieres] of Object.entries(context.ufrFiliereMap)) {
+            ufrFiliereStructure += `- ${ufr}: ${filieres.join(', ')}\n`;
+        }
+    }
 
     const systemInstruction = `Tu es un assistant qui analyse des sujets d'examen universitaires (Université de Thiès, Sénégal). Tu réponds STRICTEMENT en JSON valide, sans texte autour, sans markdown.`;
 
@@ -156,6 +165,14 @@ CONTRAINTES STRICTES :
 - anneeExamen : format "YYYY-YYYY" si trouvé (ex: "2023-2024"), sinon vide
 - matiere : nom de la matière (ex: "Algèbre Linéaire", "Programmation Java")
 - description : 1 à 2 phrases résumant le contenu
+
+${ufrFiliereStructure}
+
+RÈGLE IMPORTANTE POUR L'ASSOCIATION UFR/FILIÈRE :
+- Si tu détectes clairement la FILIÈRE mais pas l'UFR, utilise la structure ci-dessus pour trouver automatiquement l'UFR correspondant
+- Exemple : si tu détectes "Informatique", l'UFR doit être "UFR Sciences et Technologies"
+- Si la filière détectée n'existe pas dans la liste, laisse l'UFR vide
+- Ne devine pas l'UFR si tu n'es pas certain de la filière
 
 Pour chaque exercice détecté :
 - number : "Exercice 1", "Question 1", "Problème 1", etc.

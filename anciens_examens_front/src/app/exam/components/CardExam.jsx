@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { tokenStorage } from '../../../utils/tokenStorage';
 import { toast } from 'sonner';
 import { useState, useEffect } from 'react';
-import { getFavoriteStatus, addToFavorites, removeFromFavorites } from '../services/exam.api';
+import { getFavoriteStatus, addToFavorites, removeFromFavorites, incrementExamDownload } from '../services/exam.api';
 
 export default function CardExam({ exam }) {
 
@@ -79,10 +79,26 @@ export default function CardExam({ exam }) {
             toast.error('Vous devez être connecté pour télécharger cet examen');
             return;
         }
-        if (exam.files && exam.files.length > 0) {
-            // Télécharger le premier fichier par défaut
-            window.open(exam.files[0].url, '_blank');
+        if (!exam.files || exam.files.length === 0) {
+            toast.error('Aucun fichier disponible pour cet examen');
+            return;
         }
+        if (!exam.files[0].url) {
+            toast.error('URL du fichier non disponible');
+            console.error('Structure du fichier:', exam.files[0]);
+            return;
+        }
+
+        // Enregistrer le téléchargement
+        incrementExamDownload(exam.slug);
+
+        // Télécharger le premier fichier par défaut avec paramètres Cloudinary pour forcer le téléchargement
+        const fileUrl = exam.files[0].url;
+        const fileName = exam.title.replace(/[^a-zA-Z0-9\s-_]/g, '').trim() || 'examen';
+        const downloadUrl = fileUrl.includes('cloudinary.com')
+            ? fileUrl.replace(/\/upload\//, `/upload/fl_attachment:${fileName}/`)
+            : fileUrl;
+        window.open(downloadUrl, '_blank');
     };
 
     const handleReadExam = () => {

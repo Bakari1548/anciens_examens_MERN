@@ -10,7 +10,6 @@ export function useNotifications() {
     try {
       setLoading(true);
       const response = await notificationsApi.getNotifications(params);
-      console.log('Notifications reçues:', response);
       setNotifications(response.notifications || []);
       setUnreadCount((response.notifications || []).filter(n => !n.read).length);
       return response;
@@ -75,12 +74,10 @@ export function useNotifications() {
   };
 
   useEffect(() => {
-    console.log('useNotifications: fetchNotifications appelé');
     fetchNotifications();
     
     // Polling pour mettre à jour les notifications toutes les 60 secondes
     const interval = setInterval(() => {
-      console.log('useNotifications: polling notifications');
       fetchNotifications();
     }, 60000);
     

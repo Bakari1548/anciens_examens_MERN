@@ -309,6 +309,13 @@ export default function ExamDetail() {
                   <p className="text-sm text-gray-500">Date de création</p>
                   <p className="font-medium">{new Date(exam.createdAt).toLocaleDateString('fr-FR')}</p>
                 </div>
+
+                {exam.description && (
+                  <div className="border-t pt-4">
+                    <p className="text-sm text-gray-500 mb-2">Description</p>
+                    <p className="text-gray-700 text-sm leading-relaxed">{exam.description}</p>
+                  </div>
+                )}
               </div>
 
               {exam.files && exam.files.length > 0 && (

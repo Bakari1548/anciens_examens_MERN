@@ -269,19 +269,16 @@ export default function PostExam() {
         try {
             setDuplicateChecking(true);
             const payload = {
-                ufr: metadata?.ufr || formData.ufr,
-                filiere: metadata?.filiere || formData.filiere,
-                matiere: metadata?.matiere || formData.matiere,
                 aiExtraction: extraction
             };
-            if (!payload.matiere) return; // sans matière, le filtre est trop large
 
             const result = await checkDuplicate(payload);
+
             if (result?.isDuplicate && result.matches?.length > 0) {
                 setDuplicateModal({ matches: result.matches });
             }
         } catch (error) {
-            console.warn('Vérification doublon échouée:', error?.message);
+            console.error('[Doublon] Erreur complète:', error);;
         } finally {
             setDuplicateChecking(false);
         }
@@ -850,7 +847,7 @@ export default function PostExam() {
 
                                         <div className="mt-3">
                                             <Link
-                                                to={`/examen/${m.slug}`}
+                                                to={`/examens/${m.slug}`}
                                                 target="_blank"
                                                 className={`text-sm font-medium underline ${isDark ? 'text-blue-400' : 'text-blue-600'}`}
                                             >

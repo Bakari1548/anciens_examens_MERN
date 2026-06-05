@@ -54,8 +54,11 @@ const analyzeExamFile = async (req, res) => {
         }
 
         const result = await gemini.analyzeExam({
+            // buffer : contenu binaire du fichier
             buffer: req.file.buffer,
+            // mimeType : type MIME du fichier
             mimeType: req.file.mimetype,
+            // context : contexte UFR pour l'analyse
             context: getUfrContext()
         });
 
@@ -103,16 +106,18 @@ const checkDuplicate = async (req, res) => {
             return res.status(400).json({ message: 'aiExtraction.exercises requis' });
         }
 
-        // Étape 1 : filtre MongoDB rapide (ufr + filiere + matiere, status approved)
-        // On élargit en ne filtrant pas sur l'année pour détecter les réutilisations.
-        const query = { status: 'approved' };
-        if (ufr) query.ufr = ufr;
-        if (filiere) query.filiere = filiere;
-        if (matiere) query.matiere = new RegExp(`^${matiere.trim()}`, 'i');
+        // Étape 1 : récupérer les examens récents avec extraction IA
+        // On ne filtre PAS par matière, UFR ou filière - comparaison document contre document uniquement
+        // On limite aux examens des 30 derniers jours pour optimiser les performances
+        const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+        const query = {
+            createdAt: { $gte: thirtyDaysAgo }
+        };
 
         const candidates = await Exam.find(query)
-            .select('_id slug title ufr filiere matiere anneeExamen typeExamen aiExtraction')
-            .limit(5)
+            .select('_id slug title ufr filiere matiere anneeExamen typeExamen aiExtraction createdAt')
+            .sort({ createdAt: -1 })
+            .limit(20) // Plus de candidats pour une comparaison document contre document
             .lean();
 
         // Filtrer ceux qui ont une extraction IA exploitable

@@ -15,8 +15,8 @@ export const analyzeExamFile = async (file) => {
 };
 
 /**
- * Feature #2 : Vérifie si l'examen est un doublon
- * @param {Object} payload - { ufr, filiere, matiere, aiExtraction: { exercises, globalSummary } }
+ * Feature #2 : Vérifie si l'examen est un doublon (comparaison document contre document)
+ * @param {Object} payload - { aiExtraction: { exercises, globalSummary } }
  * @returns {Promise<{ isDuplicate, matches, checkedCount }>}
  */
 export const checkDuplicate = async (payload) => {

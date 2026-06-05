@@ -2,17 +2,25 @@
  * Client Redis centralisé pour le cache des métadonnées IA
  */
 
+// Désactiver Redis dans l'environnement de test
+const isTestEnv = process.env.NODE_ENV === 'test';
+
 let createClient = null;
 try {
     const redisModule = require('redis');
     createClient = redisModule.createClient;
 } catch (e) {
-    console.warn('[Redis] Module redis non installé - fonctionnalités de cache désactivées');
+    if (!isTestEnv) {
+        console.warn('[Redis] Module redis non installé - fonctionnalités de cache désactivées');
+    }
 }
 
 let redisClient = null;
 
 const getRedisClient = async () => {
+    if (isTestEnv) {
+        return null; // Désactiver Redis pendant les tests
+    }
     if (!createClient) {
         throw new Error('Module Redis non installé');
     }

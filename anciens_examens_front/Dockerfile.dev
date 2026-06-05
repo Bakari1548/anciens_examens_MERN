@@ -1,0 +1,15 @@
+# Dockerfile DEV — Vite dev server avec HMR (pas de build, pas de nginx)
+FROM docker.io/library/node:20-alpine
+
+WORKDIR /app
+
+COPY package*.json ./
+RUN npm install
+
+# Le code source sera ensuite monté via bind mount en dev (override le COPY)
+COPY . .
+
+EXPOSE 3000
+
+# --host 0.0.0.0 pour que Vite soit accessible hors du conteneur
+CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]

@@ -1,87 +1,76 @@
-version: '3.8'
+# ==========================================
+# Docker Compose - Environnement de DÉVELOPPEMENT
+# ==========================================
+# Pour lancer : docker compose up
+# Pour reconstruire : docker compose up --build
+# Pour arrêter : docker compose down
+# ==========================================
+# Services exposés sur l'hôte :
+#   - Frontend (Vite + HMR)  : http://localhost:3000
+#   - Backend (Node + watch) : http://localhost:5000
+#   - Redis (optionnel)      : redis://localhost:6379
+#
+# MongoDB : Atlas (URI dans anciens_examens_back/.env -> MONGODB_URI)
+# ===========================================
 
 services:
-  # ====================== MONGODB ======================
-  mongodb:
-    image: mongo:6.0
-    container_name: anciens_examens_mongodb
-    restart: unless-stopped
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME:-admin}
-      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:-password123}
-      MONGO_INITDB_DATABASE: ${MONGO_DATABASE:-anciens_examens}
-    ports:
-      - "27017:27017"
-    volumes:
-      - mongodb_data:/data/db
-      - ./scripts/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
-    networks:
-      - anciens_examens_network
-    healthcheck:
-      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
-      interval: 30s
-      timeout: 10s
-      retries: 3
-
-    # ==================== BACKEND Node JS ====================
+  # ==================== BACKEND Node.js (DEV avec hot reload) ====================
   backend:
     build:
       context: ./anciens_examens_back
-      dockerfile: Dockerfile
-    container_name: anciens_examens_backend
+      dockerfile: Dockerfile.dev
+    container_name: anciens_examens_backend_dev
     restart: unless-stopped
     environment:
-      NODE_ENV: production
+      NODE_ENV: development
       PORT: 5000
-      MONGODB_URI: mongodb://${MONGO_ROOT_USERNAME:-admin}:${MONGO_ROOT_PASSWORD:-password123}@mongodb:27017/${MONGO_DATABASE:-anciens_examens}?authSource=admin
-      JWT_SECRET: ${JWT_SECRET:-votre-super-secret-jet-ici}
+      # MongoDB Atlas — vient du fichier .env (MONGODB_URI=mongodb+srv://...)
+      MONGODB_URI: ${MONGODB_URI}
+      JWT_SECRET: ${JWT_SECRET:-dev-secret-change-me}
       CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME}
       CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY}
       CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET}
-      EMAIL_HOST: ${EMAIL_HOST}
-      EMAIL_PORT: ${EMAIL_PORT}
-      EMAIL_USER: ${EMAIL_USER}
-      EMAIL_PASS: ${EMAIL_PASS}
+      RESEND_API_KEY: ${RESEND_API_KEY}
+      EMAIL_FROM: ${EMAIL_FROM}
+      REDIS_URL: redis://redis:6379
     ports:
       - "5000:5000"
     env_file:
       - ./anciens_examens_back/.env
-    depends_on:
-      - mongodb
     networks:
       - anciens_examens_network
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5000/api/users/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
     volumes:
-      - ./anciens_examens_back/uploads:/app/uploads
+      # Bind mount du code source pour hot reload
       - ./anciens_examens_back:/app
-      - /app/node_modules
 
-    # ==================== FRONTEND React avec Nginx ====================
+  # ==================== FRONTEND React + Vite (DEV avec HMR) ====================
   frontend:
     build:
       context: ./anciens_examens_front
-      dockerfile: Dockerfile
-    container_name: anciens_examens_frontend
+      dockerfile: Dockerfile.dev
+    container_name: anciens_examens_frontend_dev
     restart: unless-stopped
+    environment:
+      # En dev, le navigateur tourne sur l'hôte → utilise localhost:5000 (port exposé)
+      VITE_API_URL: ${VITE_API_URL:-http://localhost:5000/api}
+      CHOKIDAR_USEPOLLING: "true"  # Nécessaire sur WSL/macOS pour HMR
     ports:
-      - "80:80"
+      - "3000:3000"
     depends_on:
       - backend
+      - redis
     networks:
       - anciens_examens_network
+    volumes:
+      - ./anciens_examens_front:/app
 
-    # ==================== Redis pour le cache (optionnel) ====================
+  # ==================== Redis ====================
   redis:
     image: redis:7-alpine
-    container_name: anciens_examens_redis
+    container_name: anciens_examens_redis_dev
     restart: unless-stopped
     ports:
-      - "6379:6379"
+      - "6380:6379"
     volumes:
       - redis_data:/data
     networks:
@@ -93,14 +82,12 @@ services:
       timeout: 10s
       retries: 3
 
-    # ==================== Volumes ====================
+# ==================== Volumes ====================
 volumes:
-  mongodb_data:
-    driver: local
   redis_data:
     driver: local
 
-    # ==================== Réseaux ====================
+# ==================== Réseaux ====================
 networks:
   anciens_examens_network:
     driver: bridge

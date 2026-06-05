@@ -10,47 +10,70 @@ cloudinary.config({
 const storage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: async (req, file) => {
-    const isPDF = file.mimetype === 'application/pdf';
-    
+    // Détecte si c'est un PDF par mimetype OU par extension (mobile peut envoyer octet-stream)
+    const isPDF = file.mimetype === 'application/pdf'
+      || /\.pdf$/i.test(file.originalname || '');
+
     const timestamp = Date.now();
-    const originalName = file.originalname.split('.')[0];
+    const originalName = (file.originalname || 'file').split('.')[0];
     const cleanName = originalName.replace(/[^a-zA-Z0-9]/g, '_');
-    
-    // Garder l'extension dans le public_id pour les PDF
-    // Cela aide Cloudinary à détecter le type
     const publicId = `file_${cleanName}_${timestamp}`;
-    
-    const folder = process.env.NODE_ENV === 'production' 
-      ? 'anciens_examens' 
+
+    const folder = process.env.NODE_ENV === 'production'
+      ? 'anciens_examens'
       : 'anciens_examens_test';
 
+    console.log('[Cloudinary upload]', {
+      originalname: file.originalname,
+      mimetype: file.mimetype,
+      size: file.size,
+      isPDF
+    });
+
+    if (isPDF) {
+      return {
+        folder,
+        resource_type: 'image',
+        format: 'pdf',
+        public_id: publicId,
+        transformation: []
+      };
+    }
+
     return {
-      folder: folder,
-      
-      // Cloudinary peut servir des PDF via /image/upload/ avec viewer inline
+      folder,
       resource_type: 'image',
-      
-      format: isPDF ? 'pdf' : undefined,  // undefined = Cloudinary détecte automatiquement pour images
-      
-      // On gérera l'affichage côté frontend avec l'URL
       public_id: publicId,
-      
-      // Optionnel : qualité auto pour les images
-      transformation: isPDF ? [] : [{ quality: 'auto', fetch_format: 'auto' }]
+      transformation: [{ quality: 'auto', fetch_format: 'auto' }]
     };
   }
 });
 
 const fileFilter = (req, file, cb) => {
-  const allowedTypes = [
+  const allowedMimes = [
     'image/jpeg', 'image/jpg', 'image/png', 'image/gif',
     'application/pdf'
   ];
-  
-  if (allowedTypes.includes(file.mimetype)) {
+  const allowedExtensions = /\.(jpe?g|png|gif|pdf)$/i;
+
+  // Certains navigateurs mobiles envoient 'application/octet-stream' pour les PDF
+  // On accepte aussi en regardant l'extension du nom de fichier
+  const mimeOk = allowedMimes.includes(file.mimetype);
+  const extOk = allowedExtensions.test(file.originalname || '');
+  const octetStreamPdf = file.mimetype === 'application/octet-stream' && /\.pdf$/i.test(file.originalname || '');
+
+  console.log('[Multer fileFilter]', {
+    originalname: file.originalname,
+    mimetype: file.mimetype,
+    mimeOk,
+    extOk,
+    octetStreamPdf
+  });
+
+  if (mimeOk || octetStreamPdf || (file.mimetype === 'application/octet-stream' && extOk)) {
     cb(null, true);
   } else {
-    cb(new Error('Type de fichier non supporté. Seuls JPG, PNG, GIF et PDF sont acceptés.'), false);
+    cb(new Error(`Type de fichier non supporté (${file.mimetype} / ${file.originalname}). Seuls JPG, PNG, GIF et PDF sont acceptés.`), false);
   }
 };
 

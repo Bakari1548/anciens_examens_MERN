@@ -2,7 +2,7 @@
 
 ## Base URL
 ```
-http://localhost:8000/api
+http://localhost:5000/api
 ```
 
 ## Routes Utilisateurs (`/api/users`)
@@ -83,6 +83,55 @@ http://localhost:8000/api
 - Les likes et commentaires utilisent le `slug` de l'examen, pas l'ID
 - Les commentaires sont publics en lecture, mais requièrent une authentification pour créer/supprimer
 - Seul l'auteur d'un commentaire ou l'auteur de l'examen peut supprimer un commentaire
+
+## Routes Logs (`/api/logs`) — Nouveau v2.2.0
+
+| Méthode | Endpoint | Description | Auth requise | Rôle requis |
+|---------|----------|-------------|--------------|-------------|
+| GET | `/logs` | Liste paginée des logs (filtres: level, action, search) | Oui | Admin |
+| GET | `/logs/stats` | Statistiques agrégées (total/info/warning/error) | Oui | Admin |
+| GET | `/logs/export` | Export CSV des logs filtrés | Oui | Admin |
+| POST | `/logs` | Créer un log manuellement | Oui | Admin |
+| DELETE | `/logs/cleanup?days=N` | Supprimer les logs plus anciens que N jours | Oui | Admin |
+
+### Filtres et paramètres `/api/logs`
+| Paramètre | Type | Description |
+|-----------|------|-------------|
+| page | number | Page (défaut: 1) |
+| limit | number | Éléments par page (défaut: 20) |
+| level | string | `info` \| `warning` \| `error` |
+| action | string | Code d'action (ex: `LOGIN`, `EXAM_UPLOAD`) |
+| search | string | Recherche dans `message`, `user`, `action` |
+
+### Réponse `/api/logs`
+```json
+{
+  "logs": [
+    {
+      "_id": "...",
+      "level": "info",
+      "action": "LOGIN",
+      "user": "Jean Dupont",
+      "userId": "...",
+      "message": "Connexion réussie: Jean Dupont",
+      "ip": "192.168.1.1",
+      "userAgent": "Mozilla/5.0...",
+      "metadata": {},
+      "timestamp": "2026-05-13T20:30:00.000Z"
+    }
+  ],
+  "pagination": { "current": 1, "pages": 5, "total": 87 }
+}
+```
+
+### Actions tracées automatiquement
+- **Auth** : `LOGIN`, `FAILED_LOGIN`, `LOGIN_BANNED`, `LOGIN_INACTIVE`, `LOGOUT`, `REGISTER`, `REGISTER_FAILED`
+- **Password** : `PASSWORD_CHANGED`, `PASSWORD_RESET_REQUEST`, `PASSWORD_RESET_SUCCESS`, `PASSWORD_RESET_FAILED`
+- **Users** : `USER_UPDATED`, `USER_DELETED`, `USER_ACTIVATED`, `USER_DESACTIVATED`, `USER_BANNED`, `USER_UNBANNED`
+- **Exams** : `EXAM_UPLOAD`, `EXAM_UPLOAD_FAILED`, `EXAM_UPDATED`, `EXAM_DELETED`, `EXAM_APPROVED`, `EXAM_REJECTED`
+- **Social** : `EXAM_LIKED`, `EXAM_UNLIKED`, `COMMENT_ADDED`, `COMMENT_DELETED`
+- **Modération** : `REPORT_RESOLVED`, `APPEAL_SUBMITTED`, `APPEAL_APPROVED`, `APPEAL_REJECTED`
+- **Sécurité** : `AUTH_ERROR`, `SYSTEM_ERROR`, `EMAIL_FAILED`
 
 ## Paramètres de Requête
 
@@ -198,7 +247,7 @@ Content-Type: application/json
 
 ### Inscription
 ```bash
-curl -X POST http://localhost:8000/api/users/register \
+curl -X POST http://localhost:5000/api/users/register \
   -H "Content-Type: application/json" \
   -d '{
     "name": "John Doe",
@@ -209,7 +258,7 @@ curl -X POST http://localhost:8000/api/users/register \
 
 ### Connexion
 ```bash
-curl -X POST http://localhost:8000/api/users/login \
+curl -X POST http://localhost:5000/api/users/login \
   -H "Content-Type: application/json" \
   -d '{
     "email": "john@example.com",
@@ -219,24 +268,24 @@ curl -X POST http://localhost:8000/api/users/login \
 
 ### Obtenir les utilisateurs (admin)
 ```bash
-curl -X GET "http://localhost:8000/api/users/all/1/25" \
+curl -X GET "http://localhost:5000/api/users/all/1/25" \
   -H "Authorization: Bearer <token>"
 ```
 
 ### Obtenir les utilisateurs avec filtres (admin)
 ```bash
-curl -X GET "http://localhost:8000/api/users/all/1/25?search=jean&role=admin" \
+curl -X GET "http://localhost:5000/api/users/all/1/25?search=jean&role=admin" \
   -H "Authorization: Bearer <token>"
 ```
 
 ### Obtenir les examens
 ```bash
-curl "http://localhost:8000/api/exams?page=1&limit=10&search=math"
+curl "http://localhost:5000/api/exams?page=1&limit=10&search=math"
 ```
 
 ### Demander une réactivation de compte
 ```bash
-curl -X POST http://localhost:8000/api/users/appeal \
+curl -X POST http://localhost:5000/api/users/appeal \
   -H "Content-Type: application/json" \
   -d '{
     "email": "user@example.com",
@@ -247,19 +296,19 @@ curl -X POST http://localhost:8000/api/users/appeal \
 
 ### Obtenir les demandes de réactivation (admin)
 ```bash
-curl -X GET "http://localhost:8000/api/users/appeals" \
+curl -X GET "http://localhost:5000/api/users/appeals" \
   -H "Authorization: Bearer <admin_token>"
 ```
 
 ### Approuver une demande (admin)
 ```bash
-curl -X PATCH "http://localhost:8000/api/users/appeals/12345/approve" \
+curl -X PATCH "http://localhost:5000/api/users/appeals/12345/approve" \
   -H "Authorization: Bearer <admin_token>"
 ```
 
 ### Rejeter une demande (admin)
 ```bash
-curl -X PATCH "http://localhost:8000/api/users/appeals/12345/reject" \
+curl -X PATCH "http://localhost:5000/api/users/appeals/12345/reject" \
   -H "Authorization: Bearer <admin_token>" \
   -d '{
     "reason": "Informations insuffisantes"
@@ -268,7 +317,7 @@ curl -X PATCH "http://localhost:8000/api/users/appeals/12345/reject" \
 
 ### Créer un examen (multi-fichiers)
 ```bash
-curl -X POST http://localhost:8000/api/exams \
+curl -X POST http://localhost:5000/api/exams \
   -H "Authorization: Bearer <token>" \
   -F "title=Examen de Math" \
   -F "ufr=Sciences" \
@@ -282,25 +331,25 @@ curl -X POST http://localhost:8000/api/exams \
 
 ### Liker un examen
 ```bash
-curl -X POST http://localhost:8000/api/exams/examen-math-abc12/like \
+curl -X POST http://localhost:5000/api/exams/examen-math-abc12/like \
   -H "Authorization: Bearer <token>"
 ```
 
 ### Retirer un like
 ```bash
-curl -X DELETE http://localhost:8000/api/exams/examen-math-abc12/like \
+curl -X DELETE http://localhost:5000/api/exams/examen-math-abc12/like \
   -H "Authorization: Bearer <token>"
 ```
 
 ### Vérifier le statut du like
 ```bash
-curl http://localhost:8000/api/exams/examen-math-abc12/like/status \
+curl http://localhost:5000/api/exams/examen-math-abc12/like/status \
   -H "Authorization: Bearer <token>"
 ```
 
 ### Ajouter un commentaire
 ```bash
-curl -X POST http://localhost:8000/api/exams/examen-math-abc12/comments \
+curl -X POST http://localhost:5000/api/exams/examen-math-abc12/comments \
   -H "Authorization: Bearer <token>" \
   -H "Content-Type: application/json" \
   -d '{"content": "Super examen, merci pour le partage !"}'
@@ -308,12 +357,12 @@ curl -X POST http://localhost:8000/api/exams/examen-math-abc12/comments \
 
 ### Récupérer les commentaires (public)
 ```bash
-curl http://localhost:8000/api/exams/examen-math-abc12/comments
+curl http://localhost:5000/api/exams/examen-math-abc12/comments
 ```
 
 ### Supprimer un commentaire
 ```bash
-curl -X DELETE http://localhost:8000/api/exams/examen-math-abc12/comments/commentId123 \
+curl -X DELETE http://localhost:5000/api/exams/examen-math-abc12/comments/commentId123 \
   -H "Authorization: Bearer <token>"
 ```
 

@@ -7,7 +7,7 @@ Cette API RESTful permet de gérer une plateforme de partage d'anciens examens u
 ## Base URL
 
 ```
-http://localhost:8000/api
+http://localhost:5000/api
 ```
 
 ## Authentification
@@ -62,7 +62,7 @@ Réponse paginée:
 - Variables d'environnement:
   - `JWT_SECRET`: Clé secrète pour les tokens JWT
   - `MONGODB_URI`: URI de connexion MongoDB
-  - `PORT`: Port du serveur (défaut: 8000)
+  - `PORT`: Port du serveur (défaut: 5000)
   - `FRONTEND_URL`: URL du frontend pour CORS (ex: https://votre-frontend.com)
   - `CLOUDINARY_CLOUD_NAME`: Nom Cloudinary
   - `CLOUDINARY_API_KEY`: Clé API Cloudinary
@@ -81,6 +81,8 @@ npm run dev
 - [Examens](./exams.md)
 - [Modèles de données](./models.md)
 - [Middlewares](./middlewares.md)
+- [Endpoints](./endpoints.md) — Liste complète incluant les routes `/api/logs`
+- [Changelog](./CHANGELOG.md)
 
 ## Codes d'erreur
 
@@ -189,7 +191,7 @@ npm start
 ### Docker
 ```bash
 docker build -t anciens-examens-api .
-docker run -p 8000:8000 anciens-examens-api
+docker run -p 5000:5000 anciens-examens-api
 ```
 
 ## Support et Débogage

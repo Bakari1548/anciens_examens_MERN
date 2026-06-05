@@ -18,6 +18,52 @@ import { useAdminStats } from '../../hooks/useAdmin.stats';
 import { useAdmin } from '../../context/AdminContext';
 import { useTheme } from '../../context/ThemeContext';
 
+// Formater les bytes en unité lisible (KB, MB, GB...)
+const formatBytes = (bytes, decimals = 2) => {
+  if (!bytes || bytes === 0) return '0 B';
+  const k = 1024;
+  const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(decimals))} ${sizes[i]}`;
+};
+
+// Composant carte de stockage réutilisable
+const StorageCard = ({ title, usedBytes, totalBytes, colorClass = 'bg-orange-500' }) => {
+  const percentage = totalBytes > 0 ? (usedBytes / totalBytes) * 100 : 0;
+  return (
+    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{title}</h3>
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <span className="text-gray-600 dark:text-gray-400">Espace utilisé</span>
+          <span className="font-medium text-orange-600 dark:text-orange-400">
+            {formatBytes(usedBytes)}
+          </span>
+        </div>
+        <div className="flex items-center justify-between">
+          <span className="text-gray-600 dark:text-gray-400">Total disponible</span>
+          <span className="font-medium text-gray-600 dark:text-gray-400">
+            {formatBytes(totalBytes)}
+          </span>
+        </div>
+        {totalBytes > 0 && (
+          <div className="pt-2">
+            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+              <div
+                className={`${colorClass} h-2 rounded-full transition-all`}
+                style={{ width: `${Math.min(100, percentage)}%` }}
+              ></div>
+            </div>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 text-right">
+              {percentage.toFixed(1)}% utilisé
+            </p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
 export default function AdminDashboard() {
   const { isDark } = useTheme();
   const { stats, fetchStats, userGrowthRate, examApprovalRate, loading } = useAdminStats();
@@ -254,7 +300,7 @@ export default function AdminDashboard() {
       </div>
 
       {/* Statistiques additionnelles */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Taux de croissance</h3>
           <div className="space-y-3">
@@ -282,20 +328,22 @@ export default function AdminDashboard() {
             </div>
           </div>
         </div>
+      </div>
 
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Stockage</h3>
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-gray-600 dark:text-gray-400">Espace utilisé</span>
-              <span className="font-medium text-orange-600 dark:text-orange-400">2.4GB</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-gray-600 dark:text-gray-400">Total disponible</span>
-              <span className="font-medium text-gray-600 dark:text-gray-400">10GB</span>
-            </div>
-          </div>
-        </div>
+      {/* Stockage détaillé : MongoDB + Cloudinary */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <StorageCard
+          title="Base de données (MongoDB)"
+          usedBytes={stats.storage?.database?.usedBytes || 0}
+          totalBytes={stats.storage?.database?.totalBytes || 0}
+          colorClass="bg-blue-500"
+        />
+        <StorageCard
+          title="Fichiers (Cloudinary)"
+          usedBytes={stats.storage?.cloudinary?.usedBytes || 0}
+          totalBytes={stats.storage?.cloudinary?.totalBytes || 0}
+          colorClass="bg-orange-500"
+        />
       </div>
     </div>
   );

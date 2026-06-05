@@ -18,6 +18,7 @@ export default function Register() {
   });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   
@@ -100,6 +101,11 @@ export default function Register() {
     
     if (formData.password.length < 8) {
       toast.error('Le mot de passe doit contenir au moins 8 caractères');
+      return;
+    }
+
+    if (!agreedToTerms) {
+      toast.error('Vous devez accepter les conditions générales d\'utilisation');
       return;
     }
 
@@ -267,9 +273,32 @@ export default function Register() {
                 </div>
               </div>
 
+              {/* Acceptation des CGU */}
+              <div className="flex items-start gap-3">
+                <input
+                  type="checkbox"
+                  id="agreeTerms"
+                  checked={agreedToTerms}
+                  onChange={(e) => setAgreedToTerms(e.target.checked)}
+                  className="mt-1 w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                />
+                <label htmlFor="agreeTerms" className="text-sm text-gray-700 select-none">
+                  J'ai lu et j'accepte les{' '}
+                  <Link
+                    to="/regles"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 hover:underline font-semibold"
+                  >
+                    conditions générales d'utilisation
+                  </Link>
+                  .
+                </label>
+              </div>
+
               <button
                 type="submit"
-                disabled={loading}
+                disabled={loading || !agreedToTerms}
                 className="w-full bg-gray-700 text-white py-3 rounded-lg hover:bg-gray-800 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? 'Inscription en cours...' : 'S\'inscrire'}

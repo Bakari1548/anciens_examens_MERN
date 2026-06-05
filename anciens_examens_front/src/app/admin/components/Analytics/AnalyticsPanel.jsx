@@ -4,11 +4,15 @@ import { useAdmin } from '../../context/AdminContext';
 import { useTheme } from '../../context/ThemeContext';
 
 export default function AnalyticsPanel() {
-  const { addNotification } = useAdmin();
+  const { addNotification, stats, fetchStats, loading } = useAdmin();
   const { isDark } = useTheme();
   const [period, setPeriod] = useState('7d');
   const [chartType, setChartType] = useState('users');
-  const [loading, setLoading] = useState(false);
+  
+  // Charger les stats au montage du composant
+  useEffect(() => {
+    fetchStats();
+  }, []);
   
   // Données simulées pour les graphiques
   const [analyticsData, setAnalyticsData] = useState({
@@ -269,13 +273,9 @@ export default function AnalyticsPanel() {
             <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
               <BookOpen className="text-green-600 dark:text-green-400" size={24} />
             </div>
-            <div className="flex items-center gap-1 text-sm font-medium text-green-600 dark:text-green-400">
-              <ArrowUp size={16} />
-              {calculateGrowth(545, 450)}%
-            </div>
           </div>
           <div>
-            <h3 className="text-2xl font-bold text-gray-900 dark:text-white">545</h3>
+            <h3 className="text-2xl font-bold text-gray-900 dark:text-white">{stats.totalExams}</h3>
             <p className="text-gray-600 dark:text-gray-400 text-sm">Examens partagés</p>
           </div>
         </div>
@@ -285,13 +285,9 @@ export default function AnalyticsPanel() {
             <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center">
               <Download className="text-purple-600 dark:text-purple-400" size={24} />
             </div>
-            <div className="flex items-center gap-1 text-sm font-medium text-green-600 dark:text-green-400">
-              <ArrowUp size={16} />
-              {calculateGrowth(480, 280)}%
-            </div>
           </div>
           <div>
-            <h3 className="text-2xl font-bold text-gray-900 dark:text-white">4,800</h3>
+            <h3 className="text-2xl font-bold text-gray-900 dark:text-white">{stats.totalDownloads}</h3>
             <p className="text-gray-600 dark:text-gray-400 text-sm">Téléchargements</p>
           </div>
         </div>
@@ -299,16 +295,12 @@ export default function AnalyticsPanel() {
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
           <div className="flex items-center justify-between mb-4">
             <div className="w-12 h-12 bg-orange-100 dark:bg-orange-900/30 rounded-lg flex items-center justify-center">
-              <Activity className="text-orange-600 dark:text-orange-400" size={24} />
-            </div>
-            <div className="flex items-center gap-1 text-sm font-medium text-green-600 dark:text-green-400">
-              <ArrowUp size={16} />
-              {calculateGrowth(1200, 890)}%
+              <Eye className="text-orange-600 dark:text-orange-400" size={24} />
             </div>
           </div>
           <div>
-            <h3 className="text-2xl font-bold text-gray-900 dark:text-white">1,200</h3>
-            <p className="text-gray-600 dark:text-gray-400 text-sm">Utilisateurs actifs</p>
+            <h3 className="text-2xl font-bold text-gray-900 dark:text-white">{stats.totalViews}</h3>
+            <p className="text-gray-600 dark:text-gray-400 text-sm">Vues totales</p>
           </div>
         </div>
       </div>

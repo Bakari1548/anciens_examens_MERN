@@ -1,11 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import logoAnciensExamens from '@/assets/logo_anciens_examens.png';
-import { FileText, LogIn, User, UserPlus, LogOut, Menu, X, AlertTriangle } from 'lucide-react';
+import { FileText, LogIn, User, UserPlus, LogOut, Menu, X, AlertTriangle, Sun, Moon, Bell, Heart } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { tokenStorage } from '@/utils/tokenStorage';
 import { logout as authLogout } from '@/app/auth/services/auth.api';
+import { useTheme } from '@/app/admin/context/ThemeContext';
+import { useNotifications } from '@/app/user/hooks/useNotifications';
+import NotificationsDropdown from '@/app/user/components/Notifications/NotificationsDropdown';
 
 export default function Header() {
+  const { isDark, toggleTheme } = useTheme();
+  const { unreadCount } = useNotifications();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [user, setUser] = useState(null);
@@ -91,12 +96,54 @@ export default function Header() {
 
         {/* Partie droite - Menu mobile et utilisateur */}
         <div className="flex items-center gap-2">
+          {/* Bouton thème */}
+          <button
+            onClick={toggleTheme}
+            className="p-2 rounded-lg group hover:bg-gray-300 hover:text-white dark:hover:bg-gray-700 active:scale-80 text-gray-700 dark:text-gray-300 transition-transform"
+            title={isDark ? 'Mode clair' : 'Mode sombre'}
+          >
+            {isDark ? <Sun className='text-white' size={20} /> : <Moon  className='text-gray-800 group-hover:text-white' size={20} />}
+          </button>
+
+          {/* Icône notifications */}
+          {user && (
+            <NotificationsDropdown
+              trigger={
+                <button
+                  className="relative p-2 rounded-lg group hover:bg-gray-300 hover:text-white dark:hover:bg-gray-700 active:scale-80 text-gray-700 dark:text-gray-300 transition-transform"
+                  title="Notifications"
+                >
+                  <Bell size={20} className='text-gray-800 group-hover:text-white' />
+                  {unreadCount > 0 && (
+                    <span className="absolute top-1 right-1 w-3 h-3 bg-red-500 text-white text-[10px] rounded-full flex items-center justify-center">
+                      {unreadCount > 9 ? '9+' : unreadCount}
+                    </span>
+                  )}
+                </button>
+              }
+            />
+          )}
+
+          {/* Icône favoris */}
+          {user && (
+            <button
+              onClick={() => onNavigate('/examens/favoris')}
+              className="p-2 rounded-lg group hover:bg-gray-300 hover:text-white dark:hover:bg-gray-700 active:scale-80 text-gray-700 dark:text-gray-300 transition-transform"
+              title="Favoris"
+            >
+              <Heart size={20} className='text-gray-800 group-hover:text-white' />
+            </button>
+          )}
+
           {/* Menu hamburger mobile */}
           <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="md:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors"
+              className="md:hidden p-2 rounded-lg group hover:bg-gray-100 active:scale-80 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 transition-transform"
           >
-              {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+              {isMobileMenuOpen ? 
+                  <X className='text-gray-800 group-hover:text-white' size={24} /> 
+                : 
+                  <Menu className='text-gray-800 group-hover:text-white' size={24} />}
           </button>
 
           {/* Icône utilisateur */}
@@ -210,6 +257,12 @@ export default function Header() {
                     className="text-lg text-gray-700 hover:text-blue-600 font-medium transition-colors text-left py-2 border-b border-gray-200"
                   >
                     Profil
+                  </button>
+                  <button
+                    onClick={() => onNavigate('/examens/favoris')}
+                    className="text-lg text-gray-700 hover:text-blue-600 font-medium transition-colors text-left py-2 border-b border-gray-200"
+                  >
+                    Favoris
                   </button>
                   <button
                     onClick={() => onNavigate('/partager-examen')}

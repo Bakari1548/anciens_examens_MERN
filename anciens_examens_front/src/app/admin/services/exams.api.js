@@ -3,14 +3,18 @@ import api from '@/api/api';
 export const examsApi = {
   // Gestion des examens
   getExams: async (params = {}) => {
-    const { page = 1, limit = 20, search, status, ufr, filiere } = params;
+    const { page = 1, limit = 20, search, status, ufr, filiere, niveau, semestre, typeExamen, matiere } = params;
     const queryParams = new URLSearchParams({
       page,
       limit,
       ...(search && { search }),
       ...(status && { status }),
       ...(ufr && { ufr }),
-      ...(filiere && { filiere })
+      ...(filiere && { filiere }),
+      ...(niveau && { niveau }),
+      ...(semestre && { semestre }),
+      ...(typeExamen && { typeExamen }),
+      ...(matiere && { matiere })
     });
     const response = await api.get(`/exams?${queryParams}`);
     return response.data;
@@ -18,6 +22,15 @@ export const examsApi = {
 
   getExamById: async (examId) => {
     const response = await api.get(`/exams/${examId}`);
+    return response.data;
+  },
+
+  updateExam: async (examSlug, formData) => {
+    const response = await api.put(`/exams/${examSlug}`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    });
     return response.data;
   },
 

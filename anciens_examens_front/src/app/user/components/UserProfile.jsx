@@ -59,7 +59,7 @@ export default function UserProfile() {
 
     try {
       await changePassword({
-        currentPassword: passwordForm.currentPassword,
+        oldPassword: passwordForm.currentPassword,
         newPassword: passwordForm.newPassword
       });
       setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });

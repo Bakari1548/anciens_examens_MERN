@@ -28,7 +28,7 @@ export default function AddExam({ onClose, onAddExam }) {
   const [loadingFilieres, setLoadingFilieres] = useState(false);
   const [loadingNiveaux, setLoadingNiveaux] = useState(false);
 
-  const typeExamenOptions = ['Examen Final', 'Contrôle Continu', 'Session de Rattrapage', 'Devoir', 'TP'];
+  const typeExamenOptions = ['Examen Final', 'Examen Partiel', 'Session de Rattrapage', 'Contrôle Continu', 'Devoir', 'TD/TP'];
 
   // Charger les UFR au montage
   useEffect(() => {

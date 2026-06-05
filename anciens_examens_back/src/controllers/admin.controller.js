@@ -1,7 +1,11 @@
 const User = require('../models/User');
 const Exam = require('../models/Exam');
 const Report = require('../models/Report');
+const Notification = require('../models/Notification');
 const sendEmail = require('../utils/sendEmail');
+const { createLog } = require('../utils/logger');
+const mongoose = require('mongoose');
+const { cloudinary } = require('../config/cloudinary');
 require('dotenv').config();
 
 // @desc    Obtenir les statistiques du dashboard
@@ -15,16 +19,82 @@ const getStats = async (req, res) => {
         const pendingExams = await Exam.countDocuments({ status: 'pending' });
         const reports = await Report.countDocuments({ status: 'pending' });
         
-        // Simuler les téléchargements
-        const totalDownloads = Math.floor(Math.random() * 1000) + 500;
+        // Calculer les téléchargements réels depuis les examens
+        const downloadsResult = await Exam.aggregate([
+            {
+                $group: {
+                    _id: null,
+                    totalDownloads: { $sum: '$downloadsCount' }
+                }
+            }
+        ]);
+        const totalDownloads = downloadsResult[0]?.totalDownloads || 0;
+
+        // Calculer les vues réelles depuis les examens
+        const viewsResult = await Exam.aggregate([
+            {
+                $group: {
+                    _id: null,
+                    totalViews: { $sum: '$viewsCount' }
+                }
+            }
+        ]);
+        const totalViews = viewsResult[0]?.totalViews || 0;
+
+        // === Stockage MongoDB ===
+        let dbStorage = { usedBytes: 0, totalBytes: 0 };
+        try {
+            const dbStats = await mongoose.connection.db.stats();
+            const usedBytes = (dbStats.dataSize || 0) + (dbStats.indexSize || 0);
+            // Limite configurable via env (défaut: 512 MB = Atlas M0 free tier)
+            const totalBytes = (parseFloat(process.env.DB_STORAGE_LIMIT_MB) || 512) * 1024 * 1024;
+            dbStorage = { usedBytes, totalBytes };
+        } catch (e) {
+            console.error('[Stats] Erreur db.stats():', e.message);
+        }
+
+        // === Stockage Cloudinary ===
+        let cloudinaryStorage = { usedBytes: 0, totalBytes: 0 };
+        try {
+            const usage = await cloudinary.api.usage();
+            cloudinaryStorage = {
+                usedBytes: usage?.storage?.usage || 0,
+                totalBytes: usage?.storage?.limit || 0
+            };
+        } catch (e) {
+            // Fallback : agréger les tailles de fichiers depuis la base si l'API échoue
+            console.warn('[Stats] Cloudinary API unavailable, using DB aggregation as fallback');
+            try {
+                const cloudinaryFallback = await Exam.aggregate([
+                    { $unwind: { path: '$files', preserveNullAndEmptyArrays: false } },
+                    {
+                        $group: {
+                            _id: null,
+                            usedBytes: { $sum: '$files.size' }
+                        }
+                    }
+                ]);
+                cloudinaryStorage = {
+                    usedBytes: cloudinaryFallback[0]?.usedBytes || 0,
+                    totalBytes: (parseFloat(process.env.CLOUDINARY_STORAGE_LIMIT_GB) || 25) * 1024 * 1024 * 1024
+                };
+            } catch (fallbackErr) {
+                console.error('[Stats] Fallback aggregation also failed:', fallbackErr.message);
+            }
+        }
 
         res.json({
             totalUsers,
             totalExams,
             totalDownloads,
+            totalViews,
             activeUsers,
             pendingExams,
-            reports
+            reports,
+            storage: {
+                database: dbStorage,
+                cloudinary: cloudinaryStorage
+            }
         });
     } catch (error) {
         res.status(500).json({
@@ -144,6 +214,7 @@ const resolveReport = async (req, res) => {
             });
         }
 
+        await createLog({ level: 'info', action: 'REPORT_RESOLVED', message: `Signalement ${id} résolu`, req, user: req.user, metadata: { reportId: id, resolution } });
         res.json({
             message: 'Signalement résolu avec succès',
             report
@@ -181,6 +252,7 @@ const banUser = async (req, res) => {
             });
         }
 
+        await createLog({ level: 'warning', action: 'USER_BANNED', message: `Utilisateur ${user.email} banni. Raison: ${reason}`, req, user: req.user, metadata: { targetUserId: id, duration, reason } });
         res.json({
             message: 'Utilisateur banni avec succès',
             user
@@ -217,6 +289,7 @@ const unbanUser = async (req, res) => {
             });
         }
 
+        await createLog({ level: 'info', action: 'USER_UNBANNED', message: `Utilisateur ${user.email} débanni`, req, user: req.user, metadata: { targetUserId: id } });
         res.json({
             message: 'Utilisateur débanni avec succès',
             user
@@ -252,6 +325,22 @@ const approveExam = async (req, res) => {
             });
         }
 
+
+        // Envoyer une notification à l'auteur de l'examen
+        if (exam.author) {
+            await Notification.create({
+                recipient: exam.author._id || exam.author,
+                type: 'success',
+                title: 'Examen approuvé',
+                message: `Votre examen "${exam.title}" a été approuvé.`,
+                metadata: {
+                    examId: exam._id,
+                    slug: exam.slug,
+                },
+                read: false
+            });
+        }
+        await createLog({ level: 'info', action: 'EXAM_APPROVED', message: `Examen approuvé: ${exam.title}`, req, user: req.user, metadata: { examId: exam._id, slug: exam.slug } });
         res.json({
             message: 'Examen approuvé avec succès',
             exam
@@ -289,6 +378,23 @@ const rejectExam = async (req, res) => {
             });
         }
 
+        // Envoyer une notification à l'auteur de l'examen
+        if (exam.author) {
+            await Notification.create({
+                recipient: exam.author._id || exam.author,
+                type: 'error',
+                title: 'Examen rejeté',
+                message: `Votre examen "${exam.title}" a été rejeté. Raison: ${reason}`,
+                metadata: {
+                    examId: exam._id,
+                    slug: exam.slug,
+                    reason: reason
+                },
+                read: false
+            });
+        }
+
+        await createLog({ level: 'warning', action: 'EXAM_REJECTED', message: `Examen rejeté: ${exam.title}. Raison: ${reason}`, req, user: req.user, metadata: { examId: exam._id, slug: exam.slug, reason } });
         res.json({
             message: 'Examen rejeté avec succès',
             exam
@@ -483,7 +589,7 @@ const getBackups = async (req, res) => {
             {
                 _id: '2',
                 filename: 'backup_2024-01-14T10:30:00.000Z.zip',
-                size: 68000000,
+                size: 65000000,
                 createdAt: new Date('2024-01-14T10:30:00.000Z'),
                 status: 'completed'
             }

@@ -1,6 +1,55 @@
 # Changelog - Anciens Examens API
 
-## Version 2.1.0 - Likes et Commentaires (Dernière mise à jour)
+## Version 2.2.0 - Système de Logs et Audit (Dernière mise à jour)
+
+### 🆕 Nouvelles fonctionnalités
+
+#### 📊 Système de Logs et Audit
+- **Modèle `Log`** (`src/models/Log.js`) avec niveau (`info`/`warning`/`error`), action, utilisateur, IP, user-agent, metadata et timestamp
+- **Utilitaire `createLog`** (`src/utils/logger.js`) : helper réutilisable qui extrait automatiquement IP/user-agent depuis la requête Express
+- **Routes API** sécurisées par auth middleware :
+  - `GET /api/logs` — Liste paginée avec filtres (level, action, search)
+  - `GET /api/logs/stats` — Statistiques agrégées (total, info, warning, error)
+  - `GET /api/logs/export` — Export CSV des logs filtrés
+  - `POST /api/logs` — Création manuelle d'un log
+  - `DELETE /api/logs/cleanup?days=N` — Suppression des logs anciens
+- **Frontend `LogsPanel`** : Interface admin connectée au backend avec pagination, filtres, recherche et export CSV
+
+#### 🔐 Évènements tracés automatiquement
+- **Authentification** : `LOGIN`, `FAILED_LOGIN`, `LOGIN_BANNED`, `LOGIN_INACTIVE`, `REGISTER`, `REGISTER_FAILED`, `LOGOUT`
+- **Mots de passe** : `PASSWORD_CHANGED`, `PASSWORD_RESET_REQUEST`, `PASSWORD_RESET_SUCCESS`, `PASSWORD_RESET_FAILED`
+- **Gestion utilisateurs** : `USER_UPDATED`, `USER_DELETED`, `USER_ACTIVATED`, `USER_DESACTIVATED`, `USER_BANNED`, `USER_UNBANNED`
+- **Examens** : `EXAM_UPLOAD`, `EXAM_UPLOAD_FAILED`, `EXAM_UPDATED`, `EXAM_DELETED`, `EXAM_APPROVED`, `EXAM_REJECTED`
+- **Social** : `EXAM_LIKED`, `EXAM_UNLIKED`, `COMMENT_ADDED`, `COMMENT_DELETED`
+- **Modération** : `REPORT_RESOLVED`, `APPEAL_SUBMITTED`, `APPEAL_APPROVED`, `APPEAL_REJECTED`
+- **Sécurité** : `AUTH_ERROR`, `SYSTEM_ERROR`, `EMAIL_FAILED`
+
+#### 🧪 Tests unitaires
+- **15 nouveaux tests** dans `src/tests/logs.test.js` couvrant :
+  - L'utilitaire `createLog()` (extraction user, IP, user-agent, metadata, gestion d'erreur)
+  - Les routes API (pagination, filtres, recherche, stats, export CSV, cleanup, auth)
+  - L'intégration logs ↔ actions utilisateur (REGISTER, FAILED_LOGIN)
+- **Tests passants : 103/103** ✅
+
+### 🔧 Implémentation technique
+
+#### Backend
+- `src/utils/logger.js` : helper `createLog({ level, action, message, req, user, userName, metadata })`
+- Intégration dans `user.controller.js`, `exam.controller.js`, `admin.controller.js`, `social.controller.js`, `auth.middleware.js`
+- Les échecs de log n'interrompent jamais le flux applicatif (try/catch interne)
+- Index MongoDB sur `timestamp`, `level`, `action`, `userId` pour des requêtes performantes
+
+#### Frontend
+- `services/logs.api.js` : `getLogs`, `getLogStats`, `createLog`, `exportLogs`, `deleteOldLogs`
+- `LogsPanel.jsx` : pagination, filtres, formatage timestamp français, export CSV automatique
+
+### 🐛 Bugs corrigés
+- **app.js** : `Object.keys(req.body)` causait un crash sur les requêtes GET (req.body undefined)
+- **Tests exams** : Corrigé `typeExamen: 'TP/TD'` → `'TD/TP'` pour matcher l'enum du modèle
+
+---
+
+## Version 2.1.0 - Likes et Commentaires
 
 ### 🆕 Nouvelles fonctionnalités
 

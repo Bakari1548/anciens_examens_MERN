@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ChevronDown, ChevronUp, HelpCircle, Users, FileText, Lock, Upload, AlertCircle } from 'lucide-react';
+import { ChevronDown, ChevronUp, HelpCircle, Users, FileText, Lock, Upload, AlertCircle, Bot, Sparkles } from 'lucide-react';
 
 export default function FAQ() {
   const [expandedItems, setExpandedItems] = useState({});
@@ -47,6 +47,30 @@ export default function FAQ() {
       icon: <HelpCircle className="w-5 h-5" />,
       question: 'Puis-je contribuer à améliorer la plateforme ?',
       answer: 'Absolument ! Vous pouvez nous aider en partageant des examens de qualité, en signalant les erreurs, en donnant votre avis sur les documents et en proposant des améliorations. Votre contribution est essentielle pour maintenir la plateforme utile pour tous les étudiants.'
+    },
+    {
+      id: 'ai-analysis',
+      icon: <Bot className="w-5 h-5" />,
+      question: 'Comment fonctionne l\'analyse IA des documents ?',
+      answer: 'Lorsque vous uploadez un examen, notre IA analyse automatiquement le document pour extraire les informations importantes (UFR, filière, matière, année, type d\'examen, etc.) et pré-remplit les champs du formulaire. Vous pouvez ensuite vérifier et corriger ces informations avant de publier.'
+    },
+    {
+      id: 'ai-verification',
+      icon: <Sparkles className="w-5 h-5" />,
+      question: 'Dois-je vérifier les informations auto-complétées par l\'IA ?',
+      answer: 'Oui, absolument ! L\'IA est un outil d\'assistance et peut parfois faire des erreurs. Vous devez toujours vérifier et corriger les informations auto-complétées avant publication. Vous restez entièrement responsable du contenu final publié.'
+    },
+    {
+      id: 'ai-chatbot',
+      icon: <Bot className="w-5 h-5" />,
+      question: 'Comment utiliser le chatbot pédagogique ?',
+      answer: 'Le chatbot pédagogique est accessible via un bouton flottant sur la page des examens. Il peut vous aider à comprendre les exercices, expliquer des concepts et vous donner des indices. Cependant, son utilisation est strictement destinée à l\'apprentissage et non à la triche lors d\'examens en cours.'
+    },
+    {
+      id: 'ai-duplicates',
+      icon: <AlertCircle className="w-5 h-5" />,
+      question: 'Comment fonctionne la détection de doublons par l\'IA ?',
+      answer: 'Avant de publier un examen, l\'IA compare les exercices avec ceux déjà partagés sur la plateforme. Elle vous alerte si elle détecte des similitudes importantes. Vous devez alors confirmer ou infirmer cette détection avant de poursuivre la publication.'
     }
   ];
 
@@ -98,7 +122,7 @@ export default function FAQ() {
             Vous ne trouvez pas réponse à votre question ?
           </p>
           <a 
-            href="mailto:support@anciensexamensuidt.app" 
+            href="mailto:onboarding@anciensexamensuidt.app" 
             className="inline-flex items-center gap-2 sm:px-6 px-4 py-3 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors"
           >
             <HelpCircle className="w-5 h-5" />

@@ -2,6 +2,19 @@ const mongoose = require('mongoose');
 const commentSchema = require('./Comment');
 const likeSchema = require('./Like');
 
+// Schéma pour le suivi des vues par utilisateur
+const viewEntrySchema = new mongoose.Schema({
+    user: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        required: true
+    },
+    viewedAt: {
+        type: Date,
+        default: Date.now
+    }
+});
+
 const examSchema = new mongoose.Schema({
     title: {
         type: String,
@@ -54,7 +67,7 @@ const examSchema = new mongoose.Schema({
     typeExamen: {
         type: String,
         required: [true, 'le type d\'examen est requis'],
-        enum: ['Examen Final', 'Contrôle Continu', 'Session de Rattrapage', 'Devoir', 'TP'],
+        enum: ['Examen Final', 'Examen Partiel', 'Session de Rattrapage', 'Contrôle Continu', 'Devoir', 'TD/TP'],
         trim: true
     },
     matiere: {
@@ -124,6 +137,7 @@ const examSchema = new mongoose.Schema({
     },
     comments: [commentSchema],
     likes: [likeSchema],
+    views: [viewEntrySchema],
     likesCount: {
         type: Number,
         default: 0
@@ -131,6 +145,26 @@ const examSchema = new mongoose.Schema({
     commentsCount: {
         type: Number,
         default: 0
+    },
+    viewsCount: {
+        type: Number,
+        default: 0
+    },
+    downloadsCount: {
+        type: Number,
+        default: 0
+    },
+    // Extraction IA (cache pour la détection de doublons)
+    aiExtraction: {
+        exercises: [{
+            number: { type: String, default: '' },
+            title: { type: String, default: '' },
+            statement: { type: String, default: '' },
+            keywords: [{ type: String }]
+        }],
+        globalSummary: { type: String, default: '' },
+        extractedAt: { type: Date },
+        model: { type: String, default: '' }
     }
 });
 
@@ -181,6 +215,36 @@ examSchema.methods.removeLike = function(userId) {
 // Méthode pour vérifier si un utilisateur a liké
 examSchema.methods.isLikedBy = function(userId) {
     return this.likes.some(like => like.user.toString() === userId.toString());
+};
+
+// Méthode pour incrémenter les vues
+examSchema.methods.incrementView = function(userId) {
+    const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000);
+    const existingView = this.views.find(view => 
+        view.user.toString() === userId.toString()
+    );
+    
+    if (existingView) {
+        // L'utilisateur a déjà vu cet examen
+        if (existingView.viewedAt > twoHoursAgo) {
+            // Vue récente (moins de 2h), ne pas compter
+            return Promise.resolve(this);
+        }
+        // Mettre à jour la date de la vue existante (pas d'ajout d'entrée)
+        existingView.viewedAt = new Date();
+    } else {
+        // Première vue de cet utilisateur
+        this.views.push({ user: userId });
+    }
+    
+    this.viewsCount += 1;
+    return this.save();
+};
+
+// Méthode pour incrémenter les téléchargements
+examSchema.methods.incrementDownload = function() {
+    this.downloadsCount += 1;
+    return this.save();
 };
 
 // Index pour optimiser les requêtes

@@ -60,6 +60,12 @@ Bienvenue sur la plateforme des Anciens Examens de l'Université de Thiès. Pour
 - **Aucun watermark personnel**
 - **Respect de la vie privée** (pas d'informations personnelles)
 
+### 4.3 Utilisation de l'Intelligence Artificielle
+- **Vérification obligatoire** des informations auto-complétées par l'IA
+- **Correction des erreurs** avant publication
+- **Responsabilité** de l'utilisateur sur le contenu final
+- **Utilisation éthique** du chatbot pédagogique (pas de triche)
+
 ---
 
 ## ⚖️ 5. Conséquences du non-respect

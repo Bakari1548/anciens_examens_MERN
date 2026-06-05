@@ -5,7 +5,7 @@ import CTASection from "./CTASection";
 import StatsSection from "./StatsSection";
 import NewsletterSection from "./NewsletterSection";
 import TestimonialsSection from "./TestimonialsSection";
-import FAQSection from "./FAQSection";
+import AISection from "./AISection";
 
 export default function Home() {
   return (
@@ -13,10 +13,10 @@ export default function Home() {
       <div className="w-full">
           <HeroSection />
           <StatsSection />
-          <CTASection />
           <Exams />
+          <CTASection />
+          <AISection />
           <TestimonialsSection />
-          {/* <FAQSection /> */}
           <NewsletterSection />
       </div>
     </ExamProvider>

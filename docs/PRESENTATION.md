@@ -26,6 +26,12 @@ Faciliter la réussite des étudiants en leur donnant accès aux ressources d'ex
 - Contribuez à la communauté étudiante
 - Aidez les futurs étudiants à réussir
 
+**🤖 Intelligence Artificielle intégrée**
+- Analyse automatique de vos documents lors du partage
+- Auto-complétion intelligente des champs du formulaire (UFR, filière, matière, etc.)
+- Détection automatique des doublons pour éviter les redondances
+- Chatbot tuteur pédagogique pour vous aider à comprendre les exercices
+
 **💬 Interagissez avec la communauté**
 - Commentez les examens pour partager vos astuces
 - Likez les ressources les plus utiles
@@ -47,6 +53,7 @@ Faciliter la réussite des étudiants en leur donnant accès aux ressources d'ex
 - Visualisez les tendances d'utilisation
 - Exportez les données pour analyse
 - Prenez des décisions basées sur des données réelles
+- Surveillez l'utilisation du stockage de la base de données et des fichiers
 
 ---
 

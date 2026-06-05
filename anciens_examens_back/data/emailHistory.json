@@ -1,0 +1,56 @@
+[
+  {
+    "id": "1779845533135",
+    "subject": "Test",
+    "message": "Test",
+    "sentAt": "2026-05-27T01:32:13.135Z"
+  },
+  {
+    "id": "1779845533125",
+    "subject": "Test",
+    "message": "Test message",
+    "recipientType": "all",
+    "recipientCount": 10,
+    "sentAt": "2026-05-27T01:32:13.125Z"
+  },
+  {
+    "id": "1779845533096",
+    "subject": "Test Subject",
+    "message": "Test Message",
+    "recipientType": "specific",
+    "recipientCount": 5,
+    "sentAt": "2026-05-27T01:32:13.096Z"
+  },
+  {
+    "id": "1779845283585",
+    "subject": "Test",
+    "message": "Test message",
+    "recipientType": "all",
+    "recipientCount": 10,
+    "sentAt": "2026-05-27T01:28:03.585Z"
+  },
+  {
+    "id": "1779845283548",
+    "subject": "Test Subject",
+    "message": "Test Message",
+    "recipientType": "specific",
+    "recipientCount": 5,
+    "sentAt": "2026-05-27T01:28:03.548Z"
+  },
+  {
+    "id": "1779843799164",
+    "subject": "Bonjour a vouss",
+    "message": "Ce email est un test d'envoi d'email de une plateforme de test",
+    "recipientType": "specific",
+    "recipientCount": 1,
+    "recipientIds": [
+      "69f2a5092bb1e99d599d12c0"
+    ],
+    "sender": "69f4d518d02b482f34524afd",
+    "senderName": "Admin Systeme",
+    "status": "sent",
+    "successfulCount": 1,
+    "failedCount": 0,
+    "sentAt": "2026-05-27T01:03:19.164Z"
+  }
+]

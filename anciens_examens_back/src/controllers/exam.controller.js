@@ -1,6 +1,9 @@
 const Exam = require('../models/Exam');
 const User = require('../models/User');
 const { cloudinary } = require('../config/cloudinary');
+const { createLog } = require('../utils/logger');
+const Notification = require('../models/Notification');
+const gemini = require('../utils/geminiClient');
 
 // Fonction pour générer un slug unique avec caractères aléatoires
 const generateUniqueSlug = async (baseSlug) => {
@@ -40,7 +43,7 @@ const getAllExams = async (req, res) => {
         const filters = {};
         if (req.query.filiere) filters.filiere = req.query.filiere;
         if (req.query.ufr) filters.ufr = req.query.ufr;
-        if (req.query.matiere) filters.matiere = req.query.matiere;
+        if (req.query.matiere) filters.matiere = { $regex: req.query.matiere, $options: 'i' };
         if (req.query.niveau) filters.niveau = req.query.niveau;
         if (req.query.semestre) filters.semestre = req.query.semestre;
         if (req.query.anneeExamen) filters.anneeExamen = req.query.anneeExamen;
@@ -234,6 +237,28 @@ const postExam = async (req, res) => {
         
         const slug = await generateUniqueSlug(baseSlug);
 
+        // Récupérer l'extraction IA depuis le body si déjà fournie par le frontend
+        // (évite un appel IA redondant si l'utilisateur a déjà déclenché l'analyse côté front)
+        let aiExtraction = null;
+        if (req.body.aiExtraction) {
+            try {
+                const parsed = typeof req.body.aiExtraction === 'string'
+                    ? JSON.parse(req.body.aiExtraction)
+                    : req.body.aiExtraction;
+                if (parsed && Array.isArray(parsed.exercises)) {
+                    aiExtraction = {
+                        exercises: parsed.exercises,
+                        globalSummary: parsed.globalSummary || '',
+                        extractedAt: new Date(),
+                        model: process.env.GEMINI_MODEL || 'gemini-2.0-flash'
+                    };
+                }
+            } catch (e) {
+                console.warn('[postExam] aiExtraction invalide, sera re-extraite:', e.message);
+            }
+        }
+
+        // Si pas d'extraction fournie et IA disponible, extraire en arrière-plan après création
         const exam = await Exam.create({
             title: formattedTitle,
             slug,
@@ -246,8 +271,34 @@ const postExam = async (req, res) => {
             matiere,
             description,
             author,
-            files // Tableau des fichiers
+            files,
+            ...(aiExtraction ? { aiExtraction } : {})
         });
+
+        // Si pas d'aiExtraction fournie par le front, déclencher en arrière-plan (fire-and-forget)
+        if (!aiExtraction && gemini.isAvailable() && files[0]) {
+            (async () => {
+                try {
+                    const result = await gemini.analyzeExam({
+                        url: files[0].url,
+                        mimeType: files[0].mimeType,
+                        context: {}
+                    });
+                    if (result?.aiExtraction) {
+                        await Exam.findByIdAndUpdate(exam._id, {
+                            aiExtraction: {
+                                exercises: result.aiExtraction.exercises || [],
+                                globalSummary: result.aiExtraction.globalSummary || '',
+                                extractedAt: new Date(),
+                                model: process.env.GEMINI_MODEL || 'gemini-2.0-flash'
+                            }
+                        });
+                    }
+                } catch (err) {
+                    console.warn('[postExam] Extraction IA en arrière-plan échouée:', err.message);
+                }
+            })();
+        }
 
         // Ajouter l'ID de l'examen au tableau exams de l'utilisateur
         await User.findByIdAndUpdate(
@@ -256,6 +307,42 @@ const postExam = async (req, res) => {
             { new: true }
         );
 
+        // Envoyer une notification à l'utilisateur que son examen a été partagé
+        await Notification.create({
+            recipient: req.user._id,
+            type: 'exam',
+            title: 'Examen partagé avec succès',
+            message: `Votre examen "${exam.title}" a été partagé et est en attente d'approbation.`,
+            metadata: {
+                examId: exam._id,
+                slug: exam.slug
+            },
+            read: false
+        });
+
+        // Envoyer une notification aux autres utilisateurs de la même filière
+        const usersInFiliere = await User.find({
+            _id: { $ne: req.user._id },
+            filiere: filiere,
+            status: 'active'
+        }).select('_id');
+
+        for (const user of usersInFiliere) {
+            await Notification.create({
+                recipient: user._id,
+                type: 'exam',
+                title: 'Nouvel examen disponible',
+                message: `Un nouvel examen "${exam.title}" est disponible dans votre filière ${filiere}.`,
+                metadata: {
+                    examId: exam._id,
+                    slug: exam.slug,
+                    filiere: filiere
+                },
+                read: false
+            });
+        }
+
+        await createLog({ level: 'info', action: 'EXAM_UPLOAD', message: `Upload examen: ${exam.title}`, req, user: req.user, metadata: { examId: exam._id, slug: exam.slug, filesCount: files.length } });
         res.status(201).json({
             message: 'Examen créé avec succès',
             exam: {
@@ -265,6 +352,7 @@ const postExam = async (req, res) => {
         });
     } catch (error) {
         console.error('Erreur lors de la création de l\'examen:', error);
+        await createLog({ level: 'error', action: 'EXAM_UPLOAD_FAILED', message: `Échec de l'upload d'examen: ${error.message}`, req, user: req.user });
         res.status(500).json({
             message: 'Erreur serveur lors du partage de l\'examen',
             error: process.env.NODE_ENV === 'development' ? error.message : 'Erreur interne'
@@ -284,17 +372,50 @@ const updateExam = async (req, res) => {
                 message: 'Examen non trouvé'
             });
         };
+
+        // Préparer les données de mise à jour
+        const updateData = {
+            ufr: req.body.ufr || exam.ufr,
+            filiere: req.body.filiere || exam.filiere,
+            niveau: req.body.niveau || exam.niveau,
+            semestre: req.body.semestre || exam.semestre,
+            anneeExamen: req.body.anneeExamen || exam.anneeExamen,
+            typeExamen: req.body.typeExamen || exam.typeExamen,
+            matiere: req.body.matiere || exam.matiere,
+            description: req.body.description || exam.description
+        };
+
+        // Gérer les fichiers
+        let files = exam.files || [];
         
-        const updatedExam = await Exam.findByIdAndUpdate(exam._id, req.body, {
+        // Si de nouveaux fichiers sont uploadés
+        if (req.files && req.files.length > 0) {
+            const newFiles = req.files.map(file => ({
+                url: file.secure_url,
+                publicId: file.public_id,
+                originalName: file.originalname,
+                size: file.size,
+                mimeType: file.mimetype
+            }));
+            
+            // Fusionner les fichiers existants avec les nouveaux
+            files = [...files, ...newFiles];
+        }
+
+        updateData.files = files;
+
+        const updatedExam = await Exam.findByIdAndUpdate(exam._id, updateData, {
             new: true,
             runValidators: true
         });
         
+        await createLog({ level: 'info', action: 'EXAM_UPDATED', message: `Examen mis à jour: ${updatedExam.title}`, req, user: req.user, metadata: { examId: updatedExam._id, slug: updatedExam.slug } });
         res.status(200).json({
             message: 'Examen mis à jour avec succès',
-            updatedExam
+            exam: updatedExam
         });
     } catch (error) {
+        await createLog({ level: 'error', action: 'SYSTEM_ERROR', message: `Erreur lors de la mise à jour de l'examen: ${error.message}`, req, user: req.user });
         res.status(500).json({
             message: 'Erreur serveur',
             error: error.message
@@ -366,6 +487,7 @@ const deleteExam = async (req, res) => {
         
         console.log(`Examen supprimé: ${exam.title} (${exam.slug})`);
         
+        await createLog({ level: 'warning', action: 'EXAM_DELETED', message: `Examen supprimé: ${exam.title}`, req, user: req.user, metadata: { examId: exam._id, slug: exam.slug } });
         res.status(200).json({
             message: 'Examen supprimé avec succès',
             examId: exam._id,
@@ -373,6 +495,7 @@ const deleteExam = async (req, res) => {
         });
     } catch (error) {
         console.error('Erreur lors de la suppression de l\'examen:', error);
+        await createLog({ level: 'error', action: 'SYSTEM_ERROR', message: `Erreur lors de la suppression de l'examen: ${error.message}`, req, user: req.user });
         res.status(500).json({
             message: 'Erreur serveur lors de la suppression',
             error: error.message
@@ -380,11 +503,225 @@ const deleteExam = async (req, res) => {
     }
 }
 
+// @desc    Ajouter un examen aux favoris
+// @route   POST /api/exams/:slug/favorite
+// @access  Private
+const addToFavorites = async (req, res) => {
+    try {
+        const exam = await Exam.findOne({ slug: req.params.slug });
+        if (!exam) {
+            return res.status(404).json({ message: 'Examen non trouvé' });
+        }
+
+        const user = await User.findById(req.user._id);
+        if (!user.favorites.includes(exam._id)) {
+            user.favorites.push(exam._id);
+            await user.save();
+
+            // Créer une notification
+            await Notification.create({
+                recipient: user._id,
+                type: 'success',
+                title: 'Favori ajouté',
+                message: `Vous avez ajouté "${exam.title}" à vos favoris`,
+                metadata: {
+                    examId: exam._id,
+                    examTitle: exam.title,
+                    examSlug: exam.slug
+                },
+                read: false
+            });
+
+            await createLog({ 
+                level: 'info', 
+                action: 'FAVORITE_ADDED', 
+                message: `Examen ajouté aux favoris: ${exam.title}`, 
+                req, 
+                user: req.user, 
+                metadata: { examId: exam._id, slug: exam.slug } 
+            });
+        }
+
+        res.status(200).json({ message: 'Examen ajouté aux favoris' });
+    } catch (error) {
+        await createLog({ 
+            level: 'error', 
+            action: 'SYSTEM_ERROR', 
+            message: `Erreur lors de l'ajout aux favoris: ${error.message}`, 
+            req, 
+            user: req.user 
+        });
+        res.status(500).json({ message: 'Erreur serveur', error: error.message });
+    }
+};
+
+// @desc    Retirer un examen des favoris
+// @route   DELETE /api/exams/:slug/favorite
+// @access  Private
+const removeFromFavorites = async (req, res) => {
+    try {
+        const exam = await Exam.findOne({ slug: req.params.slug });
+        if (!exam) {
+            return res.status(404).json({ message: 'Examen non trouvé' });
+        }
+
+        const user = await User.findById(req.user._id);
+        user.favorites = user.favorites.filter(fav => !fav.equals(exam._id));
+        await user.save();
+
+        // Créer une notification
+        await Notification.create({
+            recipient: user._id,
+            type: 'success',
+            title: 'Favori retiré',
+            message: `Vous avez retiré "${exam.title}" de vos favoris`,
+            metadata: {
+                examId: exam._id,
+                examTitle: exam.title,
+                examSlug: exam.slug
+            },
+            read: false
+        });
+
+        await createLog({ 
+            level: 'info', 
+            action: 'FAVORITE_REMOVED', 
+            message: `Examen retiré des favoris: ${exam.title}`, 
+            req, 
+            user: req.user, 
+            metadata: { examId: exam._id, slug: exam.slug } 
+        });
+
+        res.status(200).json({ message: 'Examen retiré des favoris' });
+    } catch (error) {
+        await createLog({ 
+            level: 'error', 
+            action: 'SYSTEM_ERROR', 
+            message: `Erreur lors du retrait des favoris: ${error.message}`, 
+            req, 
+            user: req.user 
+        });
+        res.status(500).json({ message: 'Erreur serveur', error: error.message });
+    }
+};
+
+// @desc    Récupérer les favoris de l'utilisateur
+// @route   GET /api/exams/favorites
+// @access  Private
+const getFavorites = async (req, res) => {
+    try {
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 12;
+        const skip = (page - 1) * limit;
+
+        const user = await User.findById(req.user._id).populate({
+            path: 'favorites',
+            options: { skip, limit, sort: { createdAt: -1 } }
+        });
+
+        const total = user.favorites.length;
+        const totalPages = Math.ceil(total / limit);
+
+        res.status(200).json({
+            exams: user.favorites,
+            pagination: {
+                currentPage: page,
+                totalPages,
+                total,
+                limit
+            }
+        });
+    } catch (error) {
+        await createLog({ 
+            level: 'error', 
+            action: 'SYSTEM_ERROR', 
+            message: `Erreur lors de la récupération des favoris: ${error.message}`, 
+            req, 
+            user: req.user 
+        });
+        res.status(500).json({ message: 'Erreur serveur', error: error.message });
+    }
+};
+
+// @desc    Vérifier si un examen est dans les favoris
+// @route   GET /api/exams/:slug/favorite/status
+// @access  Private
+const getFavoriteStatus = async (req, res) => {
+    try {
+        const exam = await Exam.findOne({ slug: req.params.slug });
+        if (!exam) {
+            return res.status(404).json({ message: 'Examen non trouvé' });
+        }
+
+        const user = await User.findById(req.user._id);
+        const isFavorite = user.favorites.includes(exam._id);
+
+        res.status(200).json({ isFavorite });
+    } catch (error) {
+        await createLog({ 
+            level: 'error', 
+            action: 'SYSTEM_ERROR', 
+            message: `Erreur lors de la vérification du statut favori: ${error.message}`, 
+            req, 
+            user: req.user 
+        });
+        res.status(500).json({ message: 'Erreur serveur', error: error.message });
+    }
+};
+
+// @desc    Incrémenter les vues d'un examen
+// @route   POST /api/exams/:slug/view
+// @access  Private
+const incrementExamView = async (req, res) => {
+    try {
+        const exam = await Exam.findOne({ slug: req.params.slug });
+        if (!exam) {
+            return res.status(404).json({ message: 'Examen non trouvé' });
+        }
+
+        const userId = req.user._id;
+        await exam.incrementView(userId);
+
+        res.status(200).json({ message: 'Vue enregistrée', viewsCount: exam.viewsCount });
+    } catch (error) {
+        console.error('Erreur lors de l\'enregistrement de la vue:', error);
+        // Silencieux en cas d'erreur pour ne pas bloquer l'expérience utilisateur
+        res.status(200).json({ message: 'Vue enregistrée' });
+    }
+};
+
+// @desc    Incrémenter les téléchargements d'un examen
+// @route   POST /api/exams/:slug/download
+// @access  Private
+const incrementExamDownload = async (req, res) => {
+    try {
+        const exam = await Exam.findOne({ slug: req.params.slug });
+        if (!exam) {
+            return res.status(404).json({ message: 'Examen non trouvé' });
+        }
+
+        await exam.incrementDownload();
+
+        res.status(200).json({ message: 'Téléchargement enregistré', downloadsCount: exam.downloadsCount });
+    } catch (error) {
+        console.error('Erreur lors de l\'enregistrement du téléchargement:', error);
+        // Silencieux en cas d'erreur pour ne pas bloquer l'expérience utilisateur
+        res.status(200).json({ message: 'Téléchargement enregistré' });
+    }
+};
+
+
 module.exports = {
     getAllExams,
     getExamBySlug,
     getUserExams,
     postExam,
     updateExam,
-    deleteExam
+    deleteExam,
+    addToFavorites,
+    removeFromFavorites,
+    getFavorites,
+    getFavoriteStatus,
+    incrementExamView,
+    incrementExamDownload
 };

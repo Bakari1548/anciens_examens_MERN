@@ -1,14 +1,15 @@
-import { useEffect, useState } from 'react';
-import { Search, Filter, Download, Eye, CheckCircle, XCircle, Trash2, MoreVertical, ChevronLeft, ChevronRight, FileText, Calendar, User, Clock, Plus, Building2, GraduationCap } from 'lucide-react';
+import { useEffect, useState, useMemo } from 'react';
+import { Search, Filter, Download, Eye, CheckCircle, XCircle, Trash2, MoreVertical, ChevronLeft, ChevronRight, FileText, Calendar, User, Clock, Plus, Building2, GraduationCap, RotateCcw } from 'lucide-react';
 import { useAdminExams } from '../../hooks/useAdmin.exams';
 import { useTheme } from '../../context/ThemeContext';
 import DetailExam from './DetailExam';
 import AddExam from './AddExam';
+import EditExam from './EditExam';
 import { getAllUfrs, getFilieresByUfr, getNiveauxByFiliere } from '../../../exam/services/exam.api';
 
 export default function ExamManagement() {
   const { isDark } = useTheme();
-  const { exams, fetchExams, approveExam, rejectExam, deleteExam, addExam, bulkApprove, bulkReject, loading } = useAdminExams();
+  const { exams, fetchExams, approveExam, rejectExam, deleteExam, addExam, updateExam, bulkApprove, bulkReject, loading, stats } = useAdminExams();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
   const [filterUFR, setFilterUFR] = useState('');
@@ -124,10 +125,34 @@ export default function ExamManagement() {
 
   const handleApprove = async (examId) => {
     await approveExam(examId);
+    await fetchExams({
+      page: currentPage,
+      limit: 25,
+      search: searchTerm,
+      status: filterStatus,
+      ufr: filterUFR,
+      filiere: filterFiliere,
+      niveau: filterNiveau,
+      semestre: filterSemestre,
+      typeExamen: filterTypeExamen,
+      matiere: filterMatiere
+    });
   };
 
   const handleReject = async (examId, reason) => {
     await rejectExam(examId, reason);
+    fetchExams({
+      page: currentPage,
+      limit: 25,
+      search: searchTerm,
+      status: filterStatus,
+      ufr: filterUFR,
+      filiere: filterFiliere,
+      niveau: filterNiveau,
+      semestre: filterSemestre,
+      typeExamen: filterTypeExamen,
+      matiere: filterMatiere
+    });
     setShowRejectModal(null);
   };
 
@@ -138,6 +163,18 @@ export default function ExamManagement() {
   const confirmDelete = async () => {
     if (showDeleteModal) {
       await deleteExam(showDeleteModal);
+      fetchExams({
+        page: currentPage,
+        limit: 25,
+        search: searchTerm,
+        status: filterStatus,
+        ufr: filterUFR,
+        filiere: filterFiliere,
+        niveau: filterNiveau,
+        semestre: filterSemestre,
+        typeExamen: filterTypeExamen,
+        matiere: filterMatiere
+      });
       setShowDeleteModal(null);
       setShowActionMenu(null);
     }
@@ -145,11 +182,35 @@ export default function ExamManagement() {
 
   const handleBulkApprove = async () => {
     await bulkApprove(selectedExams);
+    fetchExams({
+      page: currentPage,
+      limit: 25,
+      search: searchTerm,
+      status: filterStatus,
+      ufr: filterUFR,
+      filiere: filterFiliere,
+      niveau: filterNiveau,
+      semestre: filterSemestre,
+      typeExamen: filterTypeExamen,
+      matiere: filterMatiere
+    });
     setSelectedExams([]);
   };
 
   const handleBulkReject = async (reason) => {
     await bulkReject(selectedExams, reason);
+    fetchExams({
+      page: currentPage,
+      limit: 25,
+      search: searchTerm,
+      status: filterStatus,
+      ufr: filterUFR,
+      filiere: filterFiliere,
+      niveau: filterNiveau,
+      semestre: filterSemestre,
+      typeExamen: filterTypeExamen,
+      matiere: filterMatiere
+    });
     setSelectedExams([]);
     setShowRejectModal(null);
   };
@@ -230,6 +291,18 @@ export default function ExamManagement() {
     }
   };
 
+  const handleResetFilters = () => {
+    setSearchTerm('');
+    setFilterStatus('');
+    setFilterUFR('');
+    setFilterFiliere('');
+    setFilterNiveau('');
+    setFilterSemestre('');
+    setFilterTypeExamen('');
+    setFilterMatiere('');
+    setCurrentPage(1);
+  };
+
   const filteredExams = exams.filter(exam => {
     const matchesSearch = exam.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                           exam.matiere.toLowerCase().includes(searchTerm.toLowerCase());
@@ -268,6 +341,17 @@ export default function ExamManagement() {
       'Institut Universitaire de Technologie': 'from-orange-500 to-orange-600'
     };
     return colors[ufr] || 'from-gray-500 to-gray-600';
+  };
+
+  const getUFRAbbreviation = (ufr) => {
+    const abbreviations = {
+      'UFR Sciences et Technologies': 'UFR SET',
+      'UFR Sciences Économiques et Sociales': 'UFR SES',
+      'UFR Sciences de la Santé': 'UFR Santé',
+      'UFR Sciences de l\'Ingénierie': 'UFR SI',
+      'Institut Universitaire de Technologie': 'IUT'
+    };
+    return abbreviations[ufr] || ufr?.split(' ')[1] || ufr;
   };
 
   return (
@@ -314,8 +398,66 @@ export default function ExamManagement() {
         </div>
       </div>
 
+      {/* Statistics Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total examens</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats?.totalExams || exams.length}</p>
+            </div>
+            <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
+              <FileText className="text-blue-600 dark:text-blue-400" size={24} />
+            </div>
+          </div>
+        </div>
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">En attente</p>
+              <p className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">{exams.filter(e => e.status === 'pending').length}</p>
+            </div>
+            <div className="w-12 h-12 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg flex items-center justify-center">
+              <Clock className="text-yellow-600 dark:text-yellow-400" size={24} />
+            </div>
+          </div>
+        </div>
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Approuvés</p>
+              <p className="text-2xl font-bold text-green-600 dark:text-green-400">{exams.filter(e => e.status === 'approved').length}</p>
+            </div>
+            <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
+              <CheckCircle className="text-green-600 dark:text-green-400" size={24} />
+            </div>
+          </div>
+        </div>
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Rejetés</p>
+              <p className="text-2xl font-bold text-red-600 dark:text-red-400">{exams.filter(e => e.status === 'rejected').length}</p>
+            </div>
+            <div className="w-12 h-12 bg-red-100 dark:bg-red-900/30 rounded-lg flex items-center justify-center">
+              <XCircle className="text-red-600 dark:text-red-400" size={24} />
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Filtres et recherche */}
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Filtres</h3>
+          <button
+            onClick={handleResetFilters}
+            className="px-3 py-1.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors flex items-center gap-2 text-sm"
+          >
+            <RotateCcw size={16} />
+            Réinitialiser
+          </button>
+        </div>
         <div className="grid md:grid-cols-4 sm:grid-cols-2 grid-cols-1 gap-4">
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" size={20} />
@@ -399,10 +541,11 @@ export default function ExamManagement() {
           >
             <option value="">Tous les types</option>
             <option value="Examen Final">Examen Final</option>
-            <option value="Contrôle Continu">Contrôle Continu</option>
+            <option value="Examen Partiel">Examen Partiel</option>
             <option value="Session de Rattrapage">Session de Rattrapage</option>
+            <option value="Contrôle Continu">Contrôle Continu</option>
             <option value="Devoir">Devoir</option>
-            <option value="TP">TP</option>
+            <option value="TD/TP">TD/TP</option>
           </select>
           <input
             type="text"
@@ -497,7 +640,7 @@ export default function ExamManagement() {
                           {exam.title}
                         </div>
                         <div className="text-sm text-gray-500 dark:text-gray-400">
-                          {exam.matiere} - {exam.year}
+                          {exam.matiere} - {exam.anneeExamen}
                         </div>
                       </div>
                     </div>
@@ -514,7 +657,7 @@ export default function ExamManagement() {
                   </td>
                   <td className="px-6 py-4">
                     <div className="text-sm text-gray-900 dark:text-white">
-                      <div className="font-medium">{exam.ufr?.split(' ')[1]}</div>
+                      <div className="font-medium">{getUFRAbbreviation(exam.ufr)}</div>
                       <div className="text-gray-500 dark:text-gray-400">{exam.filiere}</div>
                     </div>
                   </td>
@@ -537,7 +680,7 @@ export default function ExamManagement() {
                       </button>
                       
                       {showActionMenu === exam._id && (
-                        <div className="absolute z-20 right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700">
+                        <div className="absolute z-50 right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700">
                           <div className="py-1">
                             <button
                               onClick={() => {
@@ -549,35 +692,46 @@ export default function ExamManagement() {
                               <Eye size={16} />
                               Voir les détails
                             </button>
-                            
-                              
-                                {(exam.status === 'rejected' || exam.status === 'pending' ) && 
-                                <button
-                                  onClick={() => {
-                                    handleApprove(exam._id);
-                                    setShowActionMenu(null);
-                                  }}
-                                  className="flex items-center gap-2 w-full px-4 py-2 text-sm text-green-600 dark:text-green-400 hover:bg-gray-100 dark:hover:bg-gray-700"
-                                >
-                                  <CheckCircle size={16} />
-                                  Approuver
-                                </button>
-                                }
-                                {exam.status === 'pending' && (
-                                <button
-                                  onClick={() => {
-                                    setShowRejectModal(exam);
-                                    setShowActionMenu(null);
-                                  }}
-                                  className="flex items-center gap-2 w-full px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700"
-                                >
-                                  <XCircle size={16} />
-                                  Rejeter
-                                </button>
-                                )}
+
+                            <button
+                              onClick={() => {
+                                setShowExamModal({ ...exam, isEditMode: true });
+                                setShowActionMenu(null);
+                              }}
+                              className="flex items-center gap-2 w-full px-4 py-2 text-sm text-blue-600 dark:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-700"
+                            >
+                              <FileText size={16} />
+                              Modifier
+                            </button>
+
+                            {(exam.status === 'rejected' || exam.status === 'pending') && (
+                              <button
+                                onClick={async () => {
+                                  await handleApprove(exam._id);
+                                  setShowActionMenu(null);
+                                }}
+                                className="flex items-center gap-2 w-full px-4 py-2 text-sm text-green-600 dark:text-green-400 hover:bg-gray-100 dark:hover:bg-gray-700"
+                              >
+                                <CheckCircle size={16} />
+                                Approuver
+                              </button>
+                            )}
+                            {exam.status === 'pending' && (
+                              <button
+                                onClick={() => {
+                                  setShowRejectModal(exam);
+                                  setShowActionMenu(null);
+                                }}
+                                className="flex items-center gap-2 w-full px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700"
+                              >
+                                <XCircle size={16} />
+                                Rejeter
+                              </button>
+                            )}
                             <button
                               onClick={() => {
                                 handleDelete(exam.slug);
+                                setShowActionMenu(null);
                               }}
                               className="flex items-center gap-2 w-full px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700"
                             >
@@ -697,9 +851,12 @@ export default function ExamManagement() {
         </div>
       )}
 
-      {/* Modal de détail de l'examen */}
+      {/* Modal de détail/édition de l'examen */}
       {showExamModal && (
-        <DetailExam exam={showExamModal} onClose={() => setShowExamModal(null)} />
+        <DetailExam 
+          exam={showExamModal} 
+          onClose={() => setShowExamModal(null)} 
+        />
       )}
 
       {/* Modal d'ajout d'examen */}
@@ -707,6 +864,15 @@ export default function ExamManagement() {
         <AddExam
           onClose={() => setShowAddModal(false)}
           onAddExam={addExam}
+        />
+      )}
+
+      {/* Modal d'édition d'examen */}
+      {showExamModal?.isEditMode && (
+        <EditExam
+          exam={showExamModal}
+          onClose={() => setShowExamModal(null)}
+          onUpdate={(examSlug, formData) => updateExam(examSlug, formData)}
         />
       )}
     </div>

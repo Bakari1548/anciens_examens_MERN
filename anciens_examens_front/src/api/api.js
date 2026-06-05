@@ -15,9 +15,14 @@ const api = axios.create({
 
 api.interceptors.request.use(
   (config) => {
-    // Le token est maintenant géré par HTTP-only cookie
-    // Plus besoin d'ajouter l'en-tête Authorization manuellement
-    
+    // Auth principale : cookie HTTP-only (envoyé via withCredentials)
+    // Fallback : Authorization header avec token en sessionStorage
+    // Utile si le cookie est bloqué (cross-origin, navigateur privé, etc.)
+    const token = tokenStorage.getToken();
+    if (token) {
+      config.headers['Authorization'] = `Bearer ${token}`;
+    }
+
     // IMPORTANT: Pour FormData, supprimer Content-Type pour laisser 
     // le navigateur le définir automatiquement avec le bon boundary multipart
     if (config.data instanceof FormData) {

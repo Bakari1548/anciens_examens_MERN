@@ -1,5 +1,4 @@
 import emailSentImage from '@/assets/email_sent.jpg';
-import { Link } from 'react-router-dom';
 
 
 export default function ResetPasswordDone () {
@@ -14,12 +13,6 @@ export default function ResetPasswordDone () {
                     Veuillez consulter votre boite d'email<br/>
                     Si vous ne recevez pas d'email, consulter vos spams.
                 </p>
-                <Link
-                  to="/connexion"
-                  className="block w-fit px-6 text-center bg-gray-700 text-white py-2.5 rounded-lg hover:bg-gray-800 transition-colors font-semibold"
-                >
-                  Retour à la connexion
-                </Link>
             </div>
             <img 
                 src={emailSentImage}

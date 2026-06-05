@@ -54,16 +54,11 @@ export default function ExamViewer({ exam, isUserLoggedIn, onDownload }) {
       );
     } else {
       return (
-        <div className="w-full h-full flex items-center justify-center p-4">
+        <div className="w-full h-full overflow-auto flex items-center justify-center p-4">
           <img
             src={fileUrl}
             alt={exam.title}
-            className="max-w-none"
-            style={{
-              maxWidth: '100%',
-              height: 'auto',
-              cursor: 'zoom-in'
-            }}
+            className="max-w-full max-h-full object-contain cursor-zoom-in"
           />
         </div>
       );
@@ -74,13 +69,13 @@ export default function ExamViewer({ exam, isUserLoggedIn, onDownload }) {
     <>
       <div className="relative bg-white rounded-lg shadow-md overflow-hidden">
         {/* Barre d'outils */}
-        <div className="flex items-center justify-between bg-gray-100 px-4 py-2 border-b">
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-gray-700 truncate text-wrap max-w-xs">
+        <div className="flex items-center justify-between gap-2 bg-gray-100 px-4 py-2 border-b">
+          <div className="flex items-center gap-2 min-w-0 flex-1">
+            <span className="text-sm font-medium text-gray-700 truncate">
               {exam.title}
             </span>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-shrink-0">
             {/* Navigation entre fichiers */}
             {exam.files && exam.files.length > 1 && (
               <>
@@ -137,13 +132,13 @@ export default function ExamViewer({ exam, isUserLoggedIn, onDownload }) {
         <div className="fixed inset-0 z-50 bg-black bg-opacity-90 flex items-center justify-center">
           <div className="relative w-full h-full flex flex-col">
             {/* Barre d'outils plein écran */}
-            <div className="flex items-center justify-between bg-gray-900 px-4 py-3">
-              <div className="flex items-center gap-2">
-                <span className="text-white font-medium truncate text-wrap max-w-md">
+            <div className="flex items-center justify-between gap-2 bg-gray-900 px-4 py-3">
+              <div className="flex items-center gap-2 min-w-0 flex-1">
+                <span className="text-white font-medium truncate">
                   {exam.title}
                 </span>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-shrink-0">
                 {/* Navigation entre fichiers */}
                 {exam.files && exam.files.length > 1 && (
                   <>
@@ -198,16 +193,11 @@ export default function ExamViewer({ exam, isUserLoggedIn, onDownload }) {
                   title={exam.title}
                 />
               ) : (
-                <div className="min-w-full min-h-full flex items-center justify-center p-4">
+                <div className="w-full h-full flex items-center justify-center p-4">
                   <img
                     src={fileUrl}
                     alt={exam.title}
-                    className="max-w-none"
-                    style={{
-                      maxWidth: '100%',
-                      height: 'auto',
-                      cursor: 'zoom-in'
-                    }}
+                    className="max-w-full max-h-full object-contain cursor-zoom-in"
                   />
                 </div>
               )}

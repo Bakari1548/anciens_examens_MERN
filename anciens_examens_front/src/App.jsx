@@ -15,6 +15,7 @@ import DetailExamPage from './pages/DetailExam'
 import ExamsPage from './pages/Exams'
 import ProfilePage from './pages/Profile'
 import AccountAppealPage from './pages/AccountAppeal'
+import FavoritesPage from './pages/Favorites'
 import AdminProtectedRoute from './components/AdminProtectedRoute'
 import AdminDashboardPage from './pages/AdminDashboard'
 import AdminUsersPage from './pages/AdminUsers'
@@ -25,6 +26,7 @@ import AdminNotificationsPage from './pages/AdminNotifications'
 import AdminSettingsPage from './pages/AdminSettings'
 import AdminLogsPage from './pages/AdminLogs'
 import AdminAppealsPage from './pages/AdminAppeals'
+import AdminEmailsPage from './pages/AdminEmails'
 import { ThemeProvider } from './app/admin/context/ThemeContext'
 import ResetPasswordWithTokenPage from './pages/ResetPasswordWithToken'
 import RulesPage from './app/legal/components/RulesPage'
@@ -45,8 +47,9 @@ function AppContent() {
         <Route path="/mot-de-passe-modifie" element={<ResetPasswordCompletePage />} />
         <Route path="/mot-de-passe-modifie/:token" element={<ResetPasswordWithTokenPage />} />
         <Route path="/partager-examen" element={<PostExamPage />} />
-        <Route path="/examen/:slug" element={<DetailExamPage />} />
+        <Route path="/examens/:slug" element={<DetailExamPage />} />
         <Route path="/examens" element={<ExamsPage />} />
+        <Route path="/examens/favoris" element={<FavoritesPage />} />
         <Route path="/profil" element={<ProfilePage />} />
         <Route path="/demande" element={<AccountAppealPage />} />
         <Route path="/regles" element={<RulesPage />} />
@@ -54,79 +57,26 @@ function AppContent() {
 
 
         {/* Routes Admin protégées */}
-        <Route path="/admin" element={
+        <Route path="/admin/*" element={
           <AdminProtectedRoute>
-            <ThemeProvider>
-              <AdminDashboardPage />
-            </ThemeProvider>
-          </AdminProtectedRoute>
-        } />
-        <Route path="/admin/dashboard" element={
-          <AdminProtectedRoute>
-            <ThemeProvider>
-              <AdminDashboardPage />
-            </ThemeProvider>
-          </AdminProtectedRoute>
-        } />
-        <Route path="/admin/users" element={
-          <AdminProtectedRoute>
-            <ThemeProvider>
-              <AdminUsersPage />
-            </ThemeProvider>
-          </AdminProtectedRoute>
-        } />
-        <Route path="/admin/exams" element={
-          <AdminProtectedRoute>
-            <ThemeProvider>
-              <AdminExamsPage />
-            </ThemeProvider>
-          </AdminProtectedRoute>
-        } />
-        <Route path="/admin/reports" element={
-          <AdminProtectedRoute>
-            <ThemeProvider>
-              <AdminModerationPage />
-            </ThemeProvider>
-          </AdminProtectedRoute>
-        } />
-        <Route path="/admin/analytics" element={
-          <AdminProtectedRoute>
-            <ThemeProvider>
-              <AdminAnalyticsPage />
-            </ThemeProvider>
-          </AdminProtectedRoute>
-        } />
-        <Route path="/admin/notifications" element={
-          <AdminProtectedRoute>
-            <ThemeProvider>
-              <AdminNotificationsPage />
-            </ThemeProvider>
-          </AdminProtectedRoute>
-        } />
-        <Route path="/admin/settings" element={
-          <AdminProtectedRoute>
-            <ThemeProvider>
-              <AdminSettingsPage />
-            </ThemeProvider>
-          </AdminProtectedRoute>
-        } />
-        <Route path="/admin/logs" element={
-          <AdminProtectedRoute>
-            <ThemeProvider>
-              <AdminLogsPage />
-            </ThemeProvider>
-          </AdminProtectedRoute>
-        } />
-        <Route path="/admin/appeals" element={
-          <AdminProtectedRoute>
-            <ThemeProvider>
-              <AdminAppealsPage />
-            </ThemeProvider>
+            <Routes>
+              <Route path="/" element={<AdminDashboardPage />} />
+              <Route path="dashboard" element={<AdminDashboardPage />} />
+              <Route path="users" element={<AdminUsersPage />} />
+              <Route path="exams" element={<AdminExamsPage />} />
+              <Route path="reports" element={<AdminModerationPage />} />
+              <Route path="analytics" element={<AdminAnalyticsPage />} />
+              <Route path="notifications" element={<AdminNotificationsPage />} />
+              <Route path="settings" element={<AdminSettingsPage />} />
+              <Route path="logs" element={<AdminLogsPage />} />
+              <Route path="appeals" element={<AdminAppealsPage />} />
+              <Route path="emails" element={<AdminEmailsPage />} />
+            </Routes>
           </AdminProtectedRoute>
         } />
       </Routes>
       {!isAdminRoute && <Footer />}
-      <Toaster 
+      <Toaster
         position="bottom-center"
         richColors
         closeButton
@@ -137,9 +87,11 @@ function AppContent() {
 
 function App() {
   return (
-    <Router>
-      <AppContent />
-    </Router>
+    <ThemeProvider>
+      <Router>
+        <AppContent />
+      </Router>
+    </ThemeProvider>
   );
 }
 

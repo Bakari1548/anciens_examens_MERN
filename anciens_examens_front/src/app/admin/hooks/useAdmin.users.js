@@ -12,7 +12,8 @@ export function useAdminUsers() {
     unbanUser, 
     toggleUserStatus, 
     loading, 
-    addNotification 
+    addNotification,
+    stats
   } = useAdmin();
   
   
@@ -27,6 +28,7 @@ export function useAdminUsers() {
     banUser,
     unbanUser,
     loading,
-    addNotification
+    addNotification,
+    stats
   };
 }

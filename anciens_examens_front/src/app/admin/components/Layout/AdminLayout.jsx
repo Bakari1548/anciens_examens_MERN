@@ -16,7 +16,8 @@ import {
   MessageSquare,
   Moon,
   Sun,
-  AlertCircle
+  AlertCircle,
+  Mail
 } from 'lucide-react';
 import { useAdmin } from '../../context/AdminContext';
 import { useAdminNotifications } from '../../hooks/useAdmin.notifications';
@@ -115,6 +116,12 @@ export default function AdminLayout({ children }) {
       icon: AlertCircle,
       label: 'Demandes',
       description: 'Demandes de réactivation'
+    },
+    {
+      path: '/admin/emails',
+      icon: Mail,
+      label: 'Emails',
+      description: 'Envoi d\'emails'
     }
   ];
 
@@ -131,10 +138,10 @@ export default function AdminLayout({ children }) {
             className="fixed inset-0 bg-black/50" 
             onClick={() => setSidebarOpen(false)}
           />
-          <div className="fixed left-0 top-0 h-full w-64 bg-white dark:bg-gray-800 shadow-xl">
-            <div className="p-4 border-b dark:border-gray-700">
+          <div className="fixed left-0 top-0 h-full w-56 bg-white dark:bg-gray-800 shadow-xl">
+            <div className="p-3 border-b dark:border-gray-700">
               <div className="flex items-center justify-between">
-                <h1 className="text-xl font-bold text-gray-900 dark:text-white">Admin Panel</h1>
+                <h1 className="text-lg font-bold text-gray-900 dark:text-white">Admin Panel</h1>
                 <button
                   onClick={() => setSidebarOpen(false)}
                   className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
@@ -151,7 +158,7 @@ export default function AdminLayout({ children }) {
                     key={item.path}
                     to={item.path}
                     onClick={() => setSidebarOpen(false)}
-                    className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors mb-1 ${
+                    className={`flex items-center gap-3 px-3 py-3 rounded-lg transition-colors mb-1 ${
                       isActivePath(item.path)
                         ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400'
                         : 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300'
@@ -159,8 +166,7 @@ export default function AdminLayout({ children }) {
                   >
                     <Icon size={20} />
                     <div className="flex-1">
-                      <div className="font-medium">{item.label}</div>
-                      <div className="text-xs text-gray-500 dark:text-gray-400">{item.description}</div>
+                      <div className="font-medium text-sm">{item.label}</div>
                     </div>
                     {item.badge && item.badge > 0 && (
                       <span className="bg-red-500 text-white text-xs px-2 py-1 rounded-full">
@@ -188,21 +194,21 @@ export default function AdminLayout({ children }) {
             </button>
 
             {/* Logo et titre */}
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 sm:gap-4">
               <button 
                 className="cursor-pointer active:scale-95 hover:scale-105 transition-transform rounded-lg flex items-center justify-center"
                 onClick={() => navigate('/')}
               >
-                <img src={logoAnciensExamens} alt="Logo UIDT" className="w-12 h-12" />
+                <img src={logoAnciensExamens} alt="Logo UIDT" className="w-10 h-10 sm:w-12 sm:h-12" />
               </button>
-              <div>
+              <div className="hidden sm:block">
                 <h1 className="text-xl font-bold text-gray-900 dark:text-white">Admin Panel</h1>
                 <p className="text-xs text-gray-500 dark:text-gray-400">Panneau d'administration</p>
               </div>
             </div>
 
             {/* Actions header */}
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 sm:gap-4">
               {/* Bouton thème */}
               <button
                 onClick={toggleTheme}
@@ -226,14 +232,14 @@ export default function AdminLayout({ children }) {
               </div>
 
               {/* Profil utilisateur */}
-              <div className="flex items-center gap-3">
-                <div className="text-right">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="hidden sm:block text-right">
                   <div className="text-sm font-medium text-gray-900 dark:text-white">
                     {user?.firstName} {user?.lastName}
                   </div>
                   <div className="text-xs text-gray-500 dark:text-gray-400">Administrateur</div>
                 </div>
-                <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-semibold text-sm">
+                <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-semibold text-sm flex-shrink-0">
                   {user?.firstName?.charAt(0)}{user?.lastName?.charAt(0)}
                 </div>
                 <button
@@ -251,7 +257,7 @@ export default function AdminLayout({ children }) {
 
       <div className="flex h-screen">
         {/* Sidebar desktop */}
-        <aside className="hidden lg:block w-64 bg-white dark:bg-gray-800 shadow-sm border-r dark:border-gray-700 h-screen sticky top-0 overflow-y-auto">
+        <aside className="hidden lg:block w-56 bg-white dark:bg-gray-800 shadow-sm border-r dark:border-gray-700 h-screen sticky top-0 overflow-y-auto">
           <div className="p-4">
             <nav className="space-y-1">
               {menuItems.map((item) => {
@@ -260,7 +266,7 @@ export default function AdminLayout({ children }) {
                   <Link
                     key={item.path}
                     to={item.path}
-                    className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                    className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
                       isActivePath(item.path)
                         ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400'
                         : 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300'
@@ -268,8 +274,7 @@ export default function AdminLayout({ children }) {
                   >
                     <Icon size={20} />
                     <div className="flex-1">
-                      <div className="font-medium">{item.label}</div>
-                      <div className="text-xs text-gray-500 dark:text-gray-400">{item.description}</div>
+                      <div className="font-medium text-sm">{item.label}</div>
                     </div>
                     {item.badge && item.badge > 0 && (
                       <span className="bg-red-500 text-white text-xs px-2 py-1 rounded-full">

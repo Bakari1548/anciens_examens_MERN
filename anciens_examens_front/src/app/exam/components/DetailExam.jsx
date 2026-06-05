@@ -1,9 +1,11 @@
 import { useParams, useNavigate, Link } from 'react-router';
 import { ArrowLeft, FileText, Calendar, User, Heart, MessageSquare, Send, ThumbsUp, Download } from 'lucide-react';
+import { FaWhatsapp } from 'react-icons/fa';
 import { useState, useEffect } from 'react';
-import { getExamBySlug, getLikeStatus, likeExam, unlikeExam, getComments, addComment, deleteComment } from '../services/exam.api';
+import { getExamBySlug, getLikeStatus, likeExam, unlikeExam, getComments, addComment, deleteComment, getFavoriteStatus, addToFavorites, removeFromFavorites, incrementExamView, incrementExamDownload } from '../services/exam.api';
 import { toast } from 'sonner';
 import ExamViewer from './ExamViewer';
+import AIChatWidget from './AIChatWidget';
 import { tokenStorage } from '../../../utils/tokenStorage';
 
 export default function ExamDetail() {
@@ -15,6 +17,8 @@ export default function ExamDetail() {
   const [loading, setLoading] = useState(true);
   const [isLiked, setIsLiked] = useState(false);
   const [likesCount, setLikesCount] = useState(0);
+  const [isFavorite, setIsFavorite] = useState(false);
+  const [loadingFavorite, setLoadingFavorite] = useState(false);
   const [newComment, setNewComment] = useState('');
   const [comments, setComments] = useState([]);
 
@@ -30,6 +34,12 @@ export default function ExamDetail() {
         setExam(response.exam);
         setLikesCount(response.exam.likesCount || 0);
 
+        // Enregistrer la vue de l'examen (seulement si connecté)
+        const token = tokenStorage.getToken();
+        if (token) {
+          incrementExamView(slug);
+        }
+
         // Récupérer les commentaires avec les infos utilisateur peuplées
         try {
           const commentsResponse = await getComments(slug);
@@ -39,13 +49,20 @@ export default function ExamDetail() {
           setComments([]);
         }
 
-        // Si l'utilisateur est connecté, vérifier le statut du like
+        // Si l'utilisateur est connecté, vérifier le statut du like et du favori
         if (isUserLoggedIn) {
           try {
             const likeResponse = await getLikeStatus(slug);
             setIsLiked(likeResponse.isLiked);
           } catch (error) {
             console.error('Erreur lors de la vérification du like:', error);
+          }
+
+          try {
+            const favoriteResponse = await getFavoriteStatus(slug);
+            setIsFavorite(favoriteResponse.isFavorite);
+          } catch (error) {
+            console.error('Erreur lors de la vérification du favori:', error);
           }
         }
       } catch (error) {
@@ -89,6 +106,10 @@ export default function ExamDetail() {
   const handleDownload = (fileIndex = 0) => {
     if (exam.files && exam.files.length > 0) {
       const file = exam.files[fileIndex];
+      
+      // Enregistrer le téléchargement
+      incrementExamDownload(slug);
+      
       const link = document.createElement('a');
       link.href = file.url;
       link.target = '_blank';
@@ -122,6 +143,32 @@ export default function ExamDetail() {
     } catch (error) {
       console.error('Erreur lors du like:', error);
       toast.error(error.response?.data?.message || 'Erreur lors du like');
+    }
+  };
+
+  const handleToggleFavorite = async () => {
+    if (!isUserLoggedIn) {
+      toast.error('Vous devez être connecté pour ajouter aux favoris');
+      return;
+    }
+    
+    setLoadingFavorite(true);
+    try {
+      if (isFavorite) {
+        await removeFromFavorites(slug);
+        setIsFavorite(false);
+        toast.success('Retiré des favoris');
+      } else {
+        await addToFavorites(slug);
+        setIsFavorite(true);
+        toast.success('Ajouté aux favoris');
+      }
+    } catch (error) {
+      console.error('Erreur lors de la gestion des favoris:', error);
+      console.error('Détails de l\'erreur:', error.response?.data || error.message);
+      toast.error('Erreur lors de la gestion des favoris');
+    } finally {
+      setLoadingFavorite(false);
     }
   };
 
@@ -166,6 +213,24 @@ export default function ExamDetail() {
       console.error('Erreur lors de la suppression du commentaire:', error);
       toast.error(error.response?.data?.message || 'Erreur lors de la suppression');
     }
+  };
+
+  const handleShare = () => {
+    const examUrl = `${window.location.origin}/examens/${exam.slug}`;
+    const shareMessage = `📚 *${exam.title}*\n\n` +
+      `🎓 UFR: ${exam.ufr}\n` +
+      `📖 Filière: ${exam.filiere}\n` +
+      `📊 Niveau: ${exam.niveau}\n` +
+      `📅 Semestre: ${exam.semestre}\n` +
+      `📝 Type: ${exam.typeExamen}\n` +
+      `📚 Matière: ${exam.matiere}\n` +
+      `📆 Année: ${exam.anneeExamen}\n\n` +
+      `🔗 *Lien*: ${examUrl}\n\n` +
+      `Consulte cet examen sur Anciens Examens UIDT!`;
+    
+    const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(shareMessage)}`;
+    window.open(whatsappUrl, '_blank');
+    toast.success('Ouverture de WhatsApp...');
   };
 
   return (
@@ -244,6 +309,13 @@ export default function ExamDetail() {
                   <p className="text-sm text-gray-500">Date de création</p>
                   <p className="font-medium">{new Date(exam.createdAt).toLocaleDateString('fr-FR')}</p>
                 </div>
+
+                {exam.description && (
+                  <div className="border-t pt-4">
+                    <p className="text-sm text-gray-500 mb-2">Description</p>
+                    <p className="text-gray-700 text-sm leading-relaxed">{exam.description}</p>
+                  </div>
+                )}
               </div>
 
               {exam.files && exam.files.length > 0 && (
@@ -288,14 +360,29 @@ export default function ExamDetail() {
 
             {/* Section Likes et Commentaires */}
             <div className="bg-white rounded-lg shadow-md p-6">
-              {/* Bouton Like */}
-              <div className="border-b pb-4 mb-6">
+              {/* Boutons Like et Favori */}
+              <div className="flex items-center gap-6 border-b pb-4 mb-6">
                 <button
                   onClick={handleLike}
                   className="flex items-center gap-2 text-blue-500 hover:text-blue-600 transition-colors"
                 >
                   <ThumbsUp size={24} fill={isLiked ? 'currentColor' : 'none'} strokeWidth={2} />
                   <span className="text-lg font-medium text-gray-700">{likesCount} likes</span>
+                </button>
+                <button
+                  onClick={handleToggleFavorite}
+                  disabled={loadingFavorite}
+                  className="flex items-center gap-2 text-red-500 hover:text-red-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <Heart size={24} fill={isFavorite ? 'currentColor' : 'none'} strokeWidth={2} />
+                  <span className="text-lg font-medium text-gray-700">Favori</span>
+                </button>
+                <button
+                  onClick={handleShare}
+                  className="flex items-center gap-2 text-green-500 hover:text-green-600 transition-colors"
+                >
+                  <FaWhatsapp size={24} />
+                  <span className="text-lg font-medium text-gray-700">Partager</span>
                 </button>
               </div>
 
@@ -370,6 +457,9 @@ export default function ExamDetail() {
           </div>
         </div>
       </div>
+
+      {/* Widget chat IA flottant */}
+      <AIChatWidget exam={exam} />
     </div>
   );
 }

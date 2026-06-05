@@ -5,7 +5,7 @@ export default function Exams() {
     const navigate = useNavigate();
 
     return (
-        <div className="p-4 sm:px-12 px-6 flex flex-col gap-3">
+        <div className="p-4 sm:px-12 bg-gray-50 px-6 flex flex-col gap-3">
             <div className="bg-gradient-to-r from-blue-600 to-blue-800 rounded-xl p-8 text-white">
                 <div className="flex flex-col md:flex-row items-center justify-between gap-6">
                     <div>

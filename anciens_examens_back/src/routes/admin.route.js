@@ -9,8 +9,6 @@ const {
     unbanUser,
     approveExam,
     rejectExam,
-    sendGlobalNotification,
-    sendNotificationToUsers,
     getAuditLogs,
     getSystemLogs,
     createBackup,
@@ -22,6 +20,15 @@ const {
     getSettings,
     updateSettings
 } = require('../controllers/admin.controller');
+const {
+  sendEmailToUsers,
+  sendEmailToAll,
+  sendEmailByRole,
+  getEmailHistory,
+  getReceivedEmails,
+  receiveEmailWebhook,
+  testWebhook
+} = require('../controllers/admin.email.controller');
 const authMiddleware = require('../middlewares/auth.middleware');
 const adminMiddleware = require('../middlewares/admin.middleware');
 
@@ -42,11 +49,6 @@ router.post('/users/:id/unban', authMiddleware, adminMiddleware, unbanUser);
 router.patch('/exams/:id/approve', authMiddleware, adminMiddleware, approveExam);
 router.patch('/exams/:id/reject', authMiddleware, adminMiddleware, rejectExam);
 
-// Notifications
-router.post('/notifications/global', authMiddleware, adminMiddleware, sendGlobalNotification);
-router.post('/notifications/targeted', authMiddleware, adminMiddleware, sendNotificationToUsers);
-router.get('/notifications', authMiddleware, adminMiddleware, getSettings);
-
 // Système et maintenance
 router.get('/audit-logs', authMiddleware, adminMiddleware, getAuditLogs);
 router.get('/system-logs', authMiddleware, adminMiddleware, getSystemLogs);
@@ -60,5 +62,18 @@ router.put('/settings', authMiddleware, adminMiddleware, updateSettings);
 router.get('/reports/generate/:type', authMiddleware, adminMiddleware, generateReport);
 router.get('/reports/list', authMiddleware, adminMiddleware, getReportsList);
 router.get('/reports/download/:id', authMiddleware, adminMiddleware, downloadReport);
+
+// Gestion des emails admin
+router.post('/emails/send', authMiddleware, adminMiddleware, sendEmailToUsers);
+router.post('/emails/send-all', authMiddleware, adminMiddleware, sendEmailToAll);
+router.post('/emails/send-by-role', authMiddleware, adminMiddleware, sendEmailByRole);
+router.get('/emails/history', authMiddleware, adminMiddleware, getEmailHistory);
+router.get('/emails/received', authMiddleware, adminMiddleware, getReceivedEmails);
+
+// Webhook pour recevoir les emails (pas d'authentification requise - pour Resend)
+router.post('/emails/webhook', receiveEmailWebhook);
+
+// Endpoint de test pour simuler un webhook (pour développement)
+router.post('/emails/test-webhook', authMiddleware, adminMiddleware, testWebhook);
 
 module.exports = router;

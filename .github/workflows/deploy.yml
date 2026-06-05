@@ -68,7 +68,7 @@ jobs:
         working-directory: ./anciens_examens_back
         run: |
           cat > .env << EOF
-          PORT=8000
+          PORT=5000
           MONGODB_URI=mongodb://localhost:27017/test
           JWT_SECRET="${{ secrets.JWT_SECRET }}"
           JWT_EXPIRE=7d

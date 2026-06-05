@@ -227,86 +227,151 @@ export default function AppealsManagement() {
       )}
 
       {showReviewModal && selectedAppeal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg max-w-lg w-full p-6">
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
-              {action === 'approve' ? 'Approuver la demande' : 
-               action === 'reject' ? 'Rejeter la demande' : 
-               'Détails de la demande'}
-            </h2>
-            
-            <div className="space-y-4 mb-6">
-              <div>
-                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Utilisateur</p>
-                <p className="text-gray-900 dark:text-white">
-                  {selectedAppeal.firstName} {selectedAppeal.lastName}
-                </p>
-                <p className="text-sm text-gray-500 dark:text-gray-400">{selectedAppeal.email}</p>
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            {/* Header */}
+            <div className="sticky top-0 bg-white dark:bg-gray-800 border-b dark:border-gray-700 px-6 py-4">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+                  {action === 'approve' ? 'Approuver la demande' : 
+                   action === 'reject' ? 'Rejeter la demande' : 
+                   'Détails de la demande'}
+                </h2>
+                <button
+                  onClick={() => {
+                    setShowReviewModal(false);
+                    setReviewMessage('');
+                    setSelectedAppeal(null);
+                    setAction(null);
+                  }}
+                  className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                >
+                  <XCircle size={20} className="text-gray-500 dark:text-gray-400" />
+                </button>
               </div>
-              
-              <div>
-                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Message de la demande</p>
-                <p className="text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-700 p-3 rounded-lg">
-                  {selectedAppeal.appeal?.message}
-                </p>
+            </div>
+
+            {/* Content */}
+            <div className="p-6 space-y-6">
+              {/* User Information Section */}
+              <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-4">
+                <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-4">
+                  Informations utilisateur
+                </h3>
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 bg-indigo-100 dark:bg-indigo-900 rounded-full flex items-center justify-center flex-shrink-0">
+                    <User className="text-indigo-600 dark:text-indigo-400" size={24} />
+                  </div>
+                  <div className="flex-1 space-y-2">
+                    <div>
+                      <p className="font-semibold text-gray-900 dark:text-white">
+                        {selectedAppeal.firstName} {selectedAppeal.lastName}
+                      </p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-1">
+                        <Mail size={14} />
+                        {selectedAppeal.email}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      {getUserStatusBadge(selectedAppeal.status)}
+                      <span className="text-sm text-gray-500 dark:text-gray-400">
+                        Inscrit le {new Date(selectedAppeal.createdAt).toLocaleDateString('fr-FR')}
+                      </span>
+                    </div>
+                  </div>
+                </div>
               </div>
 
+              {/* Appeal Details Section */}
+              <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-4">
+                <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-4">
+                  Détails de la demande
+                </h3>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-600 dark:text-gray-400">Statut</span>
+                    {getStatusBadge(selectedAppeal.appeal?.status)}
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-600 dark:text-gray-400">Date de soumission</span>
+                    <span className="text-sm font-medium text-gray-900 dark:text-white flex items-center gap-1">
+                      <Calendar size={14} />
+                      {new Date(selectedAppeal.appeal?.submittedAt).toLocaleDateString('fr-FR')} à {new Date(selectedAppeal.appeal?.submittedAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                  </div>
+                  {selectedAppeal.appeal?.reviewedAt && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-gray-600 dark:text-gray-400">Date de traitement</span>
+                      <span className="text-sm font-medium text-gray-900 dark:text-white">
+                        {new Date(selectedAppeal.appeal.reviewedAt).toLocaleDateString('fr-FR')} à {new Date(selectedAppeal.appeal.reviewedAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                    </div>
+                  )}
+                  <div>
+                    <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Message de la demande</p>
+                    <p className="text-gray-900 dark:text-white bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-600">
+                      {selectedAppeal.appeal?.message}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Admin Response Section */}
               {selectedAppeal.appeal?.reviewMessage && (
-                <div>
-                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Réponse de l'admin</p>
-                  <p className="text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-700 p-3 rounded-lg">
+                <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-4">
+                  <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-4">
+                    Réponse de l'administrateur
+                  </h3>
+                  <p className="text-gray-900 dark:text-white bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-600">
                     {selectedAppeal.appeal.reviewMessage}
                   </p>
                 </div>
               )}
 
-              {selectedAppeal.appeal?.status !== 'pending' && (
+              {/* Review Message Input for Pending Appeals */}
+              {selectedAppeal.appeal?.status === 'pending' && (
                 <div>
-                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Statut</p>
-                  {getStatusBadge(selectedAppeal.appeal?.status)}
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Message de réponse (optionnel)
+                  </label>
+                  <textarea
+                    value={reviewMessage}
+                    onChange={(e) => setReviewMessage(e.target.value)}
+                    rows={4}
+                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white resize-none"
+                    placeholder="Ajoutez un message pour l'utilisateur..."
+                  />
                 </div>
               )}
             </div>
 
-            {selectedAppeal.appeal?.status === 'pending' && (
-              <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Message de réponse (optionnel)
-                </label>
-                <textarea
-                  value={reviewMessage}
-                  onChange={(e) => setReviewMessage(e.target.value)}
-                  rows={3}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
-                  placeholder="Ajoutez un message pour l'utilisateur..."
-                />
-              </div>
-            )}
-
-            <div className="flex justify-end gap-3">
-              <button
-                onClick={() => {
-                  setShowReviewModal(false);
-                  setReviewMessage('');
-                  setSelectedAppeal(null);
-                  setAction(null);
-                }}
-                className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-              >
-                Annuler
-              </button>
-              {selectedAppeal.appeal?.status === 'pending' && (
+            {/* Footer */}
+            <div className="sticky bottom-0 bg-white dark:bg-gray-800 border-t dark:border-gray-700 px-6 py-4">
+              <div className="flex justify-end gap-3">
                 <button
-                  onClick={action === 'approve' ? handleApprove : handleReject}
-                  className={`px-4 py-2 text-white rounded-lg transition-colors ${
-                    action === 'approve' 
-                      ? 'bg-green-600 hover:bg-green-700' 
-                      : 'bg-red-600 hover:bg-red-700'
-                  }`}
+                  onClick={() => {
+                    setShowReviewModal(false);
+                    setReviewMessage('');
+                    setSelectedAppeal(null);
+                    setAction(null);
+                  }}
+                  className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors font-medium"
                 >
-                  {action === 'approve' ? 'Approuver' : 'Rejeter'}
+                  Annuler
                 </button>
-              )}
+                {selectedAppeal.appeal?.status === 'pending' && (
+                  <button
+                    onClick={action === 'approve' ? handleApprove : handleReject}
+                    className={`px-6 py-2 text-white rounded-lg transition-colors font-medium ${
+                      action === 'approve' 
+                        ? 'bg-green-600 hover:bg-green-700' 
+                        : 'bg-red-600 hover:bg-red-700'
+                    }`}
+                  >
+                    {action === 'approve' ? 'Approuver' : 'Rejeter'}
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         </div>

@@ -6,9 +6,10 @@ import sheet5 from '@/assets/sheet5.png';
 import sheet6 from '@/assets/sheet6.png';
 import { useNavigate } from 'react-router-dom';
 import { tokenStorage } from '@/utils/tokenStorage';
+import { useTheme } from '@/app/admin/context/ThemeContext';
 
 export default function HeroSection() {
-
+    const { isDark } = useTheme();
     const navigate = useNavigate();
 
     // Vérifier si l'utilisateur est connecté et gérer la redirection
@@ -25,7 +26,7 @@ export default function HeroSection() {
     };
 
   return (
-    <div className="flex flex-row bg-radial-[at_50%_50%] from-gray-50 via-gray-400/50 to-gray-100 to-90% w-full py-14 pb-48 justify-center items-center mx-auto p-4 md:px-4 px-6">
+    <div className={`flex flex-row bg-radial-[at_50%_50%] ${isDark ? 'from-black/85 via-black/70 to-black/85' : 'from-gray-50 via-gray-400/50 to-gray-100'} to-90% w-full py-14 pb-48 justify-center items-center mx-auto p-4 md:px-4 px-6`}>
       <style>{`
         @keyframes float-up-down {
           0%, 100% { transform: translateY(0px); }
@@ -51,8 +52,6 @@ export default function HeroSection() {
           animation-delay: 2s;
         }
       `}</style>
-        {/* <p className="text-xl font-normal text-center my-6">Vous êtes connecté en tant que <span className="font-semibold">{{ user|get_first_letter_user }}</span></p> {% endcomment %} */}
-        {/* <p className="text-xl font-bold text-center my-6">Veuillez vous connecter pour continuer</p> */}
         <div className="relative md:block hidden h-60 w-1/4 ">
             <h2 className="absolute top-0 left-[35%] font-bold text-2xl text-gray-400/60 -rotate-25 float-animation">LMI</h2>
             <h2 className="absolute top-24 left-[25%] font-bold text-2xl text-gray-400/70 rotate-10 float-animation-delay-1">LGI</h2>
@@ -73,16 +72,16 @@ export default function HeroSection() {
             />
         </div>
         <div className="flex flex-col items-center gap-8 md:px-0 sm:px-14 px-4 sm:pt-0 pt-20">
-            <h1 className="text-5xl text-gray-800 font-medium text-center">
+            <h1 className={`text-5xl font-medium text-center ${isDark ? 'text-white' : 'text-gray-800'}`}>
                 Bienvenue dans
                 <span className="bg-linear-to-r from-violet-500 via-green-400 to-blue-600 bg-clip-text font-semibold text-transparent"> anciens examens</span>
             </h1>
-            <p className="text-gray-800 font-medium text-center text-lg">Une plateforme qui collecte les anciens examens de l'UIDT pour vous aider à mieux reviser.</p>
+            <p className={`font-medium text-center text-lg ${isDark ? 'text-gray-600' : 'text-gray-800'}`}>Une plateforme qui collecte les anciens examens de l'UIDT pour vous aider à mieux reviser.</p>
             <div className="flex flex-col min-[520px]:flex-row gap-4 justify-center items-center">
                 <button onClick={() => navigate('/examens')} className="font-medium bg-gray-500 text-white py-3 px-4 rounded-lg shadow hover:bg-gray-700 active:scale-95 transition-all duration-300 ease-in-out">
                     Consulter les Examens
                 </button>
-                <button onClick={handleShareExam} className="font-medium border border-gray-700 text-gray-800 py-3 px-4 rounded-lg shadow hover:bg-gray-300/80 hover:shadow active:scale-95 transition-all duration-300 ease-in-out">
+                <button onClick={handleShareExam} className={`font-medium border py-3 px-4 rounded-lg shadow hover:shadow active:scale-95 transition-all duration-300 ease-in-out ${isDark ? 'border-gray-600 text-white hover:bg-gray-700' : 'border-gray-700 text-gray-800 hover:bg-gray-300/80'}`}>
                     Partager un examen
                 </button>
             </div>

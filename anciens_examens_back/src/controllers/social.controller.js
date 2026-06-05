@@ -1,5 +1,7 @@
 const Exam = require('../models/Exam');
 const User = require('../models/User');
+const { createLog } = require('../utils/logger');
+const Notification = require('../models/Notification');
 
 // @desc    Ajouter un like à un examen
 // @route   POST /api/exams/:slug/like
@@ -26,6 +28,7 @@ const likeExam = async (req, res) => {
         // Ajouter le like
         await exam.addLike(req.user._id);
         
+        await createLog({ level: 'info', action: 'EXAM_LIKED', message: `Like ajouté sur l'examen: ${exam.title}`, req, user: req.user, metadata: { examId: exam._id, slug: exam.slug } });
         res.status(200).json({
             message: 'Examen liké avec succès',
             likesCount: exam.likesCount,
@@ -56,6 +59,7 @@ const unlikeExam = async (req, res) => {
         // Retirer le like
         await exam.removeLike(req.user._id);
         
+        await createLog({ level: 'info', action: 'EXAM_UNLIKED', message: `Like retiré de l'examen: ${exam.title}`, req, user: req.user, metadata: { examId: exam._id, slug: exam.slug } });
         res.status(200).json({
             message: 'Like retiré avec succès',
             likesCount: exam.likesCount,
@@ -108,6 +112,22 @@ const addComment = async (req, res) => {
         exam.commentsCount = exam.comments.length;
         await exam.save();
 
+        // Envoyer une notification à l'auteur de l'examen si le commentaire n'est pas de lui-même
+        if (exam.author._id.toString() !== req.user._id.toString()) {
+            await Notification.create({
+                recipient: exam.author._id,
+                type: 'comment',
+                title: 'Nouveau commentaire',
+                message: `${req.user.firstName} ${req.user.lastName} a commenté sur votre examen "${exam.title}"`,
+                metadata: {
+                    examId: exam._id,
+                    slug: exam.slug,
+                    commentId: exam.comments[exam.comments.length - 1]._id
+                },
+                read: false
+            });
+        }
+
         // Récupérer le dernier commentaire ajouté
         const newComment = exam.comments[exam.comments.length - 1];
         
@@ -128,6 +148,7 @@ const addComment = async (req, res) => {
             }
         };
         
+        await createLog({ level: 'info', action: 'COMMENT_ADDED', message: `Nouveau commentaire sur l'examen: ${exam.title}`, req, user: req.user, metadata: { examId: exam._id, slug: exam.slug, commentId: newComment._id } });
         res.status(201).json({
             message: 'Commentaire ajouté avec succès',
             comment: populatedComment,
@@ -177,6 +198,7 @@ const deleteComment = async (req, res) => {
         // Supprimer le commentaire
         await exam.removeComment(commentId);
         
+        await createLog({ level: 'info', action: 'COMMENT_DELETED', message: `Commentaire supprimé sur l'examen: ${exam.title}`, req, user: req.user, metadata: { examId: exam._id, slug: exam.slug, commentId } });
         res.status(200).json({
             message: 'Commentaire supprimé avec succès',
             commentsCount: exam.commentsCount

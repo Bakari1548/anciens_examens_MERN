@@ -1,0 +1,16 @@
+# Dockerfile DEV — installe TOUTES les deps (dev + prod) et lance avec hot reload
+FROM docker.io/library/node:20-alpine
+
+WORKDIR /app
+
+# Toutes les dépendances (y compris devDependencies pour jest, etc.)
+COPY package*.json ./
+RUN npm install
+
+# Le code source sera ensuite monté via bind mount en dev (override le COPY)
+COPY . .
+
+EXPOSE 5000
+
+# Hot reload natif Node 20+ via --watch
+CMD ["node", "--watch", "app.js"]

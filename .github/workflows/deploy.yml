@@ -138,7 +138,7 @@ jobs:
           CLOUDINARY_API_SECRET=${{ secrets.CLOUDINARY_API_SECRET }}
           RESEND_API_KEY=${{ secrets.RESEND_API_KEY }}
           EMAIL_FROM=${{ secrets.EMAIL_FROM }}
-          # REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}  # Désactivé temporairement
+          REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}
           VITE_API_URL=${{ secrets.VITE_API_URL }}
           EOF
 

@@ -39,9 +39,9 @@ services:
       RESEND_API_KEY: ${RESEND_API_KEY}
       EMAIL_FROM: ${EMAIL_FROM}
       FRONTEND_URL: ${FRONTEND_URL}
-      # REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379  # Désactivé temporairement
-    # depends_on:
-    #   - redis  # Désactivé temporairement
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
+    depends_on:
+      - redis
     networks:
       - anciens_examens_network
 
@@ -59,29 +59,34 @@ services:
     networks:
       - anciens_examens_network
 
-  # ========== REDIS (DÉSACTIVÉ TEMPORAIREMENT) ==========
-  # redis:
-  #   image: redis:7-alpine
-  #   container_name: anciens_examens_redis_prod
-  #   restart: always
-  #   expose:
-  #     - "6379"
-  #   volumes:
-  #     - redis_data:/data
-  #   networks:
-  #     - anciens_examens_network
-  #   command: >
-  #     sh -c "
-  #     if [ -n \"${REDIS_PASSWORD}\" ]; then
-  #       redis-server --appendonly yes --requirepass \"${REDIS_PASSWORD}\"
-  #     else
-  #       redis-server --appendonly yes
-  #     fi
-  #     "
+  # ========== REDIS ==========
+  redis:
+    image: redis:7-alpine
+    container_name: anciens_examens_redis_prod
+    restart: always
+    expose:
+      - "6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - anciens_examens_network
+    command: >
+      sh -c "
+      if [ -n \"${REDIS_PASSWORD}\" ]; then
+        redis-server --appendonly yes --requirepass \"${REDIS_PASSWORD}\"
+      else
+        redis-server --appendonly yes
+      fi
+      "
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
-# volumes:
-#   redis_data:
-#     driver: local
+volumes:
+  redis_data:
+    driver: local
 
 networks:
   anciens_examens_network:

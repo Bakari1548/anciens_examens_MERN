@@ -35,7 +35,7 @@ const getReceivedEmailsFromWebhooks = async () => {
     const fs = require('fs');
     const path = require('path');
     
-    const WEBHOOK_FILE = path.join(__dirname, '../../data/receivedEmails.json');
+    const WEBHOOK_FILE = path.join(__dirname, '../data/receivedEmails.json');
     
     if (!fs.existsSync(WEBHOOK_FILE)) {
       return [];

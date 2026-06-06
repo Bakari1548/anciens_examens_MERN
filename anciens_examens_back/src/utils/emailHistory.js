@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const HISTORY_FILE = path.join(__dirname, '../../data/emailHistory.json');
+const HISTORY_FILE = path.join(__dirname, '../data/emailHistory.json');
 
 /**
  * Initialiser le fichier d'historique s'il n'existe pas

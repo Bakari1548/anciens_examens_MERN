@@ -167,7 +167,6 @@ jobs:
 
           echo "🔍 Vérification des logs si des conteneurs ne sont pas up :"
           docker compose -f docker-compose.prod.yml logs --tail=20 nginx || true
-          # docker compose -f docker-compose.prod.yml logs --tail=20 redis || true  # Redis désactivé
 
           echo "🌐 Test de connexion à nginx :"
           for i in {1..10}; do
@@ -191,7 +190,13 @@ jobs:
             exit 1
           fi
 
-      # Étape 7 : Notification de succès (optionnel)
+      # Étape 7 : Migration des examens existants vers IA
+      - name: Migrate existing exams to AI
+        run: |
+          echo "🚀 Lancement de la migration des examens vers IA..."
+          docker compose -f docker-compose.prod.yml exec -T backend node scripts/migrate-exams-to-ai.js || echo "⚠️ Migration terminée avec des erreurs (certains examens peuvent avoir échoué)"
+
+      # Étape 8 : Notification de succès (optionnel)
       - name: Deployment success
         if: success()
         run: echo "✅ Déploiement réussi sur https://anciensexamensuidt.app"

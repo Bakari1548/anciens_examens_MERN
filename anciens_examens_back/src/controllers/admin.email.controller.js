@@ -5,7 +5,7 @@ const { addEmailToHistory, getEmailHistory } = require('../utils/emailHistory');
 const fs = require('fs');
 const path = require('path');
 
-const RECEIVED_EMAILS_FILE = path.join(__dirname, '../../data/receivedEmails.json');
+const RECEIVED_EMAILS_FILE = path.join(__dirname, '../data/receivedEmails.json');
 
 /**
  * Initialiser le fichier des emails reçus

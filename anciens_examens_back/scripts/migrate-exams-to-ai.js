@@ -24,7 +24,8 @@ const path = require('path');
 const MONGODB_URI = process.env.MONGODB_URI;
 
 // Répertoire temporaire pour les fichiers téléchargés
-const TEMP_DIR = path.join(__dirname, '../temp');
+// Utiliser /tmp qui est toujours accessible en écriture dans les conteneurs Docker
+const TEMP_DIR = '/tmp/exam-migration';
 if (!fs.existsSync(TEMP_DIR)) {
     fs.mkdirSync(TEMP_DIR, { recursive: true });
 }

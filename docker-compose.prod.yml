@@ -40,6 +40,8 @@ services:
       EMAIL_FROM: ${EMAIL_FROM}
       FRONTEND_URL: ${FRONTEND_URL}
       REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-2.0-flash}
     depends_on:
       - redis
     networks:

@@ -139,6 +139,8 @@ jobs:
           RESEND_API_KEY=${{ secrets.RESEND_API_KEY }}
           EMAIL_FROM=${{ secrets.EMAIL_FROM }}
           REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}
+          GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}
+          GEMINI_MODEL=${{ secrets.GEMINI_MODEL }}
           VITE_API_URL=${{ secrets.VITE_API_URL }}
           EOF
 

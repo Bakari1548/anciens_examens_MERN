@@ -4,6 +4,15 @@ const { cloudinary } = require('../config/cloudinary');
 const { createLog } = require('../utils/logger');
 const Notification = require('../models/Notification');
 const gemini = require('../utils/geminiClient');
+const {
+    cacheExamDetails,
+    getCachedExamDetails,
+    invalidateExamDetailsCache,
+    cacheSearchResults,
+    getCachedSearchResults,
+    invalidateAllSearchCache,
+    invalidateUserFavoritesCache,
+} = require('../utils/redisClient');
 
 // Fonction pour générer un slug unique avec caractères aléatoires
 const generateUniqueSlug = async (baseSlug) => {
@@ -38,6 +47,32 @@ const getAllExams = async (req, res) => {
         // Paramètres de tri
         const sortBy = req.query.sortBy || 'createdAt';
         const sortOrder = req.query.sortOrder === 'asc' ? 1 : -1;
+
+        // Clé de cache : paramètres normalisés (sans undefined — FIX Bug 5 appliqué dans generateSearchHash)
+        const cacheParams = {
+            page,
+            limit,
+            sortBy,
+            sortOrder: req.query.sortOrder === 'asc' ? 'asc' : 'desc',
+            ...(req.query.filiere    && { filiere: req.query.filiere }),
+            ...(req.query.ufr        && { ufr: req.query.ufr }),
+            ...(req.query.matiere    && { matiere: req.query.matiere }),
+            ...(req.query.niveau     && { niveau: req.query.niveau }),
+            ...(req.query.semestre   && { semestre: req.query.semestre }),
+            ...(req.query.anneeExamen && { anneeExamen: req.query.anneeExamen }),
+            ...(req.query.typeExamen && { typeExamen: req.query.typeExamen }),
+            ...(req.query.year       && { year: req.query.year }),
+            ...(req.query.search     && { search: req.query.search }),
+        };
+
+        // Essayer le cache Redis
+        const cached = await getCachedSearchResults(cacheParams);
+        if (cached) {
+            return res.status(200).json({
+                message: 'Examens récupérés avec succès',
+                ...cached
+            });
+        }
         
         // Filtres optionnels
         const filters = {};
@@ -71,9 +106,8 @@ const getAllExams = async (req, res) => {
         const totalPages = Math.ceil(total / limit);
         const hasNextPage = page < totalPages;
         const hasPrevPage = page > 1;
-        
-        res.status(200).json({
-            message: 'Examens récupérés avec succès',
+
+        const result = {
             exams,
             pagination: {
                 currentPage: page,
@@ -85,6 +119,14 @@ const getAllExams = async (req, res) => {
                 nextPage: hasNextPage ? page + 1 : null,
                 prevPage: hasPrevPage ? page - 1 : null
             }
+        };
+
+        // Mettre en cache le résultat
+        await cacheSearchResults(cacheParams, result);
+        
+        res.status(200).json({
+            message: 'Examens récupérés avec succès',
+            ...result
         });
     } catch (error) {
         res.status(500).json({
@@ -99,12 +141,24 @@ const getAllExams = async (req, res) => {
 // @access  Public
 const getExamBySlug = async (req, res) => {
     try {
+        // Essayer le cache Redis
+        const cached = await getCachedExamDetails(req.params.slug);
+        if (cached) {
+            return res.status(200).json({
+                message: 'Examen récupéré avec succès',
+                exam: cached
+            });
+        }
+
         const exam = await Exam.findOne({ slug: req.params.slug });
         if (!exam) {
             return res.status(404).json({
                 message: 'Examen non trouvé'
             });
         }
+
+        // Mettre en cache
+        await cacheExamDetails(exam.slug, exam);
 
         res.status(200).json({
             message: 'Examen récupéré avec succès',
@@ -408,6 +462,12 @@ const updateExam = async (req, res) => {
             new: true,
             runValidators: true
         });
+
+        // Invalider le cache de l'examen et les résultats de recherche
+        await Promise.all([
+            invalidateExamDetailsCache(updatedExam.slug),
+            invalidateAllSearchCache(),
+        ]);
         
         await createLog({ level: 'info', action: 'EXAM_UPDATED', message: `Examen mis à jour: ${updatedExam.title}`, req, user: req.user, metadata: { examId: updatedExam._id, slug: updatedExam.slug } });
         res.status(200).json({
@@ -484,6 +544,12 @@ const deleteExam = async (req, res) => {
             exam.author,
             { $pull: { exams: exam._id } }
         );
+
+        // Invalider les caches liés à cet examen
+        await Promise.all([
+            invalidateExamDetailsCache(exam.slug),
+            invalidateAllSearchCache(),
+        ]);
         
         console.log(`Examen supprimé: ${exam.title} (${exam.slug})`);
         
@@ -517,6 +583,9 @@ const addToFavorites = async (req, res) => {
         if (!user.favorites.includes(exam._id)) {
             user.favorites.push(exam._id);
             await user.save();
+
+            // Invalider le cache des favoris de cet utilisateur
+            await invalidateUserFavoritesCache(req.user._id.toString());
 
             // Créer une notification
             await Notification.create({
@@ -568,6 +637,9 @@ const removeFromFavorites = async (req, res) => {
         const user = await User.findById(req.user._id);
         user.favorites = user.favorites.filter(fav => !fav.equals(exam._id));
         await user.save();
+
+        // Invalider le cache des favoris de cet utilisateur
+        await invalidateUserFavoritesCache(req.user._id.toString());
 
         // Créer une notification
         await Notification.create({

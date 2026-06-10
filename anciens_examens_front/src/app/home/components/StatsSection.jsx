@@ -23,7 +23,7 @@ export default function StatsSection() {
   useEffect(() => {
     // Données de démonstration (en production, viendraient d'une API)
     setStats({
-      examsCount: 520,
+      examsCount: 1000,
       usersCount: 1500,
       downloadsCount: 1080,
       averageRating: 4.8,

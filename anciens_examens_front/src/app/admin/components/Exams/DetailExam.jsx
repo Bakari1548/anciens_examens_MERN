@@ -1,4 +1,4 @@
-import { FileText, Calendar, User, Download, Clock, CheckCircle, XCircle, Eye, X, Edit, Maximize2, ExternalLink } from 'lucide-react';
+import { FileText, Calendar, User, Download, Clock, CheckCircle, XCircle, Eye, X, Edit, Maximize2, ExternalLink, BookOpen } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 import EditExam from './EditExam';
 import { useState } from 'react';
@@ -153,7 +153,7 @@ export default function DetailExam({ exam, onClose }) {
 
             <div className="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
               <div className="flex items-center gap-2 mb-2">
-                <Eye className="text-gray-500 dark:text-gray-400" size={18} />
+                <BookOpen className="text-gray-500 dark:text-gray-400" size={18} />
                 <span className="text-sm text-gray-500 dark:text-gray-400">Filière</span>
               </div>
               <p className="text-gray-900 dark:text-white font-medium">{exam.filiere}</p>
@@ -189,6 +189,22 @@ export default function DetailExam({ exam, onClose }) {
                 <span className="text-sm text-gray-500 dark:text-gray-400">Année examen</span>
               </div>
               <p className="text-gray-900 dark:text-white font-medium">{exam.anneeExamen}</p>
+            </div>
+
+            <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+              <div className="flex items-center gap-2 mb-2">
+                <Eye className="text-blue-500 dark:text-blue-400" size={18} />
+                <span className="text-sm text-gray-500 dark:text-gray-400">Vues</span>
+              </div>
+              <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{(exam.viewsCount ?? 0).toLocaleString()}</p>
+            </div>
+
+            <div className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
+              <div className="flex items-center gap-2 mb-2">
+                <Download className="text-purple-500 dark:text-purple-400" size={18} />
+                <span className="text-sm text-gray-500 dark:text-gray-400">Téléchargements</span>
+              </div>
+              <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">{(exam.downloadsCount ?? 0).toLocaleString()}</p>
             </div>
           </div>
 

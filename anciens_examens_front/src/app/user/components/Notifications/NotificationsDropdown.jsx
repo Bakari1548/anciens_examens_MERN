@@ -85,7 +85,7 @@ export default function NotificationsDropdown({ trigger }) {
       {isOpen && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
-          <div className="absolute min-[480px]:right-0 right-[-60px] mt-2 min-[480px]:w-96 w-80 bg-white rounded-xl shadow-2xl border border-gray-200 z-50 max-h-[500px] flex flex-col">
+          <div className="fixed md:absolute left-2 right-2 md:left-auto md:right-0 top-[72px] md:top-auto md:mt-2 md:w-96 bg-white rounded-xl shadow-2xl border border-gray-200 z-50 max-h-[70vh] md:max-h-[500px] flex flex-col">
             <div className="p-4 border-b border-gray-200 flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <h3 className="font-semibold text-gray-900">Notifications</h3>

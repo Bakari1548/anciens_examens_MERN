@@ -7,6 +7,16 @@ export const analyticsApi = {
     return response.data;
   },
 
+  getUfrStats: async () => {
+    const response = await api.get('/admin/analytics?period=all');
+    return response.data;
+  },
+
+  getTopExams: async () => {
+    const response = await api.get('/admin/analytics?period=all');
+    return response.data;
+  },
+
   // Rapports et exports
   generateReport: async (type, params = {}) => {
     const response = await api.post(`/admin/reports/generate/${type}`, params);

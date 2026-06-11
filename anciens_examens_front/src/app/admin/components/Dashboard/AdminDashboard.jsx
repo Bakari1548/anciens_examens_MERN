@@ -69,7 +69,6 @@ export default function AdminDashboard() {
   const { stats, fetchStats, userGrowthRate, examApprovalRate, loading } = useAdminStats();
   const { fetchUsers, fetchExams, fetchReports } = useAdmin();
   const [recentActivity, setRecentActivity] = useState([]);
-  const [chartData, setChartData] = useState([]);
 
   useEffect(() => {
     fetchStats();
@@ -86,16 +85,6 @@ export default function AdminDashboard() {
       { id: 5, type: 'user', action: 'Utilisateur banni', user: 'Modérateur', time: 'Il y a 2h', icon: Shield, color: 'text-orange-600' }
     ]);
 
-    // Simuler les données du graphique
-    setChartData([
-      { day: 'Lun', users: 120, exams: 45, downloads: 280 },
-      { day: 'Mar', users: 150, exams: 52, downloads: 320 },
-      { day: 'Mer', users: 180, exams: 38, downloads: 350 },
-      { day: 'Jeu', users: 140, exams: 65, downloads: 290 },
-      { day: 'Ven', users: 200, exams: 48, downloads: 410 },
-      { day: 'Sam', users: 90, exams: 25, downloads: 180 },
-      { day: 'Dim', users: 60, exams: 15, downloads: 120 }
-    ]);
   }, []);
 
   const statCards = [
@@ -255,47 +244,80 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      {/* Graphique d'activité */}
+      {/* Répartition de la plateforme */}
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Activité cette semaine</h2>
-          <div className="flex items-center gap-4 text-sm">
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-              <span className="text-gray-600 dark:text-gray-400">Utilisateurs</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-              <span className="text-gray-600 dark:text-gray-400">Examens</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
-              <span className="text-gray-600 dark:text-gray-400">Téléchargements</span>
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">Répartition de la plateforme</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-center">
+
+          {/* Barres de progression des examens */}
+          <div className="md:col-span-2 space-y-5">
+            <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Statut des examens</h3>
+            {[
+              { label: 'Approuvés', value: stats.approvedExams || 0, color: 'bg-green-500', textColor: 'text-green-600 dark:text-green-400' },
+              { label: 'En attente', value: stats.pendingExams || 0, color: 'bg-yellow-400', textColor: 'text-yellow-600 dark:text-yellow-400' },
+              { label: 'Rejetés', value: Math.max(0, (stats.totalExams || 0) - (stats.approvedExams || 0) - (stats.pendingExams || 0)), color: 'bg-red-400', textColor: 'text-red-600 dark:text-red-400' },
+            ].map(({ label, value, color, textColor }) => {
+              const pct = (stats.totalExams || 0) > 0 ? Math.round((value / stats.totalExams) * 100) : 0;
+              return (
+                <div key={label}>
+                  <div className="flex justify-between text-sm mb-1.5">
+                    <span className="text-gray-600 dark:text-gray-400">{label}</span>
+                    <span className={`font-semibold ${textColor}`}>{value.toLocaleString()} <span className="font-normal text-gray-400">({pct}%)</span></span>
+                  </div>
+                  <div className="w-full bg-gray-100 dark:bg-gray-700 rounded-full h-3">
+                    <div className={`${color} h-3 rounded-full transition-all duration-700`} style={{ width: `${pct}%` }}></div>
+                  </div>
+                </div>
+              );
+            })}
+
+            <div className="pt-3 grid grid-cols-2 gap-4 border-t border-gray-100 dark:border-gray-700">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-blue-50 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
+                  <Eye className="text-blue-500" size={18} />
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Vues totales</p>
+                  <p className="font-bold text-gray-900 dark:text-white">{(stats.totalViews || 0).toLocaleString()}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-purple-50 dark:bg-purple-900/30 rounded-lg flex items-center justify-center">
+                  <Download className="text-purple-500" size={18} />
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Téléchargements</p>
+                  <p className="font-bold text-gray-900 dark:text-white">{(stats.totalDownloads || 0).toLocaleString()}</p>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-        
-        {/* Graphique simplifié */}
-        <div className="h-64 flex items-end justify-between gap-2">
-          {chartData.map((data, index) => (
-            <div key={index} className="flex-1 flex flex-col items-center gap-2">
-              <div className="w-full flex flex-col gap-1">
-                <div 
-                  className="w-full bg-blue-500 rounded-t"
-                  style={{ height: `${(data.users / 200) * 100}px` }}
-                ></div>
-                <div 
-                  className="w-full bg-green-500"
-                  style={{ height: `${(data.exams / 200) * 100}px` }}
-                ></div>
-                <div 
-                  className="w-full bg-purple-500 rounded-b"
-                  style={{ height: `${(data.downloads / 450) * 100}px` }}
-                ></div>
-              </div>
-              <span className="text-xs text-gray-600 dark:text-gray-400">{data.day}</span>
+
+          {/* Donut CSS utilisateurs actifs */}
+          <div className="flex flex-col items-center gap-4">
+            <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Utilisateurs actifs</h3>
+            {(() => {
+              const pct = (stats.totalUsers || 0) > 0 ? Math.round(((stats.activeUsers || 0) / stats.totalUsers) * 100) : 0;
+              return (
+                <div className="relative w-36 h-36">
+                  <div
+                    className="w-36 h-36 rounded-full"
+                    style={{
+                      background: `conic-gradient(#3b82f6 ${pct * 3.6}deg, ${isDark ? '#374151' : '#5a5a5a'} ${pct * 3.6}deg)`
+                    }}
+                  />
+                  <div className={`absolute inset-[14px] rounded-full flex flex-col items-center justify-center bg-gray-800`}>
+                    <span className="text-2xl font-bold text-gray-900 dark:text-white">{pct}%</span>
+                    <span className="text-xs text-gray-500 dark:text-gray-400">actifs</span>
+                  </div>
+                </div>
+              );
+            })()}
+            <div className="text-center">
+              <p className="text-sm font-medium text-gray-900 dark:text-white">{(stats.activeUsers || 0).toLocaleString()} / {(stats.totalUsers || 0).toLocaleString()}</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">utilisateurs actifs</p>
             </div>
-          ))}
+          </div>
         </div>
       </div>
 

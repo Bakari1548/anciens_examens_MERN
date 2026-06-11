@@ -20,5 +20,10 @@ export const settingsApi = {
   getNotifications: async () => {
     const response = await api.get('/notifications');
     return response.data;
+  },
+
+  getSessions: async (limit = 50) => {
+    const response = await api.get(`/admin/sessions?limit=${limit}`);
+    return response.data;
   }
 };

@@ -477,7 +477,7 @@ export default function UserManagement() {
                   Utilisateur
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Email
+                  UFR / Filière
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Rôle
@@ -520,7 +520,8 @@ export default function UserManagement() {
                     </div>
                   </td>
                   <td className="px-6 py-4">
-                    <div className="text-sm text-gray-900 dark:text-white">{user.email}</div>
+                    <div className="text-sm text-gray-900 dark:text-white">{user.ufr || <span className="text-gray-400 italic">—</span>}</div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400">{user.filiere || ''}</div>
                   </td>
                   <td className="px-6 py-4">
                     <select

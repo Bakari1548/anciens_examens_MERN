@@ -1,52 +1,55 @@
 import { useEffect, useState } from 'react';
-import { BarChart3, TrendingUp, Users, Download, BookOpen, Calendar, Filter, ArrowUp, ArrowDown, Activity, Eye } from 'lucide-react';
+import { BarChart3, TrendingUp, Users, Download, BookOpen, Calendar, Filter, ArrowUp, ArrowDown, Activity, Eye, Loader2 } from 'lucide-react';
 import { useAdmin } from '../../context/AdminContext';
 import { useTheme } from '../../context/ThemeContext';
+import { analyticsApi } from '../../services/analytics.api';
 
 export default function AnalyticsPanel() {
   const { addNotification, stats, fetchStats, loading } = useAdmin();
   const { isDark } = useTheme();
   const [period, setPeriod] = useState('7d');
   const [chartType, setChartType] = useState('users');
-  
+  const [analyticsLoading, setAnalyticsLoading] = useState(false);
+  const [chartTooltip, setChartTooltip] = useState(null);
+
   // Charger les stats au montage du composant
   useEffect(() => {
     fetchStats();
   }, []);
-  
-  // Données simulées pour les graphiques
+
+  // Charger toutes les données depuis le backend
+  useEffect(() => {
+    const fetchAnalytics = async () => {
+      setAnalyticsLoading(true);
+      try {
+        const data = await analyticsApi.getAnalytics(period);
+        setAnalyticsData({
+          userGrowth: data.userGrowth || [],
+          examStats: data.examStats || [],
+          ufrStats: data.ufrStats || [],
+          topExams: (data.topExams || []).map(e => ({
+            title: e.title,
+            views: e.viewsCount,
+            rating: e.averageRating || null,
+            ufr: e.ufr
+          }))
+        });
+      } catch (err) {
+        console.error('Erreur chargement analytics:', err);
+      } finally {
+        setAnalyticsLoading(false);
+      }
+    };
+    fetchAnalytics();
+    setChartTooltip(null);
+  }, [period]);
+
+  // Données pour les graphiques
   const [analyticsData, setAnalyticsData] = useState({
-    userGrowth: [
-      { date: '2024-01-01', users: 1200, newUsers: 45, activeUsers: 890 },
-      { date: '2024-01-02', users: 1250, newUsers: 50, activeUsers: 920 },
-      { date: '2024-01-03', users: 1300, newUsers: 50, activeUsers: 950 },
-      { date: '2024-01-04', users: 1380, newUsers: 80, activeUsers: 1020 },
-      { date: '2024-01-05', users: 1450, newUsers: 70, activeUsers: 1080 },
-      { date: '2024-01-06', users: 1520, newUsers: 70, activeUsers: 1150 },
-      { date: '2024-01-07', users: 1600, newUsers: 80, activeUsers: 1200 }
-    ],
-    examStats: [
-      { date: '2024-01-01', totalExams: 450, newExams: 12, downloads: 280, approvedExams: 420 },
-      { date: '2024-01-02', totalExams: 462, newExams: 12, downloads: 320, approvedExams: 432 },
-      { date: '2024-01-03', totalExams: 475, newExams: 13, downloads: 350, approvedExams: 445 },
-      { date: '2024-01-04', totalExams: 490, newExams: 15, downloads: 380, approvedExams: 458 },
-      { date: '2024-01-05', totalExams: 508, newExams: 18, downloads: 420, approvedExams: 475 },
-      { date: '2024-01-06', totalExams: 525, newExams: 17, downloads: 450, approvedExams: 490 },
-      { date: '2024-01-07', totalExams: 545, newExams: 20, downloads: 480, approvedExams: 508 }
-    ],
-    ufrStats: [
-      { ufr: 'UFR Sciences et Technologies', users: 450, exams: 180, downloads: 1200 },
-      { ufr: 'UFR Sciences Économiques et de Gestion', users: 380, exams: 150, downloads: 980 },
-      { ufr: 'UFR Lettres, Arts et Communication', users: 320, exams: 120, downloads: 750 },
-      { ufr: 'UFR Sciences Juridiques et Politiques', users: 280, exams: 95, downloads: 620 }
-    ],
-    topExams: [
-      { title: 'Mathématiques Analyse I', downloads: 450, rating: 4.8, ufr: 'UFR Sciences et Technologies' },
-      { title: 'Économie Politique', downloads: 380, rating: 4.6, ufr: 'UFR Sciences Économiques et de Gestion' },
-      { title: 'Droit Constitutionnel', downloads: 320, rating: 4.7, ufr: 'UFR Sciences Juridiques et Politiques' },
-      { title: 'Littérature Française', downloads: 280, rating: 4.5, ufr: 'UFR Lettres, Arts et Communication' },
-      { title: 'Physique Générale', downloads: 260, rating: 4.9, ufr: 'UFR Sciences et Technologies' }
-    ]
+    userGrowth: [],
+    examStats: [],
+    ufrStats: [],
+    topExams: []
   });
 
   const periods = [
@@ -59,14 +62,28 @@ export default function AnalyticsPanel() {
   const chartTypes = [
     { value: 'users', label: 'Utilisateurs', icon: Users },
     { value: 'exams', label: 'Examens', icon: BookOpen },
-    { value: 'downloads', label: 'Téléchargements', icon: Download },
-    { value: 'activity', label: 'Activité', icon: Activity }
+    { value: 'downloads', label: 'Téléchargements', icon: Download }
   ];
 
   const calculateGrowth = (current, previous) => {
     if (previous === 0) return 0;
     const growth = ((current - previous) / previous) * 100;
     return growth.toFixed(1);
+  };
+
+  const formatChartDate = (dateStr, tooltip = false) => {
+    if (!dateStr) return '';
+    const parts = dateStr.split('-').map(Number);
+    if (parts.length === 2) {
+      const d = new Date(parts[0], parts[1] - 1, 1);
+      return tooltip
+        ? d.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })
+        : d.toLocaleDateString('fr-FR', { month: 'short', year: '2-digit' });
+    }
+    const d = new Date(parts[0], parts[1] - 1, parts[2]);
+    return tooltip
+      ? d.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })
+      : d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
   };
 
   const getChartData = () => {
@@ -86,14 +103,8 @@ export default function AnalyticsPanel() {
       case 'downloads':
         return analyticsData.examStats.map(d => ({
           date: d.date,
-          value: d.downloads,
+          value: d.downloads ?? 0,
           label: 'Téléchargements'
-        }));
-      case 'activity':
-        return analyticsData.userGrowth.map(d => ({
-          date: d.date,
-          value: d.activeUsers,
-          label: 'Utilisateurs actifs'
         }));
       default:
         return [];
@@ -201,7 +212,7 @@ export default function AnalyticsPanel() {
   };
 
   const chartData = getChartData();
-  const maxValue = Math.max(...chartData.map(d => d.value));
+  const maxValue = chartData.length > 0 ? Math.max(...chartData.map(d => d.value), 1) : 1;
 
   return (
     <div className="space-y-6">
@@ -257,13 +268,23 @@ export default function AnalyticsPanel() {
             <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
               <Users className="text-blue-600 dark:text-blue-400" size={24} />
             </div>
-            <div className="flex items-center gap-1 text-sm font-medium text-green-600 dark:text-green-400">
-              <ArrowUp size={16} />
-              {calculateGrowth(1600, 1200)}%
-            </div>
+            {analyticsData.userGrowth.length >= 2 && (() => {
+              const half = Math.floor(analyticsData.userGrowth.length / 2);
+              const prev = analyticsData.userGrowth.slice(0, half).reduce((s, d) => s + (d.newUsers || 0), 0);
+              const curr = analyticsData.userGrowth.slice(half).reduce((s, d) => s + (d.newUsers || 0), 0);
+              if (prev === 0) return null;
+              const pct = ((curr - prev) / prev * 100).toFixed(1);
+              const isUp = parseFloat(pct) >= 0;
+              return (
+                <div className={`flex items-center gap-1 text-sm font-medium ${isUp ? 'text-green-600 dark:text-green-400' : 'text-red-500 dark:text-red-400'}`}>
+                  {isUp ? <ArrowUp size={16} /> : <ArrowDown size={16} />}
+                  {Math.abs(pct)}%
+                </div>
+              );
+            })()}
           </div>
           <div>
-            <h3 className="text-2xl font-bold text-gray-900 dark:text-white">1,600</h3>
+            <h3 className="text-2xl font-bold text-gray-900 dark:text-white">{stats.totalUsers}</h3>
             <p className="text-gray-600 dark:text-gray-400 text-sm">Utilisateurs totaux</p>
           </div>
         </div>
@@ -330,71 +351,204 @@ export default function AnalyticsPanel() {
           </div>
         </div>
 
-        {/* Graphique simplifié */}
-        <div className="h-64 flex items-end justify-between gap-2">
-          {chartData.map((data, index) => (
-            <div key={index} className="flex-1 flex flex-col items-center gap-2">
-              <div 
-                className="w-full bg-gradient-to-t from-blue-500 to-blue-400 rounded-t hover:from-blue-600 hover:to-blue-500 transition-colors cursor-pointer"
-                style={{ height: `${(data.value / maxValue) * 200}px` }}
-                title={`${data.label}: ${data.value}`}
-              ></div>
-              <span className="text-xs text-gray-600 dark:text-gray-400">
-                {new Date(data.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
-              </span>
+        {/* SVG Area Chart */}
+        {chartData.length === 0 ? (
+          <div className="h-48 flex items-center justify-center text-gray-400 dark:text-gray-500 text-sm">
+            Aucune donnée pour cette période
+          </div>
+        ) : (() => {
+          const gradColors = { users: '#3b82f6', exams: '#10b981', downloads: '#8b5cf6', activity: '#f59e0b' };
+          const color = gradColors[chartType] || '#3b82f6';
+          const W = 560, H = 160;
+          const PAD = { top: 15, bottom: 5, left: 8, right: 8 };
+          const cW = W - PAD.left - PAD.right;
+          const cH = H - PAD.top - PAD.bottom;
+          const pts = chartData.map((d, i) => ({
+            x: PAD.left + (chartData.length === 1 ? cW / 2 : (i / (chartData.length - 1)) * cW),
+            y: PAD.top + (maxValue === 0 ? cH : (1 - d.value / maxValue) * cH),
+            ...d
+          }));
+          const linePts = pts.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
+          const areaPts = [
+            `${pts[0].x.toFixed(1)},${H}`,
+            ...pts.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`),
+            `${pts[pts.length - 1].x.toFixed(1)},${H}`
+          ].join(' ');
+          return (
+            <div>
+              <div className="flex gap-2">
+                <div className="flex flex-col justify-between text-xs text-gray-400 dark:text-gray-500 text-right py-1 w-10 flex-shrink-0" style={{ height: '160px' }}>
+                  <span>{maxValue.toLocaleString()}</span>
+                  <span>{Math.round(maxValue * 0.5).toLocaleString()}</span>
+                  <span>0</span>
+                </div>
+                <div className="flex-1" style={{ height: '160px' }}>
+                  <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-full">
+                    <defs>
+                      <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor={color} stopOpacity="0.3" />
+                        <stop offset="100%" stopColor={color} stopOpacity="0.02" />
+                      </linearGradient>
+                    </defs>
+                    {[0.25, 0.5, 0.75].map(pct => (
+                      <line key={pct}
+                        x1={PAD.left} y1={(PAD.top + (1 - pct) * cH).toFixed(1)}
+                        x2={W - PAD.right} y2={(PAD.top + (1 - pct) * cH).toFixed(1)}
+                        stroke={isDark ? '#374151' : '#f3f4f6'} strokeWidth="1" strokeDasharray="4 3"
+                      />
+                    ))}
+                    <polygon points={areaPts} fill="url(#areaGrad)" />
+                    <polyline points={linePts} fill="none" stroke={color} strokeWidth="2.5"
+                      strokeLinecap="round" strokeLinejoin="round" />
+                    {pts.map((p, i) => (
+                      <g key={i}
+                        onMouseEnter={() => setChartTooltip(i)}
+                        onMouseLeave={() => setChartTooltip(null)}
+                        onClick={() => setChartTooltip(chartTooltip === i ? null : i)}
+                        style={{ cursor: 'pointer' }}
+                      >
+                        <circle cx={p.x.toFixed(1)} cy={p.y.toFixed(1)} r="12" fill="transparent" />
+                        <circle cx={p.x.toFixed(1)} cy={p.y.toFixed(1)}
+                          r={chartTooltip === i ? '6' : '4'}
+                          fill="white" stroke={color} strokeWidth="2"
+                        />
+                        {chartTooltip === i && (() => {
+                          const tipW = 130, tipH = 52;
+                          const tipX = p.x + tipW + 14 > W ? p.x - tipW - 10 : p.x + 10;
+                          const tipY = Math.max(2, Math.min(p.y - tipH / 2, H - tipH - 2));
+                          return (
+                            <g style={{ pointerEvents: 'none' }}>
+                              <rect x={tipX - 4} y={tipY - 4} width={tipW + 8} height={tipH + 8}
+                                rx="6" ry="6"
+                                fill={isDark ? '#111827' : 'white'}
+                                stroke={color} strokeWidth="1.5"
+                                style={{ filter: 'drop-shadow(0 4px 10px rgba(0,0,0,0.18))' }}
+                              />
+                              <text x={tipX + 4} y={tipY + 13} fontSize="9"
+                                fill={isDark ? '#9ca3af' : '#6b7280'}>
+                                {formatChartDate(p.date, true)}
+                              </text>
+                              <text x={tipX + 4} y={tipY + 30} fontSize="14"
+                                fontWeight="bold" fill={color}>
+                                {p.value.toLocaleString()}
+                              </text>
+                              <text x={tipX + 4} y={tipY + 44} fontSize="9"
+                                fill={isDark ? '#9ca3af' : '#6b7280'}>
+                                {p.label}
+                              </text>
+                            </g>
+                          );
+                        })()}
+                      </g>
+                    ))}
+                  </svg>
+                </div>
+              </div>
+              <div className="flex gap-2 mt-2">
+                <div className="w-10 flex-shrink-0" />
+                <div className="flex-1 flex justify-between">
+                  {pts.map((p, i) => (
+                    <span key={i} className="text-xs text-gray-400 dark:text-gray-500 text-center">
+                      {formatChartDate(p.date)}
+                    </span>
+                  ))}
+                </div>
+              </div>
             </div>
-          ))}
-        </div>
+          );
+        })()}
       </div>
 
       {/* Statistiques par UFR */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Statistiques par UFR</h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Statistiques par UFR</h2>
+            {analyticsLoading && <Loader2 size={16} className="animate-spin text-blue-500" />}
+          </div>
           <div className="space-y-4">
-            {analyticsData.ufrStats.map((stat, index) => (
-              <div key={index} className="flex items-center justify-between">
-                <div>
-                  <div className="font-medium text-gray-900 dark:text-white">{stat.ufr}</div>
-                  <div className="text-sm text-gray-500 dark:text-gray-400">
-                    {stat.users} utilisateurs, {stat.exams} examens
+            {analyticsData.ufrStats.length === 0 && !analyticsLoading ? (
+              <p className="text-sm text-gray-400 dark:text-gray-500 text-center py-6">Aucune donnée disponible</p>
+            ) : (() => {
+              const palette = ['#3b82f6', '#10b981', '#8b5cf6', '#f59e0b', '#ef4444'];
+              const maxU = Math.max(...analyticsData.ufrStats.map(s => s.users), 1);
+              return analyticsData.ufrStats.map((stat, index) => {
+                const pct = Math.round((stat.users / maxU) * 100);
+                const color = palette[index % palette.length];
+                return (
+                  <div key={index} className="space-y-1.5">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: color }} />
+                        <span className="text-sm font-medium text-gray-800 dark:text-gray-200 truncate">{stat.ufr}</span>
+                      </div>
+                      <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400 flex-shrink-0">
+                        <span className="flex items-center gap-1"><Users size={10} /> {stat.users}</span>
+                        <span className="flex items-center gap-1"><BookOpen size={10} /> {stat.exams}</span>
+                        <span className="flex items-center gap-1"><Download size={10} /> {stat.downloads}</span>
+                      </div>
+                    </div>
+                    <div className="w-full bg-gray-100 dark:bg-gray-700 rounded-full h-2.5 overflow-hidden">
+                      <div className="h-2.5 rounded-full transition-all duration-700"
+                        style={{ width: `${pct}%`, backgroundColor: color, opacity: 0.85 }} />
+                    </div>
                   </div>
-                </div>
-                <div className="text-right">
-                  <div className="font-medium text-gray-900 dark:text-white">{stat.downloads}</div>
-                  <div className="text-sm text-gray-500 dark:text-gray-400">téléchargements</div>
-                </div>
-              </div>
-            ))}
+                );
+              });
+            })()}
           </div>
         </div>
 
         {/* Top examens */}
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Examens les plus populaires</h2>
-          <div className="space-y-4">
-            {analyticsData.topExams.map((exam, index) => (
-              <div key={index} className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg flex items-center justify-center text-white font-semibold text-sm">
-                    {index + 1}
-                  </div>
-                  <div>
-                    <div className="font-medium text-gray-900 dark:text-white max-w-xs truncate">
-                      {exam.title}
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Examens les plus populaires</h2>
+            {analyticsLoading && <Loader2 size={16} className="animate-spin text-blue-500" />}
+          </div>
+          <div className="space-y-3">
+            {analyticsData.topExams.length === 0 && !analyticsLoading ? (
+              <p className="text-sm text-gray-400 dark:text-gray-500 text-center py-6">Aucun examen disponible</p>
+            ) : (() => {
+              const medals = [
+                { bg: 'from-yellow-400 to-amber-500', ring: 'ring-yellow-300 dark:ring-yellow-600' },
+                { bg: 'from-slate-300 to-slate-400', ring: 'ring-slate-200 dark:ring-slate-500' },
+                { bg: 'from-amber-600 to-orange-600', ring: 'ring-amber-300 dark:ring-amber-600' },
+              ];
+              const defMedal = { bg: 'from-blue-400 to-indigo-500', ring: 'ring-blue-200 dark:ring-blue-600' };
+              const maxViews = Math.max(...analyticsData.topExams.map(e => e.views ?? 0), 1);
+              return analyticsData.topExams.map((exam, index) => {
+                const medal = medals[index] || defMedal;
+                const pct = Math.round(((exam.views ?? 0) / maxViews) * 100);
+                return (
+                  <div key={index} className="flex items-start gap-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                    <div className={`w-8 h-8 flex-shrink-0 bg-gradient-to-br ${medal.bg} ring-2 ${medal.ring} rounded-full flex items-center justify-center text-white font-bold text-xs shadow-sm`}>
+                      {index + 1}
                     </div>
-                    <div className="text-sm text-gray-500 dark:text-gray-400">{exam.ufr}</div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between gap-2 mb-1.5">
+                        <div className="min-w-0">
+                          <p className="font-medium text-gray-900 dark:text-white text-sm truncate">{exam.title}</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{exam.ufr}</p>
+                        </div>
+                        <div className="flex flex-col items-end flex-shrink-0">
+                          <div className="flex items-center gap-1">
+                            <Eye size={12} className="text-blue-500" />
+                            <span className="font-semibold text-blue-600 dark:text-blue-400 text-sm">{(exam.views ?? 0).toLocaleString()}</span>
+                          </div>
+                          {exam.rating != null && (
+                            <span className="text-xs text-gray-400">★ {exam.rating.toFixed(1)}</span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-1.5">
+                        <div className="bg-gradient-to-r from-blue-400 to-indigo-500 h-1.5 rounded-full transition-all duration-700"
+                          style={{ width: `${pct}%` }} />
+                      </div>
+                    </div>
                   </div>
-                </div>
-                <div className="text-right">
-                  <div className="flex items-center gap-1">
-                    <Eye size={16} className="text-gray-400 dark:text-gray-500" />
-                    <span className="font-medium text-gray-900 dark:text-white">{exam.downloads}</span>
-                  </div>
-                  <div className="text-sm text-gray-500 dark:text-gray-400">Note: {exam.rating}</div>
-                </div>
-              </div>
-            ))}
+                );
+              });
+            })()}
           </div>
         </div>
       </div>

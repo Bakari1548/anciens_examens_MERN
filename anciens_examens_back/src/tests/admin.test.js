@@ -239,9 +239,213 @@ describe('Admin Controller Tests - Storage Stats', () => {
       expect(response.body.totalDownloads).toBe(10);
     });
 
+    it('devrait retourner approvedExams dans les statistiques', async () => {
+      const { testAdmin, adminToken } = await createAdminAndToken();
+      await createTestExam(testAdmin);
+
+      cloudinary.api.usage.mockResolvedValue({
+        storage: { usage: 0, limit: 25 * 1024 * 1024 * 1024 }
+      });
+
+      const response = await request(app)
+        .get('/api/admin/stats')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(200);
+
+      expect(response.body).toHaveProperty('approvedExams');
+      expect(response.body.approvedExams).toBe(1);
+    });
+
     it('devrait retourner 401 sans authentification', async () => {
       const response = await request(app)
         .get('/api/admin/stats')
+        .expect(401);
+
+      expect(response.body.message).toBe('Token manquant');
+    });
+  });
+
+  describe('GET /api/admin/analytics - getAnalytics', () => {
+    it('devrait retourner la structure complète pour la période 7d', async () => {
+      const { testAdmin, adminToken } = await createAdminAndToken();
+      await createTestExam(testAdmin);
+
+      const response = await request(app)
+        .get('/api/admin/analytics?period=7d')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(200);
+
+      expect(response.body).toHaveProperty('userGrowth');
+      expect(response.body).toHaveProperty('examStats');
+      expect(response.body).toHaveProperty('ufrStats');
+      expect(response.body).toHaveProperty('topExams');
+      expect(response.body).toHaveProperty('period', '7d');
+      expect(Array.isArray(response.body.userGrowth)).toBe(true);
+      expect(Array.isArray(response.body.examStats)).toBe(true);
+    });
+
+    it('devrait retourner les données userGrowth avec la bonne structure', async () => {
+      const { testAdmin, adminToken } = await createAdminAndToken();
+
+      const response = await request(app)
+        .get('/api/admin/analytics?period=7d')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(200);
+
+      if (response.body.userGrowth.length > 0) {
+        const entry = response.body.userGrowth[0];
+        expect(entry).toHaveProperty('date');
+        expect(entry).toHaveProperty('newUsers');
+        expect(typeof entry.newUsers).toBe('number');
+      }
+    });
+
+    it('devrait retourner examStats avec le champ downloads (nouveau)', async () => {
+      const { testAdmin, adminToken } = await createAdminAndToken();
+      await createTestExam(testAdmin);
+
+      const response = await request(app)
+        .get('/api/admin/analytics?period=7d')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(200);
+
+      expect(response.body.examStats.length).toBeGreaterThan(0);
+      const entry = response.body.examStats[0];
+      expect(entry).toHaveProperty('date');
+      expect(entry).toHaveProperty('newExams');
+      expect(entry).toHaveProperty('approvedExams');
+      expect(entry).toHaveProperty('downloads');
+      expect(entry.downloads).toBe(10);
+    });
+
+    it('devrait grouper par jour (format YYYY-MM-DD) pour les périodes 7d et 30d', async () => {
+      const { testAdmin, adminToken } = await createAdminAndToken();
+      await createTestExam(testAdmin);
+
+      for (const period of ['7d', '30d']) {
+        const response = await request(app)
+          .get(`/api/admin/analytics?period=${period}`)
+          .set('Authorization', `Bearer ${adminToken}`)
+          .expect(200);
+
+        if (response.body.examStats.length > 0) {
+          expect(response.body.examStats[0].date).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+        }
+        if (response.body.userGrowth.length > 0) {
+          expect(response.body.userGrowth[0].date).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+        }
+      }
+    });
+
+    it('devrait grouper par mois (format YYYY-MM) pour les périodes 90d et 1y', async () => {
+      const { testAdmin, adminToken } = await createAdminAndToken();
+      await createTestExam(testAdmin);
+
+      for (const period of ['90d', '1y']) {
+        const response = await request(app)
+          .get(`/api/admin/analytics?period=${period}`)
+          .set('Authorization', `Bearer ${adminToken}`)
+          .expect(200);
+
+        if (response.body.examStats.length > 0) {
+          expect(response.body.examStats[0].date).toMatch(/^\d{4}-\d{2}$/);
+        }
+        if (response.body.userGrowth.length > 0) {
+          expect(response.body.userGrowth[0].date).toMatch(/^\d{4}-\d{2}$/);
+        }
+      }
+    });
+
+    it('devrait gérer la période 90d sans erreur (était manquante)', async () => {
+      const { testAdmin, adminToken } = await createAdminAndToken();
+
+      const response = await request(app)
+        .get('/api/admin/analytics?period=90d')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(200);
+
+      expect(response.body.period).toBe('90d');
+    });
+
+    it('devrait gérer la période 1y sans erreur (était manquante)', async () => {
+      const { testAdmin, adminToken } = await createAdminAndToken();
+
+      const response = await request(app)
+        .get('/api/admin/analytics?period=1y')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(200);
+
+      expect(response.body.period).toBe('1y');
+    });
+
+    it('devrait gérer la période all sans erreur', async () => {
+      const { testAdmin, adminToken } = await createAdminAndToken();
+      await createTestExam(testAdmin);
+
+      const response = await request(app)
+        .get('/api/admin/analytics?period=all')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(200);
+
+      expect(response.body.period).toBe('all');
+      expect(response.body.examStats.length).toBeGreaterThan(0);
+    });
+
+    it('devrait retourner des tableaux vides si aucune donnée dans la période', async () => {
+      const { adminToken } = await createAdminAndToken();
+
+      const response = await request(app)
+        .get('/api/admin/analytics?period=1d')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(200);
+
+      expect(Array.isArray(response.body.userGrowth)).toBe(true);
+      expect(Array.isArray(response.body.examStats)).toBe(true);
+    });
+
+    it('devrait retourner ufrStats avec la bonne structure', async () => {
+      const { testAdmin, adminToken } = await createAdminAndToken();
+      await createTestExam(testAdmin);
+
+      const response = await request(app)
+        .get('/api/admin/analytics?period=7d')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(200);
+
+      if (response.body.ufrStats.length > 0) {
+        const stat = response.body.ufrStats[0];
+        expect(stat).toHaveProperty('ufr');
+        expect(stat).toHaveProperty('users');
+        expect(stat).toHaveProperty('exams');
+        expect(stat).toHaveProperty('downloads');
+      }
+    });
+
+    it('devrait retourner topExams triés par viewsCount décroissant', async () => {
+      const { testAdmin, adminToken } = await createAdminAndToken();
+      await createTestExam(testAdmin);
+
+      const response = await request(app)
+        .get('/api/admin/analytics?period=7d')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(200);
+
+      expect(response.body.topExams.length).toBeGreaterThan(0);
+      const exam = response.body.topExams[0];
+      expect(exam).toHaveProperty('title');
+      expect(exam).toHaveProperty('ufr');
+      expect(exam).toHaveProperty('viewsCount');
+      expect(exam).toHaveProperty('downloadsCount');
+
+      if (response.body.topExams.length > 1) {
+        expect(response.body.topExams[0].viewsCount)
+          .toBeGreaterThanOrEqual(response.body.topExams[1].viewsCount);
+      }
+    });
+
+    it('devrait retourner 401 sans authentification', async () => {
+      const response = await request(app)
+        .get('/api/admin/analytics')
         .expect(401);
 
       expect(response.body.message).toBe('Token manquant');

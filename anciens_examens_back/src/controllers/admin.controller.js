@@ -2,6 +2,7 @@ const User = require('../models/User');
 const Exam = require('../models/Exam');
 const Report = require('../models/Report');
 const Notification = require('../models/Notification');
+const Log = require('../models/Log');
 const sendEmail = require('../utils/sendEmail');
 const { createLog } = require('../utils/logger');
 const mongoose = require('mongoose');
@@ -17,6 +18,7 @@ const getStats = async (req, res) => {
         const totalExams = await Exam.countDocuments();
         const activeUsers = await User.countDocuments({ status: 'active' });
         const pendingExams = await Exam.countDocuments({ status: 'pending' });
+        const approvedExams = await Exam.countDocuments({ status: 'approved' });
         const reports = await Report.countDocuments({ status: 'pending' });
         
         // Calculer les téléchargements réels depuis les examens
@@ -90,6 +92,7 @@ const getStats = async (req, res) => {
             totalViews,
             activeUsers,
             pendingExams,
+            approvedExams,
             reports,
             storage: {
                 database: dbStorage,
@@ -124,9 +127,21 @@ const getAnalytics = async (req, res) => {
             case '30d':
                 startDate = new Date(endDate.getTime() - 30 * 24 * 60 * 60 * 1000);
                 break;
+            case '90d':
+                startDate = new Date(endDate.getTime() - 90 * 24 * 60 * 60 * 1000);
+                break;
+            case '1y':
+                startDate = new Date(endDate.getTime() - 365 * 24 * 60 * 60 * 1000);
+                break;
+            case 'all':
+                startDate = new Date(0);
+                break;
             default:
                 startDate = new Date(endDate.getTime() - 7 * 24 * 60 * 60 * 1000);
         }
+
+        const daysDiff = Math.ceil((endDate - startDate) / (24 * 60 * 60 * 1000));
+        const dateGroupFormat = daysDiff > 60 ? '%Y-%m' : '%Y-%m-%d';
 
         const users = await User.find({
             createdAt: { $gte: startDate, $lte: endDate }
@@ -136,7 +151,65 @@ const getAnalytics = async (req, res) => {
             createdAt: { $gte: startDate, $lte: endDate }
         }).countDocuments();
 
-        const downloads = Math.floor(Math.random() * 500) + 100;
+        // Téléchargements réels sur la période
+        const downloadsResult = await Exam.aggregate([
+            { $group: { _id: null, total: { $sum: '$downloadsCount' } } }
+        ]);
+        const downloads = downloadsResult[0]?.total || 0;
+
+        // === Données pour graphiques (granularité selon la période) ===
+        const [userGrowthAgg, examGrowthAgg] = await Promise.all([
+            User.aggregate([
+                { $match: { createdAt: { $gte: startDate, $lte: endDate } } },
+                { $group: { _id: { $dateToString: { format: dateGroupFormat, date: '$createdAt' } }, newUsers: { $sum: 1 } } },
+                { $sort: { _id: 1 } }
+            ]),
+            Exam.aggregate([
+                { $match: { createdAt: { $gte: startDate, $lte: endDate } } },
+                { $group: {
+                    _id: { $dateToString: { format: dateGroupFormat, date: '$createdAt' } },
+                    newExams: { $sum: 1 },
+                    approvedExams: { $sum: { $cond: [{ $eq: ['$status', 'approved'] }, 1, 0] } },
+                    downloads: { $sum: '$downloadsCount' }
+                }},
+                { $sort: { _id: 1 } }
+            ])
+        ]);
+        const userGrowth = userGrowthAgg.map(d => ({ date: d._id, newUsers: d.newUsers }));
+        const examStats = examGrowthAgg.map(d => ({ date: d._id, newExams: d.newExams, approvedExams: d.approvedExams, downloads: d.downloads || 0 }));
+
+        // === Statistiques par UFR ===
+        const [ufrUserAgg, ufrExamAgg] = await Promise.all([
+            User.aggregate([
+                { $match: { ufr: { $exists: true, $ne: '' } } },
+                { $group: { _id: '$ufr', usersCount: { $sum: 1 } } }
+            ]),
+            Exam.aggregate([
+                { $match: { ufr: { $exists: true, $ne: '' } } },
+                { $group: { _id: '$ufr', examsCount: { $sum: 1 }, downloads: { $sum: '$downloadsCount' } } }
+            ])
+        ]);
+
+        const ufrMap = {};
+        ufrUserAgg.forEach(u => {
+            if (u._id) ufrMap[u._id] = { ufr: u._id, users: u.usersCount, exams: 0, downloads: 0 };
+        });
+        ufrExamAgg.forEach(e => {
+            if (!e._id) return;
+            if (ufrMap[e._id]) {
+                ufrMap[e._id].exams = e.examsCount;
+                ufrMap[e._id].downloads = e.downloads;
+            } else {
+                ufrMap[e._id] = { ufr: e._id, users: 0, exams: e.examsCount, downloads: e.downloads };
+            }
+        });
+        const ufrStats = Object.values(ufrMap).sort((a, b) => b.users - a.users);
+
+        // === Top 5 examens par téléchargements ===
+        const topExams = await Exam.find({ status: 'approved' })
+            .sort({ viewsCount: -1 })
+            .limit(5)
+            .select('title ufr downloadsCount viewsCount averageRating slug');
 
         res.json({
             period,
@@ -144,13 +217,33 @@ const getAnalytics = async (req, res) => {
             endDate,
             users,
             exams,
-            downloads
+            downloads,
+            userGrowth,
+            examStats,
+            ufrStats,
+            topExams
         });
     } catch (error) {
         res.status(500).json({
             message: 'Erreur serveur',
             error: error.message
         });
+    }
+};
+
+// @desc    Obtenir les sessions de connexion récentes
+// @route   GET /api/admin/sessions
+// @access  Private/Admin
+const getSessions = async (req, res) => {
+    try {
+        const { limit = 50 } = req.query;
+        const sessions = await Log.find({ action: 'LOGIN' })
+            .sort({ timestamp: -1 })
+            .limit(parseInt(limit))
+            .select('user userId ip userAgent timestamp message');
+        res.json({ sessions, total: sessions.length });
+    } catch (error) {
+        res.status(500).json({ message: 'Erreur serveur', error: error.message });
     }
 };
 
@@ -747,6 +840,7 @@ const updateSettings = async (req, res) => {
 module.exports = {
     getStats,
     getAnalytics,
+    getSessions,
     getReports,
     resolveReport,
     banUser,

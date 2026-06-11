@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
-import { Settings, Save, Bell, Shield, Palette, Globe, User, FileText, Eye, EyeOff } from 'lucide-react';
+import { Settings, Save, Bell, Shield, Palette, Globe, User, FileText, Eye, EyeOff, Monitor, Loader2, MapPin, Clock } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTheme } from '../../context/ThemeContext';
 import { changePassword } from '../../../auth/services/auth.api';
+import { settingsApi } from '../../services/settings.api';
 
 const GENERAL_KEY = 'admin_settings_general';
 const NOTIFS_KEY = 'admin_settings_notifications';
@@ -39,6 +40,11 @@ export default function SettingsPanel() {
   const [showConfirm, setShowConfirm] = useState(false);
   const [savingPw, setSavingPw] = useState(false);
 
+  // Sessions
+  const [sessions, setSessions] = useState([]);
+  const [sessionsLoading, setSessionsLoading] = useState(false);
+  const [securityTab, setSecurityTab] = useState('password');
+
   // Charger les préférences depuis localStorage
   useEffect(() => {
     try {
@@ -50,6 +56,23 @@ export default function SettingsPanel() {
       console.error('Erreur chargement préférences admin:', e);
     }
   }, []);
+
+  // Charger les sessions quand le sous-onglet Sessions est actif
+  useEffect(() => {
+    if (activeTab !== 'security' || securityTab !== 'sessions') return;
+    const loadSessions = async () => {
+      setSessionsLoading(true);
+      try {
+        const data = await settingsApi.getSessions(50);
+        setSessions(data.sessions || []);
+      } catch (err) {
+        console.error('Erreur chargement sessions:', err);
+      } finally {
+        setSessionsLoading(false);
+      }
+    };
+    loadSessions();
+  }, [activeTab, securityTab]);
 
   const handleSaveGeneral = (e) => {
     e.preventDefault();
@@ -268,9 +291,35 @@ export default function SettingsPanel() {
           )}
 
           {activeTab === 'security' && (
+            <>
+              {/* Sous-onglets */}
+              <div className="flex gap-1 mb-6 bg-gray-100 dark:bg-gray-700 p-1 rounded-lg w-fit">
+                <button
+                  onClick={() => setSecurityTab('password')}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                    securityTab === 'password'
+                      ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm'
+                      : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                  }`}
+                >
+                  <Shield size={15} />
+                  Mot de passe
+                </button>
+                <button
+                  onClick={() => setSecurityTab('sessions')}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                    securityTab === 'sessions'
+                      ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm'
+                      : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                  }`}
+                >
+                  <Monitor size={15} />
+                  Sessions
+                </button>
+              </div>
+
+            {securityTab === 'password' && (
             <form onSubmit={handleChangePassword} className="space-y-6">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Paramètres de sécurité</h3>
-              
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Mot de passe actuel</label>
@@ -344,6 +393,57 @@ export default function SettingsPanel() {
                 </button>
               </div>
             </form>
+            )}
+
+            {securityTab === 'sessions' && (
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-base font-semibold text-gray-900 dark:text-white">Sessions de connexion récentes</h3>
+                {sessionsLoading && <Loader2 size={16} className="animate-spin text-blue-500" />}
+              </div>
+
+              {sessions.length === 0 && !sessionsLoading ? (
+                <p className="text-sm text-gray-400 dark:text-gray-500 text-center py-6">Aucune session enregistrée</p>
+              ) : (
+                <div className="space-y-2 max-h-80 overflow-y-auto">
+                  {sessions.map((session, i) => (
+                    <div
+                      key={session._id || i}
+                      className="flex items-start justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg"
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900/40 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                          <Monitor size={14} className="text-blue-600 dark:text-blue-400" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-gray-900 dark:text-white">{session.user || 'Utilisateur inconnu'}</p>
+                          <div className="flex items-center gap-3 mt-0.5">
+                            <span className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
+                              <MapPin size={10} />
+                              {session.ip || 'IP inconnue'}
+                            </span>
+                            {session.userAgent && (
+                              <span className="text-xs text-gray-400 dark:text-gray-500 truncate max-w-[180px]">
+                                {session.userAgent.split(' ')[0]}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1 text-xs text-gray-400 dark:text-gray-500 flex-shrink-0 ml-2">
+                        <Clock size={10} />
+                        {new Date(session.timestamp).toLocaleString('fr-FR', {
+                          day: '2-digit', month: 'short', year: 'numeric',
+                          hour: '2-digit', minute: '2-digit'
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            )}
+            </>
           )}
 
           {activeTab === 'appearance' && (

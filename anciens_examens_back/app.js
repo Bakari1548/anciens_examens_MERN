@@ -6,6 +6,7 @@ const cron = require('node-cron');
 const connectDB = require('./src/config/db');
 const userRoutes = require('./src/routes/user.route');
 const examRoutes = require('./src/routes/exam.route');
+const examRequestRoutes = require('./src/routes/examRequest.route');
 const adminRoutes = require('./src/routes/admin.route');
 const ufrRoutes = require('./src/routes/ufr.route');
 const logRoutes = require('./src/routes/log.route');
@@ -55,6 +56,7 @@ app.get('/', (req, res) => {
 
 app.use('/api/users', userRoutes);
 app.use('/api/exams', examRoutes);
+app.use('/api/exam-requests', examRequestRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/ufrs', ufrRoutes);
 app.use('/api/logs', logRoutes);

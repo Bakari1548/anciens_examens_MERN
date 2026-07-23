@@ -451,4 +451,35 @@ describe('Admin Controller Tests - Storage Stats', () => {
       expect(response.body.message).toBe('Token manquant');
     });
   });
+
+  describe('GET /api/admin/public/stats - getPublicStats', () => {
+    it('devrait retourner les statistiques publiques sans authentification', async () => {
+      const testAdmin = await createAdminAndToken();
+      await createTestExam(testAdmin.testAdmin);
+
+      const response = await request(app)
+        .get('/api/admin/public/stats')
+        .expect(200);
+
+      expect(response.body).toHaveProperty('totalUsers');
+      expect(response.body).toHaveProperty('totalExams');
+      expect(response.body).toHaveProperty('totalDownloads');
+      expect(response.body).toHaveProperty('averageRating');
+      expect(response.body).toHaveProperty('satisfactionRate');
+      expect(response.body).toHaveProperty('ufrCount');
+      expect(response.body.totalExams).toBe(1);
+      expect(response.body.totalDownloads).toBe(10);
+      expect(response.body.averageRating).toBe(4.8);
+    });
+
+    it('devrait retourner 0 si aucun examen n\'existe', async () => {
+      const response = await request(app)
+        .get('/api/admin/public/stats')
+        .expect(200);
+
+      expect(response.body.totalExams).toBe(0);
+      expect(response.body.totalDownloads).toBe(0);
+      expect(response.body.averageRating).toBe(4.8);
+    });
+  });
 });

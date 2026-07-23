@@ -607,6 +607,35 @@ const unbanUser = async (req, res) => {
     }
 };
 
+// @desc    Supprimer le compte de l'utilisateur connecté
+// @route   DELETE /api/users/me
+// @access  Private
+const deleteMyAccount = async (req, res) => {
+    try {
+        const user = await User.findByIdAndDelete(req.user._id);
+
+        // Effacer le cookie d'authentification
+        const isProduction = process.env.NODE_ENV === 'production';
+        res.clearCookie('auth_token', {
+            httpOnly: true,
+            secure: isProduction,
+            sameSite: isProduction ? 'strict' : 'lax',
+            path: '/'
+        });
+
+        await createLog({ level: 'warning', action: 'ACCOUNT_DELETED', message: `Utilisateur ${user?.firstName || ''} ${user?.lastName || ''} (${user?.email || req.user._id}) a supprimé son compte`, req, user: req.user, metadata: { targetUserId: req.user._id } });
+
+        res.json({
+            message: 'Compte supprimé avec succès'
+        });
+    } catch (error) {
+        res.status(500).json({
+            message: 'Erreur serveur',
+            error: error.message
+        });
+    }
+};
+
 // @desc    Soumettre une demande
 // @route   POST /api/users/appeal
 // @access  Public
@@ -778,6 +807,7 @@ module.exports = {
     getAllUsers,
     updateUser,
     deleteUser,
+    deleteMyAccount,
     getUserById,
     activateUser,
     desactivateUser,

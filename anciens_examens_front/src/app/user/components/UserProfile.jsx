@@ -8,7 +8,7 @@ import UserSecurity from './UserSecurity';
 import UserPersonalInfo from './UserPersonalInfo';
 
 export default function UserProfile() {
-  const { user, userExams, loading, updateProfile, changePassword, fetchUserExams } = useUser();
+  const { user, userExams, loading, updateProfile, changePassword, deleteAccount, fetchUserExams } = useUser();
   const navigate = useNavigate();
   const [isEditing, setIsEditing] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
@@ -83,6 +83,13 @@ export default function UserProfile() {
 
   const cancelLogout = () => {
     setShowLogoutModal(false);
+  };
+
+  const handleDeleteAccount = async () => {
+    await deleteAccount();
+    tokenStorage.clear();
+    window.dispatchEvent(new Event('user-auth-change'));
+    navigate('/connexion');
   };
 
   if (loading && !user) {
@@ -224,6 +231,8 @@ export default function UserProfile() {
                 handlePasswordSubmit={handlePasswordSubmit}
                 handleLogout={handleLogout}
                 setIsChangingPassword={setIsChangingPassword}
+                userEmail={user?.email}
+                handleDeleteAccount={handleDeleteAccount}
               />
             )}
           </div>

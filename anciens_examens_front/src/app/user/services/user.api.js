@@ -37,5 +37,14 @@ export const userApi = {
     } catch (error) {
       throw error;
     }
+  },
+
+  deleteAccount: async () => {
+    try {
+      const response = await api.delete('/users/me');
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
   }
 };

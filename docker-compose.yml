@@ -42,6 +42,8 @@ services:
     volumes:
       # Bind mount du code source pour hot reload
       - ./anciens_examens_back:/app
+      # Volume anonyme pour conserver node_modules installé dans l'image
+      - /app/node_modules
 
   # ==================== FRONTEND React + Vite (DEV avec HMR) ====================
   frontend:
@@ -63,6 +65,8 @@ services:
       - anciens_examens_network
     volumes:
       - ./anciens_examens_front:/app
+      # Volume anonyme pour conserver node_modules installé dans l'image
+      - /app/node_modules
 
   # ==================== Redis ====================
   redis:

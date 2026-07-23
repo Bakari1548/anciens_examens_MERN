@@ -13,6 +13,8 @@ import ResetPasswordCompletePage from './pages/ResetPasswordComplete'
 import PostExamPage from './pages/PostExam'
 import DetailExamPage from './pages/DetailExam'
 import ExamsPage from './pages/Exams'
+import ExamRequestsPage from './pages/ExamRequests'
+import ExamRequestDetailPage from './pages/ExamRequestDetail'
 import ProfilePage from './pages/Profile'
 import AccountAppealPage from './pages/AccountAppeal'
 import FavoritesPage from './pages/Favorites'
@@ -50,6 +52,8 @@ function AppContent() {
         <Route path="/examens/:slug" element={<DetailExamPage />} />
         <Route path="/examens" element={<ExamsPage />} />
         <Route path="/examens/favoris" element={<FavoritesPage />} />
+        <Route path="/demandes" element={<ExamRequestsPage />} />
+        <Route path="/demandes/:id" element={<ExamRequestDetailPage />} />
         <Route path="/profil" element={<ProfilePage />} />
         <Route path="/demande" element={<AccountAppealPage />} />
         <Route path="/regles" element={<RulesPage />} />

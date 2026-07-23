@@ -1,12 +1,12 @@
 import AdminLayout from '../app/admin/components/Layout/AdminLayout';
-import AppealsManagement from '../app/admin/components/AppealsManagement';
+import RequestsManagement from '../app/admin/components/RequestsManagement';
 import { AdminProvider } from '../app/admin/context/AdminContext';
 
 export default function AdminAppealsPage() {
   return (
     <AdminProvider>
       <AdminLayout>
-        <AppealsManagement />
+        <RequestsManagement />
       </AdminLayout>
     </AdminProvider>
   );

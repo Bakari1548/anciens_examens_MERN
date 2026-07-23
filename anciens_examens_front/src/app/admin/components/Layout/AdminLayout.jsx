@@ -115,7 +115,7 @@ export default function AdminLayout({ children }) {
       path: '/admin/appeals',
       icon: AlertCircle,
       label: 'Demandes',
-      description: 'Demandes de réactivation'
+      description: 'Réactivations & examens'
     },
     {
       path: '/admin/emails',

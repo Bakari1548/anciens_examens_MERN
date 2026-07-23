@@ -20,7 +20,7 @@ const authMiddleware = async (req, res, next) => {
     try {
         if (!token) {
             // console.log("Token requis : ", req.user);
-            return res.status(401).json({ message: 'Token d\'accès requis' });
+            return res.status(401).json({ message: 'Token d\'accès requis, authentifier vous' });
         }
         
         const decodedToken = jwt.verify(token, JWT_SECRET);

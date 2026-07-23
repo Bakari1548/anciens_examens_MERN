@@ -91,6 +91,7 @@ export default function Header() {
         <nav className='hidden text-lg md:flex items-center gap-8'>
             <button onClick={() => onNavigate('/')} className='text-gray-700 hover:text-blue-600 font-medium transition-colors'>Accueil</button>
             <button onClick={() => onNavigate('/examens')} className='text-gray-700 hover:text-blue-600 font-medium transition-colors'>Examens</button>
+            <button onClick={() => onNavigate('/demandes')} className='text-gray-700 hover:text-blue-600 font-medium transition-colors'>Demandes</button>
             <button onClick={() => onNavigate('/regles')} className='text-gray-700 hover:text-blue-600 font-medium transition-colors'>Règles</button>
         </nav>
 
@@ -241,6 +242,12 @@ export default function Header() {
                 className="text-lg text-gray-700 hover:text-blue-600 font-medium transition-colors text-left py-2 border-b border-gray-200"
               >
                 Examens
+              </button>
+              <button
+                onClick={() => onNavigate('/demandes')}
+                className="text-lg text-gray-700 hover:text-blue-600 font-medium transition-colors text-left py-2 border-b border-gray-200"
+              >
+                Demandes
               </button>
               <button
                 onClick={() => onNavigate('/regles')}

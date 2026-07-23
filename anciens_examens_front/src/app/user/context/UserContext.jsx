@@ -64,6 +64,21 @@ export function UserProvider({ children }) {
     }
   };
 
+  const deleteAccount = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      await userApi.deleteAccount();
+      toast.success('Compte supprimé avec succès');
+    } catch (error) {
+      setError(error.message);
+      toast.error(error.response?.data?.message || 'Erreur lors de la suppression du compte');
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const fetchUserExams = async (params = {page: 1, limit: 10}) => {
     try {
       setLoading(true);
@@ -105,6 +120,7 @@ export function UserProvider({ children }) {
         fetchProfile,
         updateProfile,
         changePassword,
+        deleteAccount,
         fetchUserExams
       }}
     >

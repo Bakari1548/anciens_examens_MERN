@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { BookOpen, Users, Download, Star, TrendingUp, Award } from 'lucide-react';
+import api from '@/api/api';
 
 export default function StatsSection() {
   const [stats, setStats] = useState({
@@ -21,15 +22,22 @@ export default function StatsSection() {
   });
 
   useEffect(() => {
-    // Données de démonstration (en production, viendraient d'une API)
-    setStats({
-      examsCount: 1000,
-      usersCount: 1500,
-      downloadsCount: 1080,
-      averageRating: 4.8,
-      satisfactionRate: 96,
-      ufrCount: 5
-    });
+    const fetchStats = async () => {
+      try {
+        const { data } = await api.get('/admin/public/stats');
+        setStats({
+          examsCount: data.totalExams || 0,
+          usersCount: data.totalUsers || 0,
+          downloadsCount: data.totalDownloads || 0,
+          averageRating: data.averageRating || 0,
+          satisfactionRate: data.satisfactionRate || 0,
+          ufrCount: data.ufrCount || 0
+        });
+      } catch (error) {
+        console.error('Erreur lors du chargement des statistiques:', error);
+      }
+    };
+    fetchStats();
   }, []);
 
   useEffect(() => {
@@ -114,7 +122,7 @@ export default function StatsSection() {
       <div className="max-w-7xl mx-auto px-6">
         <div className="text-center mb-12">
           <h2 className="text-4xl font-bold text-gray-900 mb-4">
-            Des chiffres que nous voulons atteindre
+            Les chiffres réels de la plateforme
           </h2>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
             Rejoignez une communauté de milliers d'étudiants qui utilisent notre plateforme
@@ -145,7 +153,7 @@ export default function StatsSection() {
           })}
         </div>
 
-        <div className="mt-16 text-center">
+        {/* <div className="mt-16 text-center">
           <div className="inline-flex items-center gap-4 bg-white rounded-full px-8 py-4 shadow-lg">
             <div className="flex -space-x-2">
               {[1, 2, 3, 4, 5].map((i) => (
@@ -161,7 +169,7 @@ export default function StatsSection() {
               <span className="font-bold text-blue-600">+200</span> nouveaux étudiants cette semaine
             </p>
           </div>
-        </div>
+        </div> */}
       </div>
     </section>
   );

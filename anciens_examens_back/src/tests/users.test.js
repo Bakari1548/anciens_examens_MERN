@@ -740,4 +740,41 @@ describe('User Controller Tests', () => {
     });
   });
 
+  describe('DELETE /api/users/me - deleteMyAccount', () => {
+    beforeEach(async () => {
+      testUser = await User.create({
+        firstName: 'User',
+        lastName: 'ToDelete',
+        email: 'user.selfdelete@univ-thies.sn',
+        password: 'password123',
+        ufr: 'UFR Test',
+        filiere: 'Test',
+        role: 'user',
+        status: 'active'
+      });
+
+      userToken = jwt.sign({ userId: testUser._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
+    });
+
+    it('devrait supprimer le compte de l\'utilisateur connecté', async () => {
+      const response = await request(app)
+        .delete('/api/users/me')
+        .set('Authorization', `Bearer ${userToken}`)
+        .expect(200);
+
+      expect(response.body.message).toBe('Compte supprimé avec succès');
+
+      const deletedUser = await User.findById(testUser._id);
+      expect(deletedUser).toBeNull();
+    });
+
+    it('devrait retourner 401 sans token', async () => {
+      const response = await request(app)
+        .delete('/api/users/me')
+        .expect(401);
+
+      expect(response.body.message).toBe('Token manquant');
+    });
+  });
+
 });

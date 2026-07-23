@@ -17,6 +17,7 @@ const {
     desactivateUser,
     banUser,
     unbanUser,
+    deleteMyAccount,
     submitAppeal,
     getAllAppeals,
     approveAppeal,
@@ -37,6 +38,7 @@ router.post('/appeal', submitAppeal);
 router.get('/profile', authMiddleware, getProfile);
 router.put('/profile', authMiddleware, updateProfile);
 router.put('/change-password', authMiddleware, changePassword);
+router.delete('/me', authMiddleware, deleteMyAccount);
 
 // Routes protégées par le middleware admin
 router.get('/all/:page/:limit', adminMiddleware, getAllUsers);

@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { 
     getStats,
+    getPublicStats,
     getAnalytics,
     getSessions,
     getReports,
@@ -35,6 +36,7 @@ const adminMiddleware = require('../middlewares/admin.middleware');
 
 // Routes protégées par admin middleware
 router.get('/stats', authMiddleware, adminMiddleware, getStats);
+router.get('/public/stats', getPublicStats);
 router.get('/analytics', authMiddleware, adminMiddleware, getAnalytics);
 router.get('/sessions', authMiddleware, adminMiddleware, getSessions);
 

@@ -1,21 +1,21 @@
 services:
   # ========== REVERSE PROXY NGINX ==========
-  nginx:
-    build:
-      context: ./nginx
-      dockerfile: Dockerfile
-    container_name: anciens_examens_nginx
-    restart: always
-    ports:
-      - "80:80"
-      - "443:443"
-    depends_on:
-      - backend
-      - frontend
-    networks:
-      - anciens_examens_network
-    volumes:
-      - ./cloudflare-certs:/etc/nginx/cloudflare-certs:ro  # ← Certificats Cloudflare
+  # nginx:
+  #   build:
+  #     context: ./nginx
+  #     dockerfile: Dockerfile
+  #   container_name: anciens_examens_nginx
+  #   restart: always
+  #   ports:
+  #     - "80:80"
+  #     - "443:443"
+  #   depends_on:
+  #     - backend
+  #     - frontend
+  #   networks:
+  #     - anciens_examens_network
+  #   volumes:
+  #     - ./cloudflare-certs:/etc/nginx/cloudflare-certs:ro  # ← Certificats Cloudflare
 
   # ========== BACKEND NODE.JS ==========
   backend:

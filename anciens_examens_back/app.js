@@ -22,8 +22,8 @@ const port = process.env.PORT || 5000;
 
 // CORS configuration pour permettre les cookies
 const getAllowedOrigins = () => {
-  const defaultOrigins = [process.env.CORS_ORIGIN];
-  
+  const defaultOrigins = process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',') : [];
+
   // Si FRONTEND_URL est défini, l'ajouter aux origines par défaut
   if (process.env.FRONTEND_URL) {
     return [process.env.FRONTEND_URL, ...defaultOrigins];

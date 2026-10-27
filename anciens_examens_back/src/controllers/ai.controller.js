@@ -2,7 +2,7 @@ const Exam = require('../models/Exam');
 const ufrData = require('../data/ufrData');
 const { createLog } = require('../utils/logger');
 const gemini = require('../utils/geminiClient');
-const redis = require('../utils/redisClient');
+// const redis = require('../utils/redisClient');
 
 const NIVEAUX_VALID = ['L1','L2','L3','L4','M1','M2','D1','D2','D3','D4','D5','D6','PCEM1','PCEM2','DCEM1','DCEM2','DCEM3','DCEM4','LP','ING1','ING2','ING3','DUT1','DUT2'];
 const SEMESTRES_VALID = ['S1','S2','S3','S4','S5','S6','S7','S8','S9','S10','S11','S12'];
@@ -219,12 +219,12 @@ const prepareChatCache = async (req, res) => {
             filiere: exam.filiere
         };
 
-        const cached = await redis.cacheExamMetadata(slug, metadata);
-        if (!cached) {
-            return res.status(503).json({ message: 'Cache non disponible' });
-        }
+        // const cached = await redis.cacheExamMetadata(slug, metadata);
+        // if (!cached) {
+        //     return res.status(503).json({ message: 'Cache non disponible' });
+        // }
 
-        res.json({ success: true, message: 'Cache préparé avec succès' });
+        // res.json({ success: true, message: 'Cache préparé avec succès' });
     } catch (error) {
         console.error('[AI Prepare] Erreur:', error);
         res.status(500).json({ message: 'Erreur lors de la préparation du cache' });
@@ -271,7 +271,8 @@ const chatWithExam = async (req, res) => {
         }
 
         // Essayer de récupérer les métadonnées depuis Redis
-        const cachedMetadata = await redis.getCachedExamMetadata(slug);
+        // const cachedMetadata = await redis.getCachedExamMetadata(slug);
+        const cachedMetadata = null; // Redis désactivé
 
         // Si pas de cache et premier message, charger les fichiers
         let fileParts = [];

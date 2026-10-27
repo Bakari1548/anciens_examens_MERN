@@ -4,15 +4,15 @@ const { cloudinary } = require('../config/cloudinary');
 const { createLog } = require('../utils/logger');
 const Notification = require('../models/Notification');
 const gemini = require('../utils/geminiClient');
-const {
-    cacheExamDetails,
-    getCachedExamDetails,
-    invalidateExamDetailsCache,
-    cacheSearchResults,
-    getCachedSearchResults,
-    invalidateAllSearchCache,
-    invalidateUserFavoritesCache,
-} = require('../utils/redisClient');
+// const {
+//     cacheExamDetails,
+//     getCachedExamDetails,
+//     invalidateExamDetailsCache,
+//     cacheSearchResults,
+//     getCachedSearchResults,
+//     invalidateAllSearchCache,
+//     invalidateUserFavoritesCache,
+// } = require('../utils/redisClient');
 
 // Fonction pour générer un slug unique avec caractères aléatoires
 const generateUniqueSlug = async (baseSlug) => {
@@ -66,13 +66,13 @@ const getAllExams = async (req, res) => {
         };
 
         // Essayer le cache Redis
-        const cached = await getCachedSearchResults(cacheParams);
-        if (cached) {
-            return res.status(200).json({
-                message: 'Examens récupérés avec succès',
-                ...cached
-            });
-        }
+        // const cached = await getCachedSearchResults(cacheParams);
+        // if (cached) {
+        //     return res.status(200).json({
+        //         message: 'Examens récupérés avec succès',
+        //         ...cached
+        //     });
+        // }
         
         // Filtres optionnels
         const filters = {};
@@ -122,7 +122,7 @@ const getAllExams = async (req, res) => {
         };
 
         // Mettre en cache le résultat
-        await cacheSearchResults(cacheParams, result);
+        // await cacheSearchResults(cacheParams, result);
         
         res.status(200).json({
             message: 'Examens récupérés avec succès',
@@ -142,13 +142,13 @@ const getAllExams = async (req, res) => {
 const getExamBySlug = async (req, res) => {
     try {
         // Essayer le cache Redis
-        const cached = await getCachedExamDetails(req.params.slug);
-        if (cached) {
-            return res.status(200).json({
-                message: 'Examen récupéré avec succès',
-                exam: cached
-            });
-        }
+        // const cached = await getCachedExamDetails(req.params.slug);
+        // if (cached) {
+        //     return res.status(200).json({
+        //         message: 'Examen récupéré avec succès',
+        //         exam: cached
+        //     });
+        // }
 
         const exam = await Exam.findOne({ slug: req.params.slug });
         if (!exam) {
@@ -158,7 +158,7 @@ const getExamBySlug = async (req, res) => {
         }
 
         // Mettre en cache
-        await cacheExamDetails(exam.slug, exam);
+        // await cacheExamDetails(exam.slug, exam);
 
         res.status(200).json({
             message: 'Examen récupéré avec succès',
@@ -464,10 +464,10 @@ const updateExam = async (req, res) => {
         });
 
         // Invalider le cache de l'examen et les résultats de recherche
-        await Promise.all([
-            invalidateExamDetailsCache(updatedExam.slug),
-            invalidateAllSearchCache(),
-        ]);
+        // await Promise.all([
+        //     invalidateExamDetailsCache(updatedExam.slug),
+        //     invalidateAllSearchCache(),
+        // ]);
         
         await createLog({ level: 'info', action: 'EXAM_UPDATED', message: `Examen mis à jour: ${updatedExam.title}`, req, user: req.user, metadata: { examId: updatedExam._id, slug: updatedExam.slug } });
         res.status(200).json({
@@ -546,10 +546,10 @@ const deleteExam = async (req, res) => {
         );
 
         // Invalider les caches liés à cet examen
-        await Promise.all([
-            invalidateExamDetailsCache(exam.slug),
-            invalidateAllSearchCache(),
-        ]);
+        // await Promise.all([
+        //     invalidateExamDetailsCache(exam.slug),
+        //     invalidateAllSearchCache(),
+        // ]);
         
         console.log(`Examen supprimé: ${exam.title} (${exam.slug})`);
         
@@ -585,7 +585,7 @@ const addToFavorites = async (req, res) => {
             await user.save();
 
             // Invalider le cache des favoris de cet utilisateur
-            await invalidateUserFavoritesCache(req.user._id.toString());
+            // await invalidateUserFavoritesCache(req.user._id.toString());
 
             // Créer une notification
             await Notification.create({
@@ -638,8 +638,7 @@ const removeFromFavorites = async (req, res) => {
         user.favorites = user.favorites.filter(fav => !fav.equals(exam._id));
         await user.save();
 
-        // Invalider le cache des favoris de cet utilisateur
-        await invalidateUserFavoritesCache(req.user._id.toString());
+        // Cache Redis désactivé - invalidation non nécessaire
 
         // Créer une notification
         await Notification.create({

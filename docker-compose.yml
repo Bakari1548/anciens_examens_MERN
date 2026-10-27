@@ -32,7 +32,7 @@ services:
       CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET}
       RESEND_API_KEY: ${RESEND_API_KEY}
       EMAIL_FROM: ${EMAIL_FROM}
-      REDIS_URL: redis://redis:6379
+      # REDIS_URL: redis://redis:6379
     ports:
       - "5000:5000"
     env_file:
@@ -60,7 +60,7 @@ services:
       - "3000:3000"
     depends_on:
       - backend
-      - redis
+      # - redis
     networks:
       - anciens_examens_network
     volumes:
@@ -69,27 +69,27 @@ services:
       - /app/node_modules
 
   # ==================== Redis ====================
-  redis:
-    image: redis:7-alpine
-    container_name: anciens_examens_redis_dev
-    restart: unless-stopped
-    ports:
-      - "6380:6379"
-    volumes:
-      - redis_data:/data
-    networks:
-      - anciens_examens_network
-    command: redis-server --appendonly yes
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+  # redis:
+  #   image: redis:7-alpine
+  #   container_name: anciens_examens_redis_dev
+  #   restart: unless-stopped
+  #   ports:
+  #     - "6380:6379"
+  #   volumes:
+  #     - redis_data:/data
+  #   networks:
+  #     - anciens_examens_network
+  #   command: redis-server --appendonly yes
+  #   healthcheck:
+  #     test: ["CMD", "redis-cli", "ping"]
+  #     interval: 30s
+  #     timeout: 10s
+  #     retries: 3
 
 # ==================== Volumes ====================
 volumes:
-  redis_data:
-    driver: local
+  # redis_data:
+  #   driver: local
 
 # ==================== Réseaux ====================
 networks:

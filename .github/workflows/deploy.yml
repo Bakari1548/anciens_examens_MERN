@@ -6,13 +6,10 @@ name: Deploy to Production
 # ==========================================
 # QUAND LE WORKFLOW SE DÉCLENCHE
 # ==========================================
+# Workflow désactivé
+# Déclenchement manuel uniquement
 on:
-  push:
-    branches:
-      - main  # Se déclenche quand on push sur la branche main
-  pull_request:
-    branches:
-      - main  # Se déclenche aussi sur les PR vers main
+  workflow_dispatch:
 
 # ==========================================
 # JOBS (TÂCHES)
